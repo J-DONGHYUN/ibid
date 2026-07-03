@@ -36,3 +36,6 @@ out/
 ### VS Code ###
 .vscode/
 .DS_Store
+
+### 로컬 전용 (와이어프레임 이미지 등) ###
+screen/
