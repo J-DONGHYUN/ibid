@@ -30,6 +30,19 @@ public enum ErrorCode {
     INVALID_USERNAME_LENGTH(HttpStatus.BAD_REQUEST, "유저이름은 4자 이상 8자 이하여야 합니다."),
     INVALID_PASSWORD_LENGTH(HttpStatus.BAD_REQUEST, "비밀번호는 4자 이상 12자 이하여야 합니다."),
 
+    // Product
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
+    INVALID_PRODUCT_TITLE(HttpStatus.BAD_REQUEST, "상품 제목은 1자 이상 100자 이하여야 합니다."),
+    INVALID_PRODUCT_DESCRIPTION(HttpStatus.BAD_REQUEST, "상품 설명은 1자 이상 2000자 이하여야 합니다."),
+    INVALID_PRODUCT_PRICE(HttpStatus.BAD_REQUEST, "판매가는 1원 이상이어야 합니다."),
+    INVALID_PRODUCT_STOCK(HttpStatus.BAD_REQUEST, "재고 수량은 1개 이상이어야 합니다."),
+
+    // Trade
+    INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다."),
+    SOLD_OUT(HttpStatus.CONFLICT, "품절된 상품입니다."),
+    INVALID_PURCHASE_QUANTITY(HttpStatus.BAD_REQUEST, "구매 수량은 1개 이상이어야 합니다."),
+    SELF_TRADE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 등록한 상품은 구매할 수 없습니다."),
+
     ;
 
     private final HttpStatus httpStatus;
