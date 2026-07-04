@@ -9,12 +9,17 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import project.kjhjdh.ibid.common.exception.BusinessException;
+import project.kjhjdh.ibid.common.exception.ErrorCode;
 
 @Getter
 @Entity
 @Table(name = "orders")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order {
+
+    private static final int MIN_QUANTITY = 1;
+    private static final int MIN_UNIT_PRICE = 1;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +41,8 @@ public class Order {
     private int totalPrice;
 
     private Order(Long productId, Long buyerId, Long sellerId, int quantity, int unitPrice) {
+        validateQuantity(quantity);
+        validateUnitPrice(unitPrice);
         this.productId = productId;
         this.buyerId = buyerId;
         this.sellerId = sellerId;
@@ -45,5 +52,17 @@ public class Order {
 
     public static Order create(Long productId, Long buyerId, Long sellerId, int quantity, int unitPrice) {
         return new Order(productId, buyerId, sellerId, quantity, unitPrice);
+    }
+
+    private void validateQuantity(int quantity) {
+        if (quantity < MIN_QUANTITY) {
+            throw new BusinessException(ErrorCode.INVALID_PURCHASE_QUANTITY);
+        }
+    }
+
+    private void validateUnitPrice(int unitPrice) {
+        if (unitPrice < MIN_UNIT_PRICE) {
+            throw new BusinessException(ErrorCode.INVALID_PRODUCT_PRICE);
+        }
     }
 }
