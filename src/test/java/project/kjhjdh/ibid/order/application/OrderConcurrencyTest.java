@@ -69,6 +69,24 @@ class OrderConcurrencyTest extends IntegrationTestSupport {
         assertThat(found.getStock()).as("남은 재고").isZero();
     }
 
+    @DisplayName("낙관적 락으로 동시 구매하면 재고 수만큼만 팔린다")
+    @Test
+    void purchaseOptimistic_preventsOversell() throws InterruptedException {
+        // given
+        Product product = productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1));
+
+        // when
+        ConcurrencyResult result = runConcurrently(THREAD_COUNT, () ->
+                orderService.purchaseOptimistic(BUYER_ID, new PurchaseRequest(product.getId(), 1)));
+
+        // then
+        Product found = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(result.success()).as("성공한 구매 수").isEqualTo(1);
+        assertThat(result.failure()).as("실패한 구매 수").isEqualTo(THREAD_COUNT - 1);
+        assertThat(orderRepository.count()).as("저장된 주문 수").isEqualTo(1);
+        assertThat(found.getStock()).as("남은 재고").isZero();
+    }
+
     private ConcurrencyResult runConcurrently(int threadCount, Runnable task) throws InterruptedException {
         ExecutorService pool = Executors.newFixedThreadPool(threadCount);
         CountDownLatch done = new CountDownLatch(threadCount);
