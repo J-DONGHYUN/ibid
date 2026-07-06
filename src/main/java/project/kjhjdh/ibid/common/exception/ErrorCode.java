@@ -42,6 +42,7 @@ public enum ErrorCode {
     SOLD_OUT(HttpStatus.CONFLICT, "품절된 상품입니다."),
     INVALID_PURCHASE_QUANTITY(HttpStatus.BAD_REQUEST, "구매 수량은 1개 이상이어야 합니다."),
     SELF_TRADE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 등록한 상품은 구매할 수 없습니다."),
+    STOCK_UPDATE_CONFLICT(HttpStatus.CONFLICT, "재고 처리 중 충돌이 반복되었습니다. 다시 시도해주세요."),
 
     ;
 
