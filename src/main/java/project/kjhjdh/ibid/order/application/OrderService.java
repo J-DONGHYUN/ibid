@@ -23,18 +23,28 @@ public class OrderService {
     public Long purchase(Long buyerId, PurchaseRequest request) {
         Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        return settle(product, buyerId, request.quantity());
+    }
 
+    @Transactional
+    public Long purchasePessimistic(Long buyerId, PurchaseRequest request) {
+        Product product = productRepository.findByIdForUpdate(request.productId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        return settle(product, buyerId, request.quantity());
+    }
+
+    private Long settle(Product product, Long buyerId, int quantity) {
         if (product.isOwnedBy(buyerId)) {
             throw new BusinessException(ErrorCode.SELF_TRADE_NOT_ALLOWED);
         }
 
-        product.decreaseStock(request.quantity());
+        product.decreaseStock(quantity);
 
         Order order = Order.create(
                 product.getId(),
                 buyerId,
                 product.getSellerId(),
-                request.quantity(),
+                quantity,
                 product.getPrice()
         );
         return orderRepository.save(order).getId();
