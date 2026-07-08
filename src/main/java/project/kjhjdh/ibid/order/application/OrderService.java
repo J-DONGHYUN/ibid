@@ -1,10 +1,10 @@
 package project.kjhjdh.ibid.order.application;
 
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.common.exception.BusinessException;
@@ -23,7 +23,6 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
-    private final PlatformTransactionManager transactionManager;
 
     @Transactional
     public Long purchase(Long buyerId, PurchaseRequest request) {
@@ -39,20 +38,16 @@ public class OrderService {
         return settle(product, buyerId, request.quantity());
     }
 
+    @Retryable(
+            retryFor = OptimisticLockingFailureException.class,
+            maxAttempts = MAX_OPTIMISTIC_RETRY,
+            backoff = @Backoff(delay = 0)
+    )
+    @Transactional
     public Long purchaseOptimistic(Long buyerId, PurchaseRequest request) {
-        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-        for (int attempt = 1; attempt <= MAX_OPTIMISTIC_RETRY; attempt++) {
-            try {
-                return transaction.execute(status -> {
-                    Product product = productRepository.findById(request.productId())
-                            .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-                    return settle(product, buyerId, request.quantity());
-                });
-            } catch (OptimisticLockingFailureException e) {
-                // 다른 트랜잭션이 먼저 재고를 변경함 → 최신 상태로 다시 시도
-            }
-        }
-        throw new BusinessException(ErrorCode.STOCK_UPDATE_CONFLICT);
+        Product product = productRepository.findById(request.productId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        return settle(product, buyerId, request.quantity());
     }
 
     private Long settle(Product product, Long buyerId, int quantity) {
