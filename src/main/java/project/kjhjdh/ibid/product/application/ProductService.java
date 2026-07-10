@@ -1,5 +1,7 @@
 package project.kjhjdh.ibid.product.application;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,8 @@ import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterRequest;
 @RequiredArgsConstructor
 public class ProductService {
 
+    private static final int PAGE_SIZE = 16;
+
     private final ProductRepository productRepository;
 
     @Transactional
@@ -31,8 +35,9 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductListResponse getProducts() {
-        return ProductListResponse.from(productRepository.findAllByOrderByIdDesc());
+    public ProductListResponse getProducts(int page) {
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
+        return ProductListResponse.from(productRepository.findAllByOrderByIdDesc(pageable));
     }
 
     @Transactional(readOnly = true)
