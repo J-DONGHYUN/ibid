@@ -35,7 +35,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
     @Test
     void purchase() {
         // given
-        Product product = productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3));
+        Product product = onSaleProduct("나이키 후드", 89000, 3);
 
         // when
         Long orderId = orderService.purchase(BUYER_ID, new PurchaseRequest(product.getId(), 2));
@@ -56,7 +56,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
     @Test
     void purchase_soldOut() {
         // given
-        Product product = productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 2));
+        Product product = onSaleProduct("나이키 후드", 89000, 2);
 
         // when
         orderService.purchase(BUYER_ID, new PurchaseRequest(product.getId(), 2));
@@ -71,7 +71,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
     @Test
     void purchase_insufficientStock() {
         // given
-        Product product = productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1));
+        Product product = onSaleProduct("나이키 후드", 89000, 1);
 
         // when & then
         assertThatThrownBy(() -> orderService.purchase(BUYER_ID, new PurchaseRequest(product.getId(), 2)))
@@ -86,7 +86,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
     @Test
     void purchase_selfTrade() {
         // given
-        Product product = productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3));
+        Product product = onSaleProduct("나이키 후드", 89000, 3);
 
         // when & then
         assertThatThrownBy(() -> orderService.purchase(SELLER_ID, new PurchaseRequest(product.getId(), 1)))
@@ -95,5 +95,11 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
 
         assertThat(orderRepository.count()).isZero();
         assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(3);
+    }
+
+    private Product onSaleProduct(String title, int price, int stock) {
+        Product product = Product.create(SELLER_ID, title, "상태 좋음", price, stock);
+        product.openForSale();
+        return productRepository.save(product);
     }
 }

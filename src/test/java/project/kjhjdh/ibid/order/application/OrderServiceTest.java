@@ -46,6 +46,7 @@ class OrderServiceTest {
     void purchase() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
         given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
         Order savedOrder = mock(Order.class);
         given(savedOrder.getId()).willReturn(100L);
@@ -93,6 +94,7 @@ class OrderServiceTest {
     void purchase_insufficientStock() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
         given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then

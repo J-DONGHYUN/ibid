@@ -16,7 +16,7 @@ class ProductTest {
 
     private static final Long SELLER_ID = 1L;
 
-    @DisplayName("유효한 값으로 상품을 생성하면 판매중 상태가 된다")
+    @DisplayName("유효한 값으로 상품을 생성하면 판매 대기 상태가 된다")
     @Test
     void create() {
         // when
@@ -27,7 +27,7 @@ class ProductTest {
         assertThat(product.getTitle()).isEqualTo("나이키 후드");
         assertThat(product.getPrice()).isEqualTo(89000);
         assertThat(product.getStock()).isEqualTo(3);
-        assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.PENDING);
     }
 
     @DisplayName("제목이 비었거나 100자를 초과하면 생성에 실패한다")
@@ -72,11 +72,51 @@ class ProductTest {
                 .hasMessage(ErrorCode.INVALID_PRODUCT_STOCK.getMessage());
     }
 
+    @DisplayName("판매를 시작하면 판매중 상태가 된다")
+    @Test
+    void openForSale() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+
+        // when
+        product.openForSale();
+
+        // then
+        assertThat(product.isOnSale()).isTrue();
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+    }
+
+    @DisplayName("판매 대기 상태가 아니면 판매를 시작할 수 없다")
+    @Test
+    void openForSale_notPending() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+
+        // when & then
+        assertThatThrownBy(product::openForSale)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_PENDING.getMessage());
+    }
+
+    @DisplayName("판매를 시작하지 않은 상품은 구매(차감)할 수 없다")
+    @Test
+    void decreaseStock_notOnSale() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+
+        // when & then
+        assertThatThrownBy(() -> product.decreaseStock(1))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_ON_SALE.getMessage());
+    }
+
     @DisplayName("구매 수량만큼 재고를 차감한다")
     @Test
     void decreaseStock() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
 
         // when
         product.decreaseStock(2);
@@ -91,6 +131,7 @@ class ProductTest {
     void decreaseStock_soldOut() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
 
         // when
         product.decreaseStock(1);
@@ -106,6 +147,7 @@ class ProductTest {
     void decreaseStock_invalidQuantity(int quantity) {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
 
         // when & then
         assertThatThrownBy(() -> product.decreaseStock(quantity))
@@ -118,6 +160,7 @@ class ProductTest {
     void decreaseStock_insufficientStock() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
 
         // when & then
         assertThatThrownBy(() -> product.decreaseStock(2))
@@ -130,6 +173,7 @@ class ProductTest {
     void decreaseStock_alreadySoldOut() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
         product.decreaseStock(1);
 
         // when & then

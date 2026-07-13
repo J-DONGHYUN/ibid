@@ -36,7 +36,9 @@ class OrderConcurrencyTest extends IntegrationTestSupport {
     @Test
     void purchase_preventsOversell() throws InterruptedException {
         // given
-        Product product = productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1));
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
+        productRepository.save(product);
 
         // when
         ConcurrencyResult result = runConcurrently(THREAD_COUNT, () ->
