@@ -59,11 +59,18 @@ public class Product {
         this.description = description;
         this.price = price;
         this.stock = stock;
-        this.status = ProductStatus.ON_SALE;
+        this.status = ProductStatus.PENDING;
     }
 
     public static Product create(Long sellerId, String title, String description, int price, int stock) {
         return new Product(sellerId, title, description, price, stock);
+    }
+
+    public void openForSale() {
+        if (status != ProductStatus.PENDING) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_PENDING);
+        }
+        this.status = ProductStatus.ON_SALE;
     }
 
     public void decreaseStock(int quantity) {
@@ -72,6 +79,9 @@ public class Product {
         }
         if (isSoldOut()) {
             throw new BusinessException(ErrorCode.SOLD_OUT);
+        }
+        if (status != ProductStatus.ON_SALE) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_ON_SALE);
         }
         if (quantity > stock) {
             throw new BusinessException(ErrorCode.INSUFFICIENT_STOCK);
@@ -84,6 +94,10 @@ public class Product {
 
     public boolean isSoldOut() {
         return status == ProductStatus.SOLD_OUT;
+    }
+
+    public boolean isOnSale() {
+        return status == ProductStatus.ON_SALE;
     }
 
     public boolean isOwnedBy(Long userId) {

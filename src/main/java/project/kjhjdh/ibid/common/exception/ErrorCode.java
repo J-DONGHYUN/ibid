@@ -36,6 +36,8 @@ public enum ErrorCode {
     INVALID_PRODUCT_DESCRIPTION(HttpStatus.BAD_REQUEST, "상품 설명은 1자 이상 2000자 이하여야 합니다."),
     INVALID_PRODUCT_PRICE(HttpStatus.BAD_REQUEST, "판매가는 1원 이상이어야 합니다."),
     INVALID_PRODUCT_STOCK(HttpStatus.BAD_REQUEST, "재고 수량은 1개 이상이어야 합니다."),
+    PRODUCT_NOT_PENDING(HttpStatus.CONFLICT, "판매 대기 상태의 상품만 판매를 시작할 수 있습니다."),
+    PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다."),
 
     // Trade
     INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다."),
