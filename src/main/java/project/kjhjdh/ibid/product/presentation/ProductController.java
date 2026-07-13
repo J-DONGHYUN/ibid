@@ -39,9 +39,9 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<ProductListResponse> getProducts(
-            @RequestParam(defaultValue = "0") int page
+            @RequestParam(required = false) Long cursor
     ) {
-        return ResponseEntity.ok(productService.getProducts(page));
+        return ResponseEntity.ok(productService.getProducts(cursor));
     }
 
     @GetMapping("/{productId}")

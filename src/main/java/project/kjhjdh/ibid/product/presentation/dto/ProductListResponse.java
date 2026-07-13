@@ -2,29 +2,27 @@ package project.kjhjdh.ibid.product.presentation.dto;
 
 import java.util.List;
 
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 
 import project.kjhjdh.ibid.product.domain.Product;
 
 public record ProductListResponse(
         List<ProductSummaryResponse> products,
-        int page,
-        int size,
-        long totalElements,
-        int totalPages,
+        Long nextCursor,
         boolean hasNext
 ) {
 
-    public static ProductListResponse from(Page<Product> products) {
+    public static ProductListResponse of(Slice<Product> slice) {
+        List<Product> content = slice.getContent();
+        Long nextCursor = slice.hasNext() && !content.isEmpty()
+                ? content.get(content.size() - 1).getId()
+                : null;
         return new ProductListResponse(
-                products.getContent().stream()
+                content.stream()
                         .map(ProductSummaryResponse::from)
                         .toList(),
-                products.getNumber(),
-                products.getSize(),
-                products.getTotalElements(),
-                products.getTotalPages(),
-                products.hasNext()
+                nextCursor,
+                slice.hasNext()
         );
     }
 }

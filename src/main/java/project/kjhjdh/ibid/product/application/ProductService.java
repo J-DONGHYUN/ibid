@@ -2,6 +2,7 @@ package project.kjhjdh.ibid.product.application;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,9 +36,11 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductListResponse getProducts(int page) {
-        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
-        return ProductListResponse.from(productRepository.findAllByOrderByIdDesc(pageable));
+    public ProductListResponse getProducts(Long cursor) {
+        Pageable pageable = PageRequest.of(0, PAGE_SIZE);
+        Long effectiveCursor = (cursor == null) ? Long.MAX_VALUE : cursor;
+        Slice<Product> slice = productRepository.findByIdLessThanOrderByIdDesc(effectiveCursor, pageable);
+        return ProductListResponse.of(slice);
     }
 
     @Transactional(readOnly = true)
