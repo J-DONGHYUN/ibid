@@ -1,7 +1,6 @@
 package project.kjhjdh.ibid.common.exception;
 
 import org.springframework.context.support.DefaultMessageSourceResolvable;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -43,12 +42,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException e) {
         return ResponseEntity.status(ErrorCode.NOT_FOUND.getHttpStatus())
                 .body(ErrorResponse.of(ErrorCode.NOT_FOUND));
-    }
-
-    @ExceptionHandler(OptimisticLockingFailureException.class)
-    public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException e) {
-        return ResponseEntity.status(ErrorCode.STOCK_UPDATE_CONFLICT.getHttpStatus())
-                .body(ErrorResponse.of(ErrorCode.STOCK_UPDATE_CONFLICT));
     }
 
     @ExceptionHandler(Exception.class)

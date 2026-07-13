@@ -1,8 +1,5 @@
 package project.kjhjdh.ibid.order.application;
 
-import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,33 +16,12 @@ import project.kjhjdh.ibid.product.infra.ProductRepository;
 @RequiredArgsConstructor
 public class OrderService {
 
-    private static final int MAX_OPTIMISTIC_RETRY = 100;
-
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
 
     @Transactional
     public Long purchase(Long buyerId, PurchaseRequest request) {
-        Product product = productRepository.findById(request.productId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-        return settle(product, buyerId, request.quantity());
-    }
-
-    @Transactional
-    public Long purchasePessimistic(Long buyerId, PurchaseRequest request) {
         Product product = productRepository.findByIdForUpdate(request.productId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-        return settle(product, buyerId, request.quantity());
-    }
-
-    @Retryable(
-            retryFor = OptimisticLockingFailureException.class,
-            maxAttempts = MAX_OPTIMISTIC_RETRY,
-            backoff = @Backoff(delay = 0)
-    )
-    @Transactional
-    public Long purchaseOptimistic(Long buyerId, PurchaseRequest request) {
-        Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         return settle(product, buyerId, request.quantity());
     }
