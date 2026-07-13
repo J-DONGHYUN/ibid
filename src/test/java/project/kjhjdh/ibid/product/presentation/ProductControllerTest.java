@@ -2,7 +2,6 @@ package project.kjhjdh.ibid.product.presentation;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -118,12 +117,12 @@ class ProductControllerTest extends ControllerTestSupport {
     @Test
     void getProducts() {
         // given
-        given(productService.getProducts(anyInt())).willReturn(new ProductListResponse(
+        given(productService.getProducts(any())).willReturn(new ProductListResponse(
                 List.of(
                         new ProductSummaryResponse(2L, "나이키 후드", 89000, 3, ProductStatus.ON_SALE),
                         new ProductSummaryResponse(1L, "아디다스 슬리퍼", 30000, 0, ProductStatus.SOLD_OUT)
                 ),
-                0, 16, 2, 1, false
+                1L, true
         ));
 
         // when & then
@@ -137,8 +136,8 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("products[0].stock", equalTo(3))
                 .body("products[0].status", equalTo("ON_SALE"))
                 .body("products[1].status", equalTo("SOLD_OUT"))
-                .body("page", equalTo(0))
-                .body("hasNext", equalTo(false));
+                .body("nextCursor", equalTo(1))
+                .body("hasNext", equalTo(true));
     }
 
     @DisplayName("상품 상세 조회에 성공하면 200과 상품 정보를 응답한다")
