@@ -39,3 +39,7 @@ out/
 
 ### 로컬 전용 (와이어프레임 이미지 등) ###
 screen/
+
+### 프론트엔드 ###
+frontend/node_modules/
+frontend/.next/
