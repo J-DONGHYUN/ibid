@@ -9,11 +9,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
-import project.kjhjdh.ibid.auth.application.AuthService;
 import project.kjhjdh.ibid.auth.domain.TokenPair;
 import project.kjhjdh.ibid.auth.presentation.cookie.RefreshTokenCookieHandler;
 import project.kjhjdh.ibid.auth.presentation.dto.LoginRequest;
@@ -24,9 +22,6 @@ import project.kjhjdh.ibid.common.exception.GlobalException;
 import project.kjhjdh.ibid.support.ControllerTestSupport;
 
 class AuthControllerTest extends ControllerTestSupport {
-
-    @MockitoBean
-    private AuthService authService;
 
     @DisplayName("회원가입에 성공하면 201과 userId를 응답한다")
     @Test

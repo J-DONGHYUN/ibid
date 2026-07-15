@@ -1,0 +1,195 @@
+package project.kjhjdh.ibid.product.domain;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import project.kjhjdh.ibid.common.exception.BusinessException;
+import project.kjhjdh.ibid.common.exception.ErrorCode;
+
+class ProductTest {
+
+    private static final Long SELLER_ID = 1L;
+
+    @DisplayName("유효한 값으로 상품을 생성하면 판매 대기 상태가 된다")
+    @Test
+    void create() {
+        // when
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+
+        // then
+        assertThat(product.getSellerId()).isEqualTo(SELLER_ID);
+        assertThat(product.getTitle()).isEqualTo("나이키 후드");
+        assertThat(product.getPrice()).isEqualTo(89000);
+        assertThat(product.getStock()).isEqualTo(3);
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.PENDING);
+    }
+
+    @DisplayName("제목이 비었거나 100자를 초과하면 생성에 실패한다")
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", " ", "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A"})
+    void create_invalidTitle(String title) {
+        // when & then
+        assertThatThrownBy(() -> Product.create(SELLER_ID, title, "상태 좋음", 89000, 3))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_PRODUCT_TITLE.getMessage());
+    }
+
+    @DisplayName("설명이 비어 있으면 생성에 실패한다")
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", " "})
+    void create_invalidDescription(String description) {
+        // when & then
+        assertThatThrownBy(() -> Product.create(SELLER_ID, "나이키 후드", description, 89000, 3))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_PRODUCT_DESCRIPTION.getMessage());
+    }
+
+    @DisplayName("판매가가 1원 미만이면 생성에 실패한다")
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void create_invalidPrice(int price) {
+        // when & then
+        assertThatThrownBy(() -> Product.create(SELLER_ID, "나이키 후드", "상태 좋음", price, 3))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_PRODUCT_PRICE.getMessage());
+    }
+
+    @DisplayName("재고가 1개 미만이면 생성에 실패한다")
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void create_invalidStock(int stock) {
+        // when & then
+        assertThatThrownBy(() -> Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, stock))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_PRODUCT_STOCK.getMessage());
+    }
+
+    @DisplayName("판매를 시작하면 판매중 상태가 된다")
+    @Test
+    void openForSale() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+
+        // when
+        product.openForSale();
+
+        // then
+        assertThat(product.isOnSale()).isTrue();
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+    }
+
+    @DisplayName("판매 대기 상태가 아니면 판매를 시작할 수 없다")
+    @Test
+    void openForSale_notPending() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+
+        // when & then
+        assertThatThrownBy(product::openForSale)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_PENDING.getMessage());
+    }
+
+    @DisplayName("판매를 시작하지 않은 상품은 구매(차감)할 수 없다")
+    @Test
+    void decreaseStock_notOnSale() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+
+        // when & then
+        assertThatThrownBy(() -> product.decreaseStock(1))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_ON_SALE.getMessage());
+    }
+
+    @DisplayName("구매 수량만큼 재고를 차감한다")
+    @Test
+    void decreaseStock() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+
+        // when
+        product.decreaseStock(2);
+
+        // then
+        assertThat(product.getStock()).isEqualTo(1);
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+    }
+
+    @DisplayName("재고가 0이 되면 품절 상태로 전환된다")
+    @Test
+    void decreaseStock_soldOut() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
+
+        // when
+        product.decreaseStock(1);
+
+        // then
+        assertThat(product.getStock()).isZero();
+        assertThat(product.isSoldOut()).isTrue();
+    }
+
+    @DisplayName("구매 수량이 1개 미만이면 차감에 실패한다")
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void decreaseStock_invalidQuantity(int quantity) {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+
+        // when & then
+        assertThatThrownBy(() -> product.decreaseStock(quantity))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_PURCHASE_QUANTITY.getMessage());
+    }
+
+    @DisplayName("구매 수량이 재고보다 많으면 차감에 실패한다")
+    @Test
+    void decreaseStock_insufficientStock() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
+
+        // when & then
+        assertThatThrownBy(() -> product.decreaseStock(2))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INSUFFICIENT_STOCK.getMessage());
+    }
+
+    @DisplayName("이미 품절된 상품은 차감에 실패한다")
+    @Test
+    void decreaseStock_alreadySoldOut() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
+        product.decreaseStock(1);
+
+        // when & then
+        assertThatThrownBy(() -> product.decreaseStock(1))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.SOLD_OUT.getMessage());
+    }
+
+    @DisplayName("판매자 본인 여부를 판별한다")
+    @Test
+    void isOwnedBy() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+
+        // when & then
+        assertThat(product.isOwnedBy(SELLER_ID)).isTrue();
+        assertThat(product.isOwnedBy(2L)).isFalse();
+    }
+}
