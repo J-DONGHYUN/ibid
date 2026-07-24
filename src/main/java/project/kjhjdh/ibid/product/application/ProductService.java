@@ -35,6 +35,16 @@ public class ProductService {
         return productRepository.save(product).getId();
     }
 
+    @Transactional
+    public void openForSale(Long sellerId, Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        if (!product.isOwnedBy(sellerId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+        product.openForSale();
+    }
+
     @Transactional(readOnly = true)
     public ProductListResponse getProducts(Long cursor) {
         Pageable pageable = PageRequest.of(0, PAGE_SIZE);

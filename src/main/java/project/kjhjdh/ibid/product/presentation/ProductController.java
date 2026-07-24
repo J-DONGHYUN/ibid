@@ -3,6 +3,7 @@ package project.kjhjdh.ibid.product.presentation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,5 +48,14 @@ public class ProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDetailResponse> getProduct(@PathVariable Long productId) {
         return ResponseEntity.ok(productService.getProduct(productId));
+    }
+
+    @PatchMapping("/{productId}/on-sale")
+    public ResponseEntity<Void> openForSale(
+            @LoginUser UserInfo loginUser,
+            @PathVariable Long productId
+    ) {
+        productService.openForSale(loginUser.userId(), productId);
+        return ResponseEntity.ok().build();
     }
 }
