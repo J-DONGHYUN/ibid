@@ -50,13 +50,15 @@ class OrderServiceTest {
         given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
         Order savedOrder = mock(Order.class);
         given(savedOrder.getId()).willReturn(100L);
+        given(savedOrder.getTotalPrice()).willReturn(178000);
         given(orderRepository.save(any(Order.class))).willReturn(savedOrder);
 
         // when
-        Long orderId = orderService.purchase(BUYER_ID, new PurchaseRequest(PRODUCT_ID, 2));
+        PurchaseResult result = orderService.purchase(BUYER_ID, new PurchaseRequest(PRODUCT_ID, 2));
 
         // then
-        assertThat(orderId).isEqualTo(100L);
+        assertThat(result.orderId()).isEqualTo(100L);
+        assertThat(result.totalPrice()).isEqualTo(178000);
         assertThat(product.getStock()).isEqualTo(1);
         verify(orderRepository).save(any(Order.class));
     }

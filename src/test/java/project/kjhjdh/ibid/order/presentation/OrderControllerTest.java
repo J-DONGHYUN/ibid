@@ -14,6 +14,7 @@ import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.order.application.PurchaseResult;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
 import project.kjhjdh.ibid.support.ControllerTestSupport;
 
@@ -23,7 +24,7 @@ class OrderControllerTest extends ControllerTestSupport {
     @Test
     void purchase() {
         // given
-        given(orderService.purchase(anyLong(), any())).willReturn(100L);
+        given(orderService.purchase(anyLong(), any())).willReturn(new PurchaseResult(100L, 178000));
 
         // when & then
         RestAssuredMockMvc.given()

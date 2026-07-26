@@ -38,10 +38,11 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
         Product product = onSaleProduct("나이키 후드", 89000, 3);
 
         // when
-        Long orderId = orderService.purchase(BUYER_ID, new PurchaseRequest(product.getId(), 2));
+        PurchaseResult result = orderService.purchase(BUYER_ID, new PurchaseRequest(product.getId(), 2));
 
         // then
-        Order order = orderRepository.findById(orderId).orElseThrow();
+        assertThat(result.totalPrice()).isEqualTo(178000);
+        Order order = orderRepository.findById(result.orderId()).orElseThrow();
         assertThat(order.getBuyerId()).isEqualTo(BUYER_ID);
         assertThat(order.getSellerId()).isEqualTo(SELLER_ID);
         assertThat(order.getQuantity()).isEqualTo(2);

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.order.application.OrderService;
+import project.kjhjdh.ibid.order.application.PurchaseResult;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseResponse;
 
@@ -27,8 +28,8 @@ public class OrderController {
             @LoginUser UserInfo loginUser,
             @Valid @RequestBody PurchaseRequest request
     ) {
-        Long orderId = orderService.purchase(loginUser.userId(), request);
+        PurchaseResult result = orderService.purchase(loginUser.userId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new PurchaseResponse(orderId));
+                .body(new PurchaseResponse(result.orderId()));
     }
 }
