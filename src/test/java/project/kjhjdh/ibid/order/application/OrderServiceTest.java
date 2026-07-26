@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.order.domain.Order;
+import project.kjhjdh.ibid.order.domain.OrderStatus;
 import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
 import project.kjhjdh.ibid.product.domain.Product;
@@ -31,6 +32,7 @@ class OrderServiceTest {
     private static final Long PRODUCT_ID = 1L;
     private static final Long SELLER_ID = 10L;
     private static final Long BUYER_ID = 20L;
+    private static final Long ORDER_ID = 100L;
 
     @Mock
     private OrderRepository orderRepository;
@@ -105,5 +107,37 @@ class OrderServiceTest {
                 .hasMessage(ErrorCode.INSUFFICIENT_STOCK.getMessage());
         assertThat(product.getStock()).isEqualTo(1);
         verify(orderRepository, never()).save(any());
+    }
+
+    @DisplayName("주문을 취소하면 재고가 복원되고 상태가 CANCELED가 된다")
+    @Test
+    void cancel() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+        product.decreaseStock(2);
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 2, 89000);
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.of(order));
+        given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when
+        orderService.cancel(ORDER_ID);
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELED);
+        assertThat(product.getStock()).isEqualTo(3);
+    }
+
+    @DisplayName("존재하지 않는 주문은 취소할 수 없다")
+    @Test
+    void cancel_orderNotFound() {
+        // given
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> orderService.cancel(ORDER_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_FOUND.getMessage());
+        verify(productRepository, never()).findByIdForUpdate(any());
     }
 }

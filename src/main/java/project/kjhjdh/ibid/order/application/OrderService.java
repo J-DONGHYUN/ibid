@@ -26,6 +26,16 @@ public class OrderService {
         return settle(product, buyerId, request.quantity());
     }
 
+    @Transactional
+    public void cancel(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        Product product = productRepository.findByIdForUpdate(order.getProductId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        order.cancel();
+        product.restoreStock(order.getQuantity());
+    }
+
     private PurchaseResult settle(Product product, Long buyerId, int quantity) {
         if (product.isOwnedBy(buyerId)) {
             throw new BusinessException(ErrorCode.SELF_TRADE_NOT_ALLOWED);

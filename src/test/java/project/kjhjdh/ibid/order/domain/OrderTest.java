@@ -29,6 +29,33 @@ class OrderTest {
         assertThat(order.getSellerId()).isEqualTo(SELLER_ID);
         assertThat(order.getQuantity()).isEqualTo(3);
         assertThat(order.getTotalPrice()).isEqualTo(267000);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CREATED);
+    }
+
+    @DisplayName("생성된 주문을 취소하면 CANCELED가 된다")
+    @Test
+    void cancel() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+
+        // when
+        order.cancel();
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELED);
+    }
+
+    @DisplayName("생성 상태가 아닌 주문은 취소할 수 없다")
+    @Test
+    void cancel_notCreated() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+        order.cancel();
+
+        // when & then
+        assertThatThrownBy(order::cancel)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_CANCELABLE.getMessage());
     }
 
     @DisplayName("구매 수량이 1개 미만이면 생성에 실패한다")

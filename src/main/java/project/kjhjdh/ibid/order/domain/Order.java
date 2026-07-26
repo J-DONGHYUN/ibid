@@ -2,6 +2,8 @@ package project.kjhjdh.ibid.order.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,6 +42,10 @@ public class Order {
     @Column(nullable = false)
     private int totalPrice;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderStatus status;
+
     private Order(Long productId, Long buyerId, Long sellerId, int quantity, int unitPrice) {
         validateQuantity(quantity);
         validateUnitPrice(unitPrice);
@@ -48,10 +54,18 @@ public class Order {
         this.sellerId = sellerId;
         this.quantity = quantity;
         this.totalPrice = unitPrice * quantity;
+        this.status = OrderStatus.CREATED;
     }
 
     public static Order create(Long productId, Long buyerId, Long sellerId, int quantity, int unitPrice) {
         return new Order(productId, buyerId, sellerId, quantity, unitPrice);
+    }
+
+    public void cancel() {
+        if (status != OrderStatus.CREATED) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_CANCELABLE);
+        }
+        this.status = OrderStatus.CANCELED;
     }
 
     private void validateQuantity(int quantity) {
