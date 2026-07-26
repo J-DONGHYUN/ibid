@@ -32,6 +32,32 @@ class OrderTest {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CREATED);
     }
 
+    @DisplayName("생성된 주문의 결제를 확정하면 PAID가 된다")
+    @Test
+    void confirmPaid() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+
+        // when
+        order.confirmPaid();
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
+    }
+
+    @DisplayName("생성 상태가 아닌 주문은 결제를 확정할 수 없다")
+    @Test
+    void confirmPaid_notCreated() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+        order.confirmPaid();
+
+        // when & then
+        assertThatThrownBy(order::confirmPaid)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_PAYABLE.getMessage());
+    }
+
     @DisplayName("생성된 주문을 취소하면 CANCELED가 된다")
     @Test
     void cancel() {
@@ -43,6 +69,19 @@ class OrderTest {
 
         // then
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELED);
+    }
+
+    @DisplayName("이미 결제된 주문은 취소할 수 없다")
+    @Test
+    void cancel_afterPaid() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+        order.confirmPaid();
+
+        // when & then
+        assertThatThrownBy(order::cancel)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_CANCELABLE.getMessage());
     }
 
     @DisplayName("생성 상태가 아닌 주문은 취소할 수 없다")

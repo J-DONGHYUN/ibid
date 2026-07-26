@@ -109,6 +109,32 @@ class OrderServiceTest {
         verify(orderRepository, never()).save(any());
     }
 
+    @DisplayName("결제가 확정되면 주문 상태가 PAID가 된다")
+    @Test
+    void confirmPaid() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 2, 89000);
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.of(order));
+
+        // when
+        orderService.confirmPaid(ORDER_ID);
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
+    }
+
+    @DisplayName("존재하지 않는 주문은 결제 확정할 수 없다")
+    @Test
+    void confirmPaid_orderNotFound() {
+        // given
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> orderService.confirmPaid(ORDER_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_FOUND.getMessage());
+    }
+
     @DisplayName("주문을 취소하면 재고가 복원되고 상태가 CANCELED가 된다")
     @Test
     void cancel() {

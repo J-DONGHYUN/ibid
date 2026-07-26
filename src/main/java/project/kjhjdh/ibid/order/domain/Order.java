@@ -61,6 +61,13 @@ public class Order {
         return new Order(productId, buyerId, sellerId, quantity, unitPrice);
     }
 
+    public void confirmPaid() {
+        if (status != OrderStatus.CREATED) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_PAYABLE);
+        }
+        this.status = OrderStatus.PAID;
+    }
+
     public void cancel() {
         if (status != OrderStatus.CREATED) {
             throw new BusinessException(ErrorCode.ORDER_NOT_CANCELABLE);

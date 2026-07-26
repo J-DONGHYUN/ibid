@@ -34,12 +34,12 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 - [x] **O1. `OrderService.purchase()` 반환값 변경** — `Long orderId` → `(orderId, totalPrice)` 결과 객체 (결제가 order repo 직접 접근 안 하도록).
 - [x] **O2. `Product.restoreStock(quantity)` 추가** — 재고 복원용(`decreaseStock`의 역동작, PENDING 복원 차단).
 - [x] **O3. 주문 취소 유스케이스** — `OrderService.cancel(orderId)` → 재고 복원 + 주문 `CANCELED` (결제 실패/이탈 보상). *(OrderStatus enum·status 필드 최소 도입 포함)*
-- [ ] **O4. 결제 확정 반영** — `OrderService.confirmPaid(orderId)` → 주문 `CREATED` → `PAID`.
-- [ ] **O5. 경계 유지** — order/inspection이 payment/Toss를 import하지 않음 확인.
+- [x] **O4. 결제 확정 반영** — `OrderService.confirmPaid(orderId)` → 주문 `CREATED` → `PAID`.
+- [x] **O5. 경계 유지** — order가 payment/Toss를 import하지 않음 확인(현재 `auth`·`product`만 의존). inspection은 T8에서 동일 원칙 적용.
 
 ### 주문 flow (본인 핵심)
 
-- [~] **T3. OrderStatus 상태기계 도입** — enum·`status`(기본 `CREATED`)·`CANCELED` 전이는 O3에서 도입 완료. 남은 것: `PAID`(O4)/발송/검수 전이 + 각 전이별 잘못된 전이 방지(`409`).
+- [~] **T3. OrderStatus 상태기계 도입** — enum·`status`(기본 `CREATED`)와 `CANCELED`(O3)·`PAID`(O4) 전이 완료. 남은 것: 발송(`SHIPPED_TO_INSPECTOR`)/검수(`UNDER_INSPECTION`→`COMPLETED`/`REFUNDED`) 전이 + 각 전이별 잘못된 전이 방지(`409`).
 - [ ] **T5. 판매자 발송 처리** — `POST /api/orders/{id}/ship`(판매자 본인). `PAID` → `SHIPPED_TO_INSPECTOR`.
 - [ ] **T6. 내 거래 목록/상세** — 구매자·판매자 관점 주문 조회.
 - [ ] **T7. `CREATED` 방치 주문 타임아웃 정리(후순위)** — 결제 미완 주문 자동 취소/재고 복원.
