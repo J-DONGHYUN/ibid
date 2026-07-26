@@ -2,10 +2,10 @@
 
 이커머스(중고 거래 + 검수 에스크로) 서비스의 **기능 정의와 전체 플로우**를 다룬다. 팀 전체가 같은 그림을 공유하기 위한 단일 기준 문서다.
 
-> **범위 구분**: 이 문서 = *무엇을 만드는가(기능·플로우·설계)*. 작업 목록·진행 상태·단계(MVP 1차/2차)·우선순위는 **[MVP.md](./MVP.md)** 에서만 다룬다.
+> **범위 구분**: 이 문서 = *무엇을 만드는가(기능·플로우·설계)*. 작업 목록·진행 상태·우선순위는 **[MVP.md](./MVP.md)** 에서만 다룬다.
 
 - 대상 코드: `project.kjhjdh.ibid` (Spring Boot 3.5, Java 21, JPA + Redis)
-- 담당 구분: **주문 flow(오케스트레이션)** 와 **결제(에스크로 3단계, 외부 PG)** 는 담당자가 다르다 → [§3.1 담당 경계](#31-담당-경계) 참고
+- 담당 구분: **주문 flow = 본인**, **결제(외부 PG/Toss) = 팀원**. 결제-주문 연동 방향은 [#15](https://github.com/J-DONGHYUN/ibid/issues/15)에서 확정 → [§3.1 담당 경계](#31-담당-경계)
 
 ---
 
@@ -17,8 +17,8 @@
 | 판매자(Seller) | 특정 상품을 등록한 사용자. 상품 기준의 역할 이름일 뿐 별도 계정 종류가 아님 |
 | 구매자(Buyer) | 특정 상품을 구매한 사용자. 본인이 판매한 상품은 구매할 수 없음 |
 | 검수업체(Inspector) | 판매자가 보낸 상품을 검수해 거래 완결/환불을 결정하는 **플랫폼 운영 주체**. 일반 사용자 계정이 아니라 운영자(관리자) 권한으로 동작 |
-| 결제(Payment) | 대금의 실제 이동을 책임지는 관심사. **외부 PG 연동**이며 **에스크로 3단계(보관/정산/환불)** 를 제공한다. **팀원 담당** |
-| 에스크로(Escrow) | 구매 시점에 구매자 대금을 검수 완료 전까지 묶어두는 대금 보관 상태. 실제 보관/해제는 결제(PG)가 수행 |
+| 결제(Payment) | 대금의 실제 이동(승인/취소/환불)을 책임지는 관심사. **외부 PG(Toss) 연동**. **팀원 담당**이며 **order를 호출**한다 |
+| 에스크로(Escrow) | 결제 완료된 대금을 검수 완료 전까지 플랫폼이 묶어두는 개념. 주문이 `PAID`~`UNDER_INSPECTION` 상태인 동안 대금이 확보돼 있는 상태로 표현 |
 
 ---
 
@@ -68,29 +68,31 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 | 상품 목록 | GET | `/api/products?cursor=` | X | 커서 기반 무한스크롤(16개 단위, id 내림차순) |
 | 상품 상세 | GET | `/api/products/{id}` | X | 단건 조회 |
 
-**상태 규칙**
-- 생성 시 `PENDING`, 판매 시작 시 `ON_SALE`, 재고 0이 되면 `SOLD_OUT`
-- 구매는 `ON_SALE` 상품만 가능
+**규칙**
+- 생성 시 `PENDING`, 판매 시작 시 `ON_SALE`, 재고 0이 되면 `SOLD_OUT`, 구매는 `ON_SALE`만 가능
+- 재고 도메인 메서드: `decreaseStock(quantity)`(구매 시), `increaseStock(quantity)`(주문 취소/환불 시 복원)
 
 ### 2.4 주문 (order)
+
+주문은 **결제(payment) checkout 시점에 생성**되며, 이후 발송·검수 라이프사이클을 상태 기계로 관리한다.
 
 | 필드 | 설명 |
 | --- | --- |
 | `productId` / `buyerId` / `sellerId` | 거래 당사자 |
 | `quantity` | 구매 수량(1 이상) |
-| `totalPrice` | `unitPrice * quantity` |
+| `totalPrice` | `unitPrice * quantity`. **대금의 진실 원천**(클라 입력 아님) |
 | `status` | 주문 상태 → [§3.4 주문 상태 기계](#34-주문-상태-기계) |
-| `paymentId` | 결제 건 식별자(에스크로 hold 성공 시 결제로부터 받음) |
+
+> 주문은 `paymentId`를 갖지 않는다. Order↔Payment 연결은 **결제 쪽이 `Payment.orderId`로 참조**한다(order는 payment를 모른다).
 
 **규칙**
 - 본인이 등록한 상품은 구매 불가(`SELF_TRADE_NOT_ALLOWED`)
 - 재고 차감은 `findByIdForUpdate`(비관적 락)로 동시성 제어 → 초과 판매 방지
 - 재고가 0이 되면 상품 `SOLD_OUT`
-- 주문의 진행은 상태 기계로 관리하며, 상태 전이 시점에 결제(에스크로)를 호출한다
 
 ### 2.5 검수 (inspection)
 
-주문 1건당 검수 기록 1건. 검수업체(운영자)가 수령/판정을 기록한다.
+주문 1건당 검수 기록 1건. 검수업체(운영자)가 수령/판정을 기록하고, 판정 결과를 **도메인 이벤트로 발행**한다(정산/환불은 결제가 구독).
 
 | 필드 | 설명 |
 | --- | --- |
@@ -99,142 +101,145 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 | `inspectorId` | 검수 처리자(운영자) id (선택) |
 | `memo` | 판정 사유/메모 |
 
-### 2.6 결제 연동 인터페이스 (payment, 팀원 구현)
+### 2.6 결제 연동 (경계)
 
-주문 flow가 의존하는 **포트**. 결제 담당이 이 계약을 구현한다. (시그니처는 협의로 확정 — 아래는 초안)
+결제(Toss 연동)는 **팀원 담당**이며, [#15](https://github.com/J-DONGHYUN/ibid/issues/15)에서 **의존성 방향을 payment → order로 확정**했다.
 
-```java
-public interface PaymentPort {
+- **구매 오케스트레이션은 결제 모듈이 소유**: 결제의 checkout 파사드가 `OrderService`를 호출해 **Order + Payment를 한 트랜잭션에 원자적으로 생성**한다. 엔드포인트(`/api/payments/checkout`, `/confirm`)도 결제 모듈에 있다.
+- **order는 payment/Toss를 import하지 않는다.** 대신 결제가 호출할 유스케이스만 노출한다.
 
-    PaymentResult hold(PaymentCommand command);   // 구매 시 대금 보관(에스크로). 실패 시 예외
-    void settle(String paymentId);                 // 검수 통과 시 판매자 정산(매입 확정)
-    void refund(String paymentId);                 // 검수 불합격/취소 시 환불
-}
+**주문이 결제에 제공하는 유스케이스 (order 소유)**
 
-record PaymentCommand(Long orderId, Long buyerId, Long sellerId, int amount) {}
-record PaymentResult(String paymentId, PaymentStatus status) {}
-```
+| 유스케이스 | 호출 시점 | 동작 |
+| --- | --- | --- |
+| `purchase(buyerId, req)` → `(orderId, totalPrice)` | 결제 checkout | 상품/본인거래 검증 + 재고 차감 + Order 생성(`CREATED`). 금액을 **결과 객체**로 반환(결제가 order repo 직접 접근 안 함) |
+| `confirmPaid(orderId)` | 결제 confirm 성공 | 주문 `CREATED` → `PAID` |
+| `cancel(orderId)` | 결제 실패/이탈 | 재고 복원 + 주문 → `CANCELED` (보상 처리) |
 
-**계약(합의 필요 항목)**
-- `hold` 성공 시 반환되는 **`paymentId`를 주문(Order)이 보관**한다. 이후 `settle`/`refund`의 키로 사용.
-- 각 메서드는 **자체 트랜잭션**으로 동작(결제 담당 책임). 실패는 예외로 전달하고, 주문 flow가 상태 전이를 중단/롤백한다.
-- 외부 PG 호출(네트워크 I/O)을 DB 트랜잭션 안에 어디까지 포함할지는 **경계 논의 필요**([§5](#5-미해결논의-필요)).
-- `amount`는 주문의 `totalPrice`와 일치. 통화/수수료는 범위 밖.
+**검수 정산/환불 (order/inspection → payment, 이벤트)**
+- 검수 통과/불합격 시 정산·환불이 필요하지만 **order/inspection은 payment를 직접 호출하지 않는다.**
+- inspection이 **도메인 이벤트**(`InspectionPassed` / `InspectionFailed`)를 발행 → **결제가 구독**해 정산/환불을 수행한다. 컴파일 의존성은 여전히 단방향(payment → order) 유지.
+- 이벤트 계약(payload, 정산 수단)은 팀원과 합의 필요([§5](#5-미해결논의-필요)).
 
 ---
 
 ## 3. 거래 flow (주문 + 검수 에스크로)
 
-구매자가 결제하면 → 대금이 에스크로로 묶이고 → 판매자가 상품을 보내고 → 검수업체가 확인해 → 구매자에게 상품이, 판매자에게 대금이 가는 **한 사이클**을 정의한다.
-
 ### 3.1 담당 경계
 
 | 관심사 | 담당 | 책임 |
 | --- | --- | --- |
-| **주문 flow (오케스트레이션)** | 본인 | 주문 생성, **주문 상태 기계**, 상태 전이 시점에 결제 호출을 "끼워 넣기", 검수 결과 반영, 예외/롤백 처리 |
-| **결제 (에스크로 3단계 · 외부 PG)** | 팀원 | 대금 **보관(hold) / 정산(settle) / 환불(refund)** 을 트랜잭션으로 처리. PG 연동, 결제 건 상태 관리 |
+| **주문 (order)** | 본인 | Order 생성/상태 기계, 재고 차감·복원, `purchase`/`confirmPaid`/`cancel` 유스케이스 제공. **payment를 모른다** |
+| **검수 (inspection)** | 본인 | 검수 기록/판정, 판정 결과 이벤트 발행 |
+| **결제 (payment)** | 팀원 | checkout/confirm 오케스트레이션, Toss 연동, Payment 상태 관리, 정산/환불. **order를 호출/구독** |
 
 **핵심 원칙**
-- 주문 flow는 "**언제 돈이 움직여야 하는가**"를 결정하고, "**실제로 어떻게 옮기는가**"는 결제에 위임한다.
-- 주문 flow는 결제 구현이 아니라 **결제 포트([§2.6](#26-결제-연동-인터페이스-payment-팀원-구현))** 에만 의존한다.
+- 의존성 방향은 **payment → order** 한 방향. order/inspection은 payment를 import하지 않는다.
+- 대금의 진실 원천은 `Order.getTotalPrice()`.
+- 결제 실패/이탈로 인한 재고 누수는 order가 **취소 유스케이스(보상)** 로 복원한다.
 
-### 3.2 핵심 시나리오 (해피 패스)
+### 3.2 핵심 시나리오
 
 ```
 1. 판매자가 상품 등록 → 판매 시작(ON_SALE)
-2. 구매자가 상품 구매
-     └ [주문] 상품/재고/본인거래 검증
-     └ [결제] hold  : 대금 보관(에스크로)         ← 팀원 트랜잭션
-     └ [주문] 주문 생성, 상태 = PAYMENT_HELD
-     └ 판매자에게 "대금 보관됨, 상품을 검수업체로 발송하라" 안내
-3. 판매자가 검수업체로 상품 발송(송장 등록)
-     └ [주문] 상태 = SHIPPED_TO_INSPECTOR
-4. 검수업체가 상품 수령 → 검수
-     └ [주문] 상태 = UNDER_INSPECTION
-     ├ [통과]  [결제] settle : 판매자에게 정산  → 상태 = COMPLETED (구매자에게 발송)
-     └ [불합격] [결제] refund : 구매자에게 환불  → 상태 = REFUNDED (판매자에게 반송)
+2. 구매자가 구매 요청  [FE] POST /api/payments/checkout {productId, quantity}
+     └ [결제] checkout(@Transactional)
+          ├ order.purchase() : 재고 차감 + Order 생성(CREATED), (orderId, totalPrice) 반환
+          └ Payment(READY) 저장 + tossOrderId 생성 → 결제창 값 반환
+3. [FE] Toss 결제창 → 결제 승인
+     └ [결제] confirm : Toss 승인 → Payment CONFIRMED
+          └ order.confirmPaid(orderId) : 주문 CREATED → PAID
+     └ (실패/이탈) order.cancel(orderId) : 재고 복원 + 주문 CANCELED
+4. 판매자가 검수업체로 발송  [주문] ship → SHIPPED_TO_INSPECTOR
+5. 검수업체 수령/검수  [검수] receive → UNDER_INSPECTION
+     ├ 통과  : 이벤트 InspectionPassed → [결제] 판매자 정산 / [주문] COMPLETED
+     └ 불합격 : 이벤트 InspectionFailed → [결제] 구매자 환불 / [주문] REFUNDED
 ```
 
 ### 3.3 추가 시나리오 / 규칙
 
-- **결제 실패 시 주문 미생성**: `hold` 실패면 주문을 만들지 않고 재고도 원복(같은 트랜잭션 경계).
-- **판매자 미발송 기한 초과**: `PAYMENT_HELD` 상태로 일정 기간 미발송 시 자동 `refund` → `REFUNDED`(취소).
+- **결제 미완/이탈**: `CREATED`로 남은 주문은 `cancel`로 재고 복원 후 `CANCELED`. 방치분은 타임아웃 정리(스케줄러, 후순위) 검토.
+- **재고 선점**: 재고는 checkout(주문 생성) 시점에 차감되므로, 결제 이탈 시 반드시 복원해야 재고 누수가 없다.
 - **내 거래 목록/상세**: 구매자·판매자가 자기 주문의 진행 상태를 확인.
 - **구매자 수령 확정**: 검수 통과 후 즉시 정산으로 단순화. 별도 수령 확정 단계는 두지 않는다.
 
 ### 3.4 주문 상태 기계
 
 ```
-        [구매]  주문 검증 → 결제 hold → 주문 생성
+        [checkout] order.purchase → Order 생성
                          │
                          ▼
-                  PAYMENT_HELD ───(미발송 기한초과: refund)──▶ REFUNDED
+                     CREATED ──(결제 실패/이탈: cancel)──▶ CANCELED  (재고 복원)
                          │
-              (판매자 발송)
+              (결제 confirm 성공: confirmPaid)
                          ▼
-              SHIPPED_TO_INSPECTOR
-                         │
-              (검수업체 수령)
-                         ▼
-                UNDER_INSPECTION
-                    │        │
-        (통과: settle)      (불합격: refund)
-                    ▼        ▼
-              COMPLETED     REFUNDED
+                       PAID ──(판매자 발송: ship)──▶ SHIPPED_TO_INSPECTOR
+                                                          │
+                                              (검수업체 수령: receive)
+                                                          ▼
+                                                  UNDER_INSPECTION
+                                                      │        │
+                                            (통과)             (불합격)
+                                                      ▼        ▼
+                                                COMPLETED    REFUNDED
 ```
 
-| 상태 | 의미 | 진입 시 결제 호출 |
+| 상태 | 의미 | 전이 트리거 |
 | --- | --- | --- |
-| `PAYMENT_HELD` | 대금 보관됨, 판매자 발송 대기 | `hold` (진입 직전) |
-| `SHIPPED_TO_INSPECTOR` | 판매자→검수업체 발송 완료 | - |
-| `UNDER_INSPECTION` | 검수업체 수령·검수 중 | - |
-| `COMPLETED` | 검수 통과, 판매자 정산 + 구매자 발송 | `settle` |
-| `REFUNDED` | 검수 불합격 또는 취소, 구매자 환불 | `refund` |
+| `CREATED` | 주문 생성, 재고 선점, 결제 확정 대기 | 결제 checkout |
+| `PAID` | 결제 완료(대금 확보), 판매자 발송 대기 | 결제 confirm 성공 → `confirmPaid` |
+| `CANCELED` | 결제 미완/이탈로 취소, 재고 복원됨 | 결제 실패/이탈 → `cancel` |
+| `SHIPPED_TO_INSPECTOR` | 판매자→검수업체 발송 완료 | 판매자 `ship` |
+| `UNDER_INSPECTION` | 검수업체 수령·검수 중 | 검수 `receive` |
+| `COMPLETED` | 검수 통과, 판매자 정산 완료 | 검수 통과 이벤트 |
+| `REFUNDED` | 검수 불합격, 구매자 환불 | 검수 불합격 이벤트 |
 
 - 상태별 허용 액션을 서비스에서 강제. 잘못된 전이는 `409 CONFLICT`.
 - 각 전이 액션은 **당사자/권한 검증**을 포함(발송=판매자 본인, 검수=운영자).
 
-### 3.5 거래 API 목록
+### 3.5 API 목록 (소유 도메인 표시)
 
-| 기능 | Method | URL | 권한 | 결제 호출 |
+| 기능 | Method | URL | 소유 | 권한 |
 | --- | --- | --- | --- | --- |
-| 상품 구매 | POST | `/api/orders` | 로그인 | `hold` |
-| 판매자 발송 | POST | `/api/orders/{id}/ship` | 판매자 본인 | - |
-| 내 거래 목록 | GET | `/api/orders?role=buyer\|seller` | 로그인 | - |
-| 내 거래 상세 | GET | `/api/orders/{id}` | 당사자 | - |
-| 검수 수령 | POST | `/api/inspections/{orderId}/receive` | 운영자 | - |
-| 검수 통과 | POST | `/api/inspections/{orderId}/pass` | 운영자 | `settle` |
-| 검수 불합격 | POST | `/api/inspections/{orderId}/fail` | 운영자 | `refund` |
+| 구매(체크아웃) | POST | `/api/payments/checkout` | 결제(팀원) | 로그인 |
+| 결제 승인 | POST | `/api/payments/{paymentId}/confirm` | 결제(팀원) | 로그인 |
+| 판매자 발송 | POST | `/api/orders/{id}/ship` | 주문(본인) | 판매자 본인 |
+| 내 거래 목록 | GET | `/api/orders?role=buyer\|seller` | 주문(본인) | 로그인 |
+| 내 거래 상세 | GET | `/api/orders/{id}` | 주문(본인) | 당사자 |
+| 검수 수령 | POST | `/api/inspections/{orderId}/receive` | 검수(본인) | 운영자 |
+| 검수 통과 | POST | `/api/inspections/{orderId}/pass` | 검수(본인) | 운영자 |
+| 검수 불합격 | POST | `/api/inspections/{orderId}/fail` | 검수(본인) | 운영자 |
 
 ---
 
-## 4. 검수업체 도메인 설계 논의
+## 4. 도메인 경계 & 검수업체 설계
 
-**결론: "검수업체 계정(회원 타입)"은 만들지 말고, `inspection` 도메인 + 운영자(관리자) 권한으로 모델링한다.**
+**검수업체는 계정(회원 타입)이 아니라 `inspection` 도메인 + 운영자(ROLE_ADMIN) 권한으로 모델링한다.**
 
-- 검수업체는 **거래 당사자가 아니라 거래를 중개/검수하는 플랫폼 자신**이다. 사고파는 주체가 아니므로 `User`의 한 종류로 넣으면 역할이 뒤섞인다.
-- 검수업체가 하는 일은 **(1) 상품 검수 판정 (2) 판정에 따라 대금 정산/환불 트리거**다.
-  - 검수 판정 → `inspection` 도메인(검수 기록).
-  - 대금 정산/환불 → 결제 담당의 `settle`/`refund`를 **주문 flow가 호출**.
-- "대금을 검수업체가 들고 있다"는 개념은 별도 계정 잔액이 아니라 **주문이 `PAYMENT_HELD`/`UNDER_INSPECTION` 상태 = 결제(PG) 쪽에 대금이 보관된 상태**로 표현하면 충분하다.
+- 검수업체는 거래 당사자가 아니라 플랫폼 자신. `User`의 한 종류로 넣으면 역할이 뒤섞인다.
+- 검수업체의 일 = (1) 상품 검수 판정 (2) 판정에 따른 정산/환불 트리거(이벤트).
 
-**권장 구조**
+**모듈 구조 & 의존성**
 
 ```
-inspection 도메인   : Inspection 엔티티(검수 기록) + 검수 수령/판정 유스케이스   ← 본인
-order 도메인 확장    : OrderStatus 상태기계 + 상태 전이 시 결제 포트 호출        ← 본인
-payment (포트/구현)  : hold / settle / refund, PG 연동, 결제 건 관리            ← 팀원
-권한                 : 검수 액션은 ROLE_ADMIN(운영자)만 호출 가능
+order 도메인       : Order 상태기계 + 재고 + purchase/confirmPaid/cancel 유스케이스   ← 본인 (payment 모름)
+inspection 도메인  : Inspection 기록 + 판정 이벤트 발행                                ← 본인 (payment 모름)
+payment 모듈       : checkout/confirm, Toss 연동, Payment 관리, 정산/환불(이벤트 구독)  ← 팀원 (order 호출/구독)
+권한               : 검수 액션은 ROLE_ADMIN
+
+의존성:  payment ──▶ order   (동기 호출: purchase/confirmPaid/cancel)
+        inspection ──(도메인 이벤트)──▶ payment   (정산/환불; 컴파일 의존성은 단방향 유지)
 ```
 
 ---
 
 ## 5. 미해결·논의 필요
 
-- **트랜잭션 경계**: 외부 PG 호출(네트워크 I/O)을 주문 DB 트랜잭션 안에 어디까지 넣을지. `hold` 성공 후 주문 저장 실패 시 보상(취소) 전략 — 사가/보상 트랜잭션 필요 여부.
-- **결제-주문 매핑 키**: `paymentId`를 주문이 들고 갈지, 결제 쪽이 `orderId`로 역참조할지.
-- **재고 원복 시점**: 검수 불합격/취소(`REFUNDED`) 시 상품 재고를 되돌릴지 여부.
-- **동시성**: 검수/발송 액션의 중복 호출 방지(멱등성), 상태 전이 락 전략.
+- **정산(판매자 지급) 수단**: 실제 PG에서 판매자에게 대금을 지급하는 방식(정산 API/수동/주기)은 미정. 검수 통과 시 `COMPLETED` 처리와 실제 지급을 분리할지 결정 필요.
+- **검수 이벤트 계약**: `InspectionPassed`/`InspectionFailed` payload(orderId 등)와 결제 구독 처리, 실패 시 재시도/보상 정책.
+- **트랜잭션/일관성**: checkout에서 `order.purchase` + `Payment(READY)` 원자성(팀원 트랜잭션 경계), confirm 실패 시 Payment `CANCELED` + `order.cancel` 연계.
+- **재고 누수 방지**: `CREATED` 방치 주문 타임아웃 정리(스케줄러) 도입 여부.
+- **동시성/멱등성**: ship/검수/confirm 중복 호출 방지(멱등), 상태 전이 락.
 
 ---
 
