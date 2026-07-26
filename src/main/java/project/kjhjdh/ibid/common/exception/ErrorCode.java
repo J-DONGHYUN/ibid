@@ -38,6 +38,7 @@ public enum ErrorCode {
     INVALID_PRODUCT_STOCK(HttpStatus.BAD_REQUEST, "재고 수량은 1개 이상이어야 합니다."),
     PRODUCT_NOT_PENDING(HttpStatus.CONFLICT, "판매 대기 상태의 상품만 판매를 시작할 수 있습니다."),
     PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다."),
+    CANNOT_RESTORE_STOCK(HttpStatus.CONFLICT, "판매 시작 전 상품은 재고를 복원할 수 없습니다."),
 
     // Trade
     INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다."),

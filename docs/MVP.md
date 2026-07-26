@@ -32,7 +32,7 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 ### #15 연동 — 주문 쪽 필수 수정 (결제팀 요청)
 
 - [x] **O1. `OrderService.purchase()` 반환값 변경** — `Long orderId` → `(orderId, totalPrice)` 결과 객체 (결제가 order repo 직접 접근 안 하도록).
-- [ ] **O2. `Product.increaseStock(quantity)` 추가** — 재고 복원용(현재 `decreaseStock`만 존재).
+- [x] **O2. `Product.restoreStock(quantity)` 추가** — 재고 복원용(`decreaseStock`의 역동작, PENDING 복원 차단).
 - [ ] **O3. 주문 취소 유스케이스** — `OrderService.cancel(orderId)` → 재고 복원 + 주문 `CANCELED` (결제 실패/이탈 보상).
 - [ ] **O4. 결제 확정 반영** — `OrderService.confirmPaid(orderId)` → 주문 `CREATED` → `PAID`.
 - [ ] **O5. 경계 유지** — order/inspection이 payment/Toss를 import하지 않음 확인.

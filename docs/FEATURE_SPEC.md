@@ -70,7 +70,7 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 
 **규칙**
 - 생성 시 `PENDING`, 판매 시작 시 `ON_SALE`, 재고 0이 되면 `SOLD_OUT`, 구매는 `ON_SALE`만 가능
-- 재고 도메인 메서드: `decreaseStock(quantity)`(구매 시), `increaseStock(quantity)`(주문 취소/환불 시 복원)
+- 재고 도메인 메서드: `decreaseStock(quantity)`(구매 시), `restoreStock(quantity)`(주문 취소/환불 시 복원; PENDING 상품은 복원 불가)
 
 ### 2.4 주문 (order)
 
