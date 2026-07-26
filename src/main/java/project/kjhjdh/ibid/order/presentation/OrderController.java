@@ -2,6 +2,7 @@ package project.kjhjdh.ibid.order.presentation;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,5 +32,14 @@ public class OrderController {
         PurchaseResult result = orderService.purchase(loginUser.userId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new PurchaseResponse(result.orderId()));
+    }
+
+    @PostMapping("/{orderId}/ship")
+    public ResponseEntity<Void> ship(
+            @LoginUser UserInfo loginUser,
+            @PathVariable Long orderId
+    ) {
+        orderService.ship(loginUser.userId(), orderId);
+        return ResponseEntity.ok().build();
     }
 }

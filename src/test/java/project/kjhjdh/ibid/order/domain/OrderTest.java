@@ -71,6 +71,43 @@ class OrderTest {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELED);
     }
 
+    @DisplayName("결제된 주문을 발송하면 검수업체 발송 상태가 된다")
+    @Test
+    void ship() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+        order.confirmPaid();
+
+        // when
+        order.ship();
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED_TO_INSPECTOR);
+    }
+
+    @DisplayName("결제되지 않은 주문은 발송할 수 없다")
+    @Test
+    void ship_notPaid() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+
+        // when & then
+        assertThatThrownBy(order::ship)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_SHIPPABLE.getMessage());
+    }
+
+    @DisplayName("판매자 본인 여부를 판별한다")
+    @Test
+    void isSeller() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+
+        // when & then
+        assertThat(order.isSeller(SELLER_ID)).isTrue();
+        assertThat(order.isSeller(BUYER_ID)).isFalse();
+    }
+
     @DisplayName("이미 결제된 주문은 취소할 수 없다")
     @Test
     void cancel_afterPaid() {

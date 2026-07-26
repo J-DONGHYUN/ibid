@@ -34,6 +34,16 @@ public class OrderService {
     }
 
     @Transactional
+    public void ship(Long sellerId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        if (!order.isSeller(sellerId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+        order.ship();
+    }
+
+    @Transactional
     public void cancel(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));

@@ -135,6 +135,48 @@ class OrderServiceTest {
                 .hasMessage(ErrorCode.ORDER_NOT_FOUND.getMessage());
     }
 
+    @DisplayName("판매자가 결제된 주문을 발송하면 검수업체 발송 상태가 된다")
+    @Test
+    void ship() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 2, 89000);
+        order.confirmPaid();
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.of(order));
+
+        // when
+        orderService.ship(SELLER_ID, ORDER_ID);
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED_TO_INSPECTOR);
+    }
+
+    @DisplayName("판매자가 아니면 발송할 수 없다")
+    @Test
+    void ship_notSeller() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 2, 89000);
+        order.confirmPaid();
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.of(order));
+
+        // when & then
+        assertThatThrownBy(() -> orderService.ship(BUYER_ID, ORDER_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
+    }
+
+    @DisplayName("존재하지 않는 주문은 발송할 수 없다")
+    @Test
+    void ship_orderNotFound() {
+        // given
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> orderService.ship(SELLER_ID, ORDER_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_FOUND.getMessage());
+    }
+
     @DisplayName("주문을 취소하면 재고가 복원되고 상태가 CANCELED가 된다")
     @Test
     void cancel() {

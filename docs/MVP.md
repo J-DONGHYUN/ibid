@@ -39,8 +39,8 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 
 ### 주문 flow (본인 핵심)
 
-- [~] **T3. OrderStatus 상태기계 도입** — enum·`status`(기본 `CREATED`)와 `CANCELED`(O3)·`PAID`(O4) 전이 완료. 남은 것: 발송(`SHIPPED_TO_INSPECTOR`)/검수(`UNDER_INSPECTION`→`COMPLETED`/`REFUNDED`) 전이 + 각 전이별 잘못된 전이 방지(`409`).
-- [ ] **T5. 판매자 발송 처리** — `POST /api/orders/{id}/ship`(판매자 본인). `PAID` → `SHIPPED_TO_INSPECTOR`.
+- [~] **T3. OrderStatus 상태기계 도입** — 전이 누적: `CANCELED`(O3)·`PAID`(O4)·`SHIPPED_TO_INSPECTOR`(T5) 완료. 남은 것: 검수(`UNDER_INSPECTION`→`COMPLETED`/`REFUNDED`) 전이(T9~T11).
+- [x] **T5. 판매자 발송 처리** — `POST /api/orders/{id}/ship`(판매자 본인). `PAID` → `SHIPPED_TO_INSPECTOR`.
 - [ ] **T6. 내 거래 목록/상세** — 구매자·판매자 관점 주문 조회.
 - [ ] **T7. `CREATED` 방치 주문 타임아웃 정리(후순위)** — 결제 미완 주문 자동 취소/재고 복원.
 

@@ -3,7 +3,9 @@ package project.kjhjdh.ibid.order.presentation;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 
 import org.junit.jupiter.api.DisplayName;
@@ -103,5 +105,51 @@ class OrderControllerTest extends ControllerTestSupport {
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value())
                 .body("code", equalTo("PRODUCT_NOT_FOUND"));
+    }
+
+    @DisplayName("판매자가 발송 처리하면 200을 응답한다")
+    @Test
+    void ship() {
+        // given
+        willDoNothing().given(orderService).ship(anyLong(), eq(1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .post("/api/orders/{orderId}/ship", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+    }
+
+    @DisplayName("판매자가 아니면 발송 시 403을 응답한다")
+    @Test
+    void ship_forbidden() {
+        // given
+        willThrow(new BusinessException(ErrorCode.ACCESS_DENIED))
+                .given(orderService).ship(anyLong(), eq(1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .post("/api/orders/{orderId}/ship", 1L)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value())
+                .body("code", equalTo("ACCESS_DENIED"));
+    }
+
+    @DisplayName("발송할 수 없는 상태의 주문을 발송하면 409를 응답한다")
+    @Test
+    void ship_notShippable() {
+        // given
+        willThrow(new BusinessException(ErrorCode.ORDER_NOT_SHIPPABLE))
+                .given(orderService).ship(anyLong(), eq(1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .post("/api/orders/{orderId}/ship", 1L)
+                .then()
+                .statusCode(HttpStatus.CONFLICT.value())
+                .body("code", equalTo("ORDER_NOT_SHIPPABLE"));
     }
 }

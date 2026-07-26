@@ -68,6 +68,17 @@ public class Order {
         this.status = OrderStatus.PAID;
     }
 
+    public void ship() {
+        if (status != OrderStatus.PAID) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_SHIPPABLE);
+        }
+        this.status = OrderStatus.SHIPPED_TO_INSPECTOR;
+    }
+
+    public boolean isSeller(Long userId) {
+        return sellerId.equals(userId);
+    }
+
     public void cancel() {
         if (status != OrderStatus.CREATED) {
             throw new BusinessException(ErrorCode.ORDER_NOT_CANCELABLE);
