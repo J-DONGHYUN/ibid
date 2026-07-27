@@ -75,6 +75,13 @@ public class Order {
         this.status = OrderStatus.SHIPPED_TO_INSPECTOR;
     }
 
+    public void startInspection() {
+        if (status != OrderStatus.SHIPPED_TO_INSPECTOR) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_INSPECTABLE);
+        }
+        this.status = OrderStatus.UNDER_INSPECTION;
+    }
+
     public boolean isSeller(Long userId) {
         return sellerId.equals(userId);
     }

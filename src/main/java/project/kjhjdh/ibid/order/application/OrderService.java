@@ -44,6 +44,13 @@ public class OrderService {
     }
 
     @Transactional
+    public void startInspection(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        order.startInspection();
+    }
+
+    @Transactional
     public void cancel(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));

@@ -97,6 +97,34 @@ class OrderTest {
                 .hasMessage(ErrorCode.ORDER_NOT_SHIPPABLE.getMessage());
     }
 
+    @DisplayName("발송된 주문을 검수 시작하면 검수중 상태가 된다")
+    @Test
+    void startInspection() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+        order.confirmPaid();
+        order.ship();
+
+        // when
+        order.startInspection();
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.UNDER_INSPECTION);
+    }
+
+    @DisplayName("발송되지 않은 주문은 검수를 시작할 수 없다")
+    @Test
+    void startInspection_notShipped() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+        order.confirmPaid();
+
+        // when & then
+        assertThatThrownBy(order::startInspection)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_INSPECTABLE.getMessage());
+    }
+
     @DisplayName("판매자 본인 여부를 판별한다")
     @Test
     void isSeller() {
