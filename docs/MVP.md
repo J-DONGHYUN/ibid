@@ -59,7 +59,7 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 
 ### 마무리
 
-- [ ] **T13. 통합 테스트** — 판매시작→(결제)→발송→검수 통과/불합격 시나리오. order는 payment 없이 검증(유스케이스/상태기계 단위).
+- [x] **T13. 통합 테스트** — `TradeScenarioIntegrationTest`: 구매→결제확정→발송→수령→통과(`COMPLETED`)/불합격(`REFUNDED`+재고복원) 전 사이클 + 잘못된 전이 차단을 실제 DB(Testcontainers)로 검증. 결제 없이 order/inspection 서비스로 완주.
 - [ ] **T14. 프론트 연동** — 내 거래 상태 화면, (운영자) 검수 처리 화면. (구매/결제창은 결제팀 checkout 응답 사용)
 - [ ] **T15. 문서 갱신** — 기능 추가 시 `FEATURE_SPEC.md`·`CLAUDE.md` 최신 상태 유지.
 
