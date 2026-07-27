@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +23,8 @@ import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.order.domain.Order;
 import project.kjhjdh.ibid.order.domain.OrderStatus;
 import project.kjhjdh.ibid.order.infra.OrderRepository;
+import project.kjhjdh.ibid.order.presentation.dto.MyOrdersResponse;
+import project.kjhjdh.ibid.order.presentation.dto.OrderDetailResponse;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
@@ -33,6 +36,7 @@ class OrderServiceTest {
     private static final Long SELLER_ID = 10L;
     private static final Long BUYER_ID = 20L;
     private static final Long ORDER_ID = 100L;
+    private static final Long STRANGER_ID = 999L;
 
     @Mock
     private OrderRepository orderRepository;
@@ -299,5 +303,79 @@ class OrderServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ORDER_NOT_FOUND.getMessage());
         verify(productRepository, never()).findByIdForUpdate(any());
+    }
+
+    @DisplayName("구매자 관점 내 거래 목록은 상품명이 채워져 반환된다")
+    @Test
+    void getMyOrders() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 2, 89000);
+        Product product = mock(Product.class);
+        given(product.getId()).willReturn(PRODUCT_ID);
+        given(product.getTitle()).willReturn("나이키 후드");
+        given(orderRepository.findByBuyerIdOrderByIdDesc(BUYER_ID)).willReturn(List.of(order));
+        given(productRepository.findAllById(List.of(PRODUCT_ID))).willReturn(List.of(product));
+
+        // when
+        MyOrdersResponse response = orderService.getMyOrders(BUYER_ID, "buyer");
+
+        // then
+        assertThat(response.orders()).hasSize(1);
+        assertThat(response.orders().get(0).productId()).isEqualTo(PRODUCT_ID);
+        assertThat(response.orders().get(0).productTitle()).isEqualTo("나이키 후드");
+        assertThat(response.orders().get(0).totalPrice()).isEqualTo(178000);
+    }
+
+    @DisplayName("role 값이 올바르지 않으면 목록 조회에 실패한다")
+    @Test
+    void getMyOrders_invalidRole() {
+        // when & then
+        assertThatThrownBy(() -> orderService.getMyOrders(BUYER_ID, "invalid"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_INPUT.getMessage());
+    }
+
+    @DisplayName("거래 당사자는 주문 상세를 조회할 수 있다")
+    @Test
+    void getMyOrder() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 2, 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.of(order));
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when
+        OrderDetailResponse response = orderService.getMyOrder(BUYER_ID, ORDER_ID);
+
+        // then
+        assertThat(response.buyerId()).isEqualTo(BUYER_ID);
+        assertThat(response.sellerId()).isEqualTo(SELLER_ID);
+        assertThat(response.productTitle()).isEqualTo("나이키 후드");
+        assertThat(response.status()).isEqualTo(OrderStatus.CREATED);
+    }
+
+    @DisplayName("거래 당사자가 아니면 주문 상세를 조회할 수 없다")
+    @Test
+    void getMyOrder_notParty() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 2, 89000);
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.of(order));
+
+        // when & then
+        assertThatThrownBy(() -> orderService.getMyOrder(STRANGER_ID, ORDER_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
+    }
+
+    @DisplayName("존재하지 않는 주문 상세는 조회할 수 없다")
+    @Test
+    void getMyOrder_orderNotFound() {
+        // given
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> orderService.getMyOrder(BUYER_ID, ORDER_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_FOUND.getMessage());
     }
 }

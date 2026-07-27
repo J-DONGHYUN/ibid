@@ -1,5 +1,9 @@
 package project.kjhjdh.ibid.order.application;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -8,6 +12,9 @@ import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.order.domain.Order;
 import project.kjhjdh.ibid.order.infra.OrderRepository;
+import project.kjhjdh.ibid.order.presentation.dto.MyOrdersResponse;
+import project.kjhjdh.ibid.order.presentation.dto.OrderDetailResponse;
+import project.kjhjdh.ibid.order.presentation.dto.OrderSummaryResponse;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
@@ -75,6 +82,33 @@ public class OrderService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         order.cancel();
         product.restoreStock(order.getQuantity());
+    }
+
+    @Transactional(readOnly = true)
+    public MyOrdersResponse getMyOrders(Long userId, String role) {
+        List<Order> orders = (OrderRole.from(role) == OrderRole.SELLER)
+                ? orderRepository.findBySellerIdOrderByIdDesc(userId)
+                : orderRepository.findByBuyerIdOrderByIdDesc(userId);
+
+        Map<Long, Product> productsById = productRepository.findAllById(
+                orders.stream().map(Order::getProductId).distinct().toList()
+        ).stream().collect(Collectors.toMap(Product::getId, product -> product));
+
+        List<OrderSummaryResponse> items = orders.stream()
+                .map(order -> OrderSummaryResponse.of(order, productsById.get(order.getProductId())))
+                .toList();
+        return MyOrdersResponse.of(items);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getMyOrder(Long userId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        if (!order.isBuyer(userId) && !order.isSeller(userId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+        Product product = productRepository.findById(order.getProductId()).orElse(null);
+        return OrderDetailResponse.of(order, product);
     }
 
     private PurchaseResult settle(Product product, Long buyerId, int quantity) {

@@ -100,6 +100,10 @@ public class Order {
         return sellerId.equals(userId);
     }
 
+    public boolean isBuyer(Long userId) {
+        return buyerId.equals(userId);
+    }
+
     public void cancel() {
         if (status != OrderStatus.CREATED) {
             throw new BusinessException(ErrorCode.ORDER_NOT_CANCELABLE);

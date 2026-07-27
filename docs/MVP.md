@@ -41,7 +41,7 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 
 - [x] **T3. OrderStatus 상태기계 도입** — 전 전이 완료: `CANCELED`(O3)·`PAID`(O4)·`SHIPPED_TO_INSPECTOR`(T5)·`UNDER_INSPECTION`(T9)·`COMPLETED`(T10)·`REFUNDED`(T11). 각 전이 가드로 잘못된 전이 `409`.
 - [x] **T5. 판매자 발송 처리** — `POST /api/orders/{id}/ship`(판매자 본인). `PAID` → `SHIPPED_TO_INSPECTOR`.
-- [ ] **T6. 내 거래 목록/상세** — 구매자·판매자 관점 주문 조회.
+- [x] **T6. 내 거래 목록/상세** — `GET /api/orders?role=buyer|seller`(목록, 상품명 배치 조회), `GET /api/orders/{id}`(상세, 당사자만). 목록은 ID 참조라 `findAllById` 배치로 상품명 매핑.
 - [ ] **T7. `CREATED` 방치 주문 타임아웃 정리(후순위)** — 결제 미완 주문 자동 취소/재고 복원.
 
 ### 검수 (inspection 도메인 — 본인)
@@ -50,7 +50,7 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 - [x] **T9. 검수 수령 처리** — `POST /api/inspections/{orderId}/receive`. 주문 전이 `SHIPPED_TO_INSPECTOR` → `UNDER_INSPECTION`(Inspection 기록 없음). InspectionService(검수 유스케이스의 집) 도입, order→startInspection 위임. *(권한 ROLE_ADMIN은 T12)*
 - [x] **T10. 검수 통과 → 정산 이벤트** — `POST /api/inspections/{orderId}/pass`. `Inspection.passed` 기록 + 주문 `COMPLETED` + `InspectionPassed(orderId)` 발행(결제 구독). *이벤트 payload는 A1 확정 전 잠정(orderId).*
 - [x] **T11. 검수 불합격 → 환불 이벤트** — `POST /api/inspections/{orderId}/fail`. `Inspection.failed` 기록 + 주문 `REFUNDED` + **재고 복원** + `InspectionFailed(orderId)` 발행(결제 구독). *payload는 A1 확정 전 잠정.*
-- [ ] **T12. 운영자 권한 가드** — 검수 API는 `ROLE_ADMIN`만 접근.
+- [ ] **T12. 운영자 권한 가드 → MVP3로 연기** — 검수 API를 `ADMIN`만 접근. 로컬 단독 테스트 단계라 지금은 보류(모두 로그인 사용자면 호출 가능). ⚠️ **배포 전 필수** — role을 JWT에 싣는 작업과 함께 MVP3에서 처리.
 
 ### 합의 필요 (팀원과)
 
@@ -66,7 +66,8 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 ### 권장 진행 순서
 
 ```
-T0(완료) → O1·O2·O3·O4(#15 연동) → T3(상태기계) → T5(발송) → T8·T9(검수) → T10·T11(정산/환불 이벤트) → T12(권한) → T6·T13(조회/통합) → T14·T15
+T0(완료) → O1·O2·O3·O4(#15 연동) → T3(상태기계) → T5(발송) → T8·T9(검수) → T10·T11(정산/환불 이벤트) → T6·T13(조회/통합) → T14·T15
 ```
 
-병행: **A1·A2(이벤트 계약·정산 수단)** 는 T10/T11 착수 전까지 팀원과 합의.
+- 병행: **A1·A2(이벤트 계약·정산 수단)** 는 T10/T11 착수 전까지 팀원과 합의.
+- **MVP3로 연기**: T12(운영자 권한, 배포 전 필수), T7(방치 주문 타임아웃, 후순위).
