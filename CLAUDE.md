@@ -84,4 +84,5 @@ DB 구성이 코드에 아직 명시돼 있지 않다는 점이 이 저장소의
 
 - `docs/FEATURE_SPEC.md` : 기능 정의·전체 플로우·담당 경계 (기능 작업 전 필독)
 - `docs/MVP.md` : MVP 작업 목록·진행 상태
+- `docs/API.md` : REST API 명세(엔드포인트 종합)
 - `docs/TEST.md` : 테스트 작성 규칙
