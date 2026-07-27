@@ -92,13 +92,15 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 
 ### 2.5 검수 (inspection)
 
-주문 1건당 검수 기록 1건. 검수업체(운영자)가 수령/판정을 기록하고, 판정 결과를 **도메인 이벤트로 발행**한다(정산/환불은 결제가 구독).
+검수의 **상태 흐름은 Order가 소유**(`SHIPPED_TO_INSPECTOR → UNDER_INSPECTION → COMPLETED/REFUNDED`)하고, `Inspection`은 **판정 결과를 남기는 기록**이다. 검수의 생애주기를 Order 상태기계와 이중으로 두면 동기화 비용이 크므로, 검수는 Order의 한 단계로 두고 판정 근거(누가·왜)만 별도로 남긴다.
+
+- 검수업체(운영자)가 통과/불합격을 판정하는 순간 `Inspection`이 생성되고, 판정 결과를 **도메인 이벤트로 발행**한다(정산/환불은 결제가 구독).
 
 | 필드 | 설명 |
 | --- | --- |
 | `orderId` | 대상 주문 |
-| `status` | `WAITING`(도착 대기) → `RECEIVED`(수령) → `PASSED` / `FAILED` |
-| `inspectorId` | 검수 처리자(운영자) id (선택) |
+| `inspectorId` | 검수 처리자(운영자) id |
+| `result` | `PASSED` / `FAILED` |
 | `memo` | 판정 사유/메모 |
 
 ### 2.6 결제 연동 (경계)

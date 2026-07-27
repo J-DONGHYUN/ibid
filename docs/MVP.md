@@ -46,10 +46,10 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 
 ### 검수 (inspection 도메인 — 본인)
 
-- [ ] **T8. Inspection 엔티티 + 도메인** — 주문당 검수 기록, 상태 `WAITING/RECEIVED/PASSED/FAILED`.
-- [ ] **T9. 검수 수령 처리** — `POST /api/inspections/{orderId}/receive`(운영자). `SHIPPED_TO_INSPECTOR` → `UNDER_INSPECTION`.
-- [ ] **T10. 검수 통과 → 정산 이벤트** — `POST /api/inspections/{orderId}/pass`. `InspectionPassed` 발행(결제 구독), 주문 `COMPLETED`.
-- [ ] **T11. 검수 불합격 → 환불 이벤트** — `POST /api/inspections/{orderId}/fail`. `InspectionFailed` 발행(결제 구독), 주문 `REFUNDED`.
+- [x] **T8. Inspection 판정 기록 도메인 (옵션 C)** — 상태 흐름은 **Order가 소유**, Inspection은 판정 결과 기록(`orderId/inspectorId/result(PASSED|FAILED)/memo`). 자체 상태기계 없음. InspectionRepository 포함.
+- [ ] **T9. 검수 수령 처리** — `POST /api/inspections/{orderId}/receive`(운영자). 주문 전이 `SHIPPED_TO_INSPECTOR` → `UNDER_INSPECTION`(Inspection 기록 없음).
+- [ ] **T10. 검수 통과 → 정산 이벤트** — `POST /api/inspections/{orderId}/pass`. `Inspection.passed` 기록 + 주문 `COMPLETED` + `InspectionPassed` 발행(결제 구독).
+- [ ] **T11. 검수 불합격 → 환불 이벤트** — `POST /api/inspections/{orderId}/fail`. `Inspection.failed` 기록 + 주문 `REFUNDED` + `InspectionFailed` 발행(결제 구독).
 - [ ] **T12. 운영자 권한 가드** — 검수 API는 `ROLE_ADMIN`만 접근.
 
 ### 합의 필요 (팀원과)
