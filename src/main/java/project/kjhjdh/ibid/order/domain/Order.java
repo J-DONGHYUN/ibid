@@ -82,6 +82,13 @@ public class Order {
         this.status = OrderStatus.UNDER_INSPECTION;
     }
 
+    public void complete() {
+        if (status != OrderStatus.UNDER_INSPECTION) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_JUDGEABLE);
+        }
+        this.status = OrderStatus.COMPLETED;
+    }
+
     public boolean isSeller(Long userId) {
         return sellerId.equals(userId);
     }

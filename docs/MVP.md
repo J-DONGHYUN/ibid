@@ -39,7 +39,7 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 
 ### 주문 flow (본인 핵심)
 
-- [~] **T3. OrderStatus 상태기계 도입** — 전이 누적: `CANCELED`(O3)·`PAID`(O4)·`SHIPPED_TO_INSPECTOR`(T5)·`UNDER_INSPECTION`(T9) 완료. 남은 것: `COMPLETED`(T10)/`REFUNDED`(T11).
+- [~] **T3. OrderStatus 상태기계 도입** — 전이 누적: `CANCELED`(O3)·`PAID`(O4)·`SHIPPED_TO_INSPECTOR`(T5)·`UNDER_INSPECTION`(T9)·`COMPLETED`(T10) 완료. 남은 것: `REFUNDED`(T11).
 - [x] **T5. 판매자 발송 처리** — `POST /api/orders/{id}/ship`(판매자 본인). `PAID` → `SHIPPED_TO_INSPECTOR`.
 - [ ] **T6. 내 거래 목록/상세** — 구매자·판매자 관점 주문 조회.
 - [ ] **T7. `CREATED` 방치 주문 타임아웃 정리(후순위)** — 결제 미완 주문 자동 취소/재고 복원.
@@ -48,7 +48,7 @@ MVP 단계별 작업 목록과 진행 상태를 관리하는 문서다. **무엇
 
 - [x] **T8. Inspection 판정 기록 도메인 (옵션 C)** — 상태 흐름은 **Order가 소유**, Inspection은 판정 결과 기록(`orderId/inspectorId/result(PASSED|FAILED)/memo`). 자체 상태기계 없음. InspectionRepository 포함.
 - [x] **T9. 검수 수령 처리** — `POST /api/inspections/{orderId}/receive`. 주문 전이 `SHIPPED_TO_INSPECTOR` → `UNDER_INSPECTION`(Inspection 기록 없음). InspectionService(검수 유스케이스의 집) 도입, order→startInspection 위임. *(권한 ROLE_ADMIN은 T12)*
-- [ ] **T10. 검수 통과 → 정산 이벤트** — `POST /api/inspections/{orderId}/pass`. `Inspection.passed` 기록 + 주문 `COMPLETED` + `InspectionPassed` 발행(결제 구독).
+- [x] **T10. 검수 통과 → 정산 이벤트** — `POST /api/inspections/{orderId}/pass`. `Inspection.passed` 기록 + 주문 `COMPLETED` + `InspectionPassed(orderId)` 발행(결제 구독). *이벤트 payload는 A1 확정 전 잠정(orderId).*
 - [ ] **T11. 검수 불합격 → 환불 이벤트** — `POST /api/inspections/{orderId}/fail`. `Inspection.failed` 기록 + 주문 `REFUNDED` + `InspectionFailed` 발행(결제 구독).
 - [ ] **T12. 운영자 권한 가드** — 검수 API는 `ROLE_ADMIN`만 접근.
 

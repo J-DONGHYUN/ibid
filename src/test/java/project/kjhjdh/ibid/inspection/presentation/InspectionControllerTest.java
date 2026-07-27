@@ -1,6 +1,8 @@
 package project.kjhjdh.ibid.inspection.presentation;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
@@ -9,9 +11,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
+import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.inspection.presentation.dto.InspectionJudgeRequest;
 import project.kjhjdh.ibid.support.ControllerTestSupport;
 
 class InspectionControllerTest extends ControllerTestSupport {
@@ -60,5 +64,39 @@ class InspectionControllerTest extends ControllerTestSupport {
                 .then()
                 .statusCode(HttpStatus.CONFLICT.value())
                 .body("code", equalTo("ORDER_NOT_INSPECTABLE"));
+    }
+
+    @DisplayName("검수 통과 처리하면 200을 응답한다")
+    @Test
+    void pass() {
+        // given
+        willDoNothing().given(inspectionService).pass(anyLong(), eq(1L), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new InspectionJudgeRequest("정품 확인"))
+                .when()
+                .post("/api/inspections/{orderId}/pass", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+    }
+
+    @DisplayName("검수 판정할 수 없는 상태면 409를 응답한다")
+    @Test
+    void pass_notJudgeable() {
+        // given
+        willThrow(new BusinessException(ErrorCode.ORDER_NOT_JUDGEABLE))
+                .given(inspectionService).pass(anyLong(), eq(1L), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new InspectionJudgeRequest("정품 확인"))
+                .when()
+                .post("/api/inspections/{orderId}/pass", 1L)
+                .then()
+                .statusCode(HttpStatus.CONFLICT.value())
+                .body("code", equalTo("ORDER_NOT_JUDGEABLE"));
     }
 }

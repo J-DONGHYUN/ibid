@@ -205,6 +205,35 @@ class OrderServiceTest {
                 .hasMessage(ErrorCode.ORDER_NOT_FOUND.getMessage());
     }
 
+    @DisplayName("검수를 완료하면 주문이 거래 완료 상태가 된다")
+    @Test
+    void complete() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 2, 89000);
+        order.confirmPaid();
+        order.ship();
+        order.startInspection();
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.of(order));
+
+        // when
+        orderService.complete(ORDER_ID);
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+    }
+
+    @DisplayName("존재하지 않는 주문은 완료할 수 없다")
+    @Test
+    void complete_orderNotFound() {
+        // given
+        given(orderRepository.findById(ORDER_ID)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> orderService.complete(ORDER_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_FOUND.getMessage());
+    }
+
     @DisplayName("주문을 취소하면 재고가 복원되고 상태가 CANCELED가 된다")
     @Test
     void cancel() {

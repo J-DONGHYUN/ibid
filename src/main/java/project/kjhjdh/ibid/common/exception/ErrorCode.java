@@ -52,6 +52,7 @@ public enum ErrorCode {
     ORDER_NOT_PAYABLE(HttpStatus.CONFLICT, "결제 확정할 수 없는 주문 상태입니다."),
     ORDER_NOT_SHIPPABLE(HttpStatus.CONFLICT, "발송할 수 없는 주문 상태입니다."),
     ORDER_NOT_INSPECTABLE(HttpStatus.CONFLICT, "검수를 시작할 수 없는 주문 상태입니다."),
+    ORDER_NOT_JUDGEABLE(HttpStatus.CONFLICT, "검수 판정할 수 없는 주문 상태입니다."),
 
     ;
 

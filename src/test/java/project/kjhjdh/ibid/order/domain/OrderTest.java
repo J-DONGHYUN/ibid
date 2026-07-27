@@ -125,6 +125,35 @@ class OrderTest {
                 .hasMessage(ErrorCode.ORDER_NOT_INSPECTABLE.getMessage());
     }
 
+    @DisplayName("검수중인 주문을 완료하면 거래 완료 상태가 된다")
+    @Test
+    void complete() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+        order.confirmPaid();
+        order.ship();
+        order.startInspection();
+
+        // when
+        order.complete();
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+    }
+
+    @DisplayName("검수중이 아닌 주문은 완료할 수 없다")
+    @Test
+    void complete_notUnderInspection() {
+        // given
+        Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 3, 89000);
+        order.confirmPaid();
+
+        // when & then
+        assertThatThrownBy(order::complete)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ORDER_NOT_JUDGEABLE.getMessage());
+    }
+
     @DisplayName("판매자 본인 여부를 판별한다")
     @Test
     void isSeller() {
