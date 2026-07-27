@@ -35,4 +35,14 @@ public class InspectionController {
         inspectionService.pass(loginUser.userId(), orderId, request.memo());
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{orderId}/fail")
+    public ResponseEntity<Void> fail(
+            @LoginUser UserInfo loginUser,
+            @PathVariable Long orderId,
+            @RequestBody InspectionJudgeRequest request
+    ) {
+        inspectionService.fail(loginUser.userId(), orderId, request.memo());
+        return ResponseEntity.ok().build();
+    }
 }

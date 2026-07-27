@@ -58,6 +58,16 @@ public class OrderService {
     }
 
     @Transactional
+    public void refund(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        Product product = productRepository.findByIdForUpdate(order.getProductId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        order.refund();
+        product.restoreStock(order.getQuantity());
+    }
+
+    @Transactional
     public void cancel(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));

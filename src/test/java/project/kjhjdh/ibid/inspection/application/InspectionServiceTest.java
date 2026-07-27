@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import project.kjhjdh.ibid.inspection.domain.Inspection;
+import project.kjhjdh.ibid.inspection.domain.InspectionFailed;
 import project.kjhjdh.ibid.inspection.domain.InspectionPassed;
 import project.kjhjdh.ibid.inspection.infra.InspectionRepository;
 import project.kjhjdh.ibid.order.application.OrderService;
@@ -65,5 +66,23 @@ class InspectionServiceTest {
         assertThat(saved.getInspectorId()).isEqualTo(INSPECTOR_ID);
         assertThat(saved.isPassed()).isTrue();
         assertThat(saved.getMemo()).isEqualTo("정품 확인");
+    }
+
+    @DisplayName("검수 불합격은 주문 환불 + 불합격 기록 저장 + 불합격 이벤트 발행을 수행한다")
+    @Test
+    void fail() {
+        // when
+        inspectionService.fail(INSPECTOR_ID, ORDER_ID, "가품 의심");
+
+        // then
+        then(orderService).should().refund(ORDER_ID);
+        then(inspectionRepository).should().save(inspectionCaptor.capture());
+        then(eventPublisher).should().publishEvent(new InspectionFailed(ORDER_ID));
+
+        Inspection saved = inspectionCaptor.getValue();
+        assertThat(saved.getOrderId()).isEqualTo(ORDER_ID);
+        assertThat(saved.getInspectorId()).isEqualTo(INSPECTOR_ID);
+        assertThat(saved.isPassed()).isFalse();
+        assertThat(saved.getMemo()).isEqualTo("가품 의심");
     }
 }

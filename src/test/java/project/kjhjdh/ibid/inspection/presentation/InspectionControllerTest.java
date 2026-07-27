@@ -99,4 +99,20 @@ class InspectionControllerTest extends ControllerTestSupport {
                 .statusCode(HttpStatus.CONFLICT.value())
                 .body("code", equalTo("ORDER_NOT_JUDGEABLE"));
     }
+
+    @DisplayName("검수 불합격 처리하면 200을 응답한다")
+    @Test
+    void fail() {
+        // given
+        willDoNothing().given(inspectionService).fail(anyLong(), eq(1L), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new InspectionJudgeRequest("가품 의심"))
+                .when()
+                .post("/api/inspections/{orderId}/fail", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+    }
 }
