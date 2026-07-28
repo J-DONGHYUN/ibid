@@ -163,14 +163,14 @@ function MyPageContent() {
               <button key={s.label} className="flex flex-col items-center gap-2.5">
                 <span className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-300 text-sm font-bold text-neutral-700">
                   {s.badge}
-                  {s.dot && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-brand" />}
+                  {s.dot && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#f0143c]" />}
                 </span>
                 <span className="text-xs text-neutral-500">{s.label}</span>
               </button>
             ))}
           </div>
 
-          <OrderSection title="구매 내역" role="buyer" accent="text-brand" />
+          <OrderSection title="구매 내역" role="buyer" accent="text-[#f0143c]" />
           <OrderSection
             title="판매 내역"
             role="seller"

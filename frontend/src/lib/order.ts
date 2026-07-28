@@ -24,7 +24,7 @@ export function orderStatusTone(status: OrderStatus): string {
     case "PAID":
     case "SHIPPED_TO_INSPECTOR":
     case "UNDER_INSPECTION":
-      return "text-brand";
+      return "text-[#f0143c]";
     case "COMPLETED":
       return "text-neutral-900";
     case "REFUNDED":

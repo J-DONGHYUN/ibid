@@ -30,7 +30,7 @@ export default function Header() {
           <button className="hover:text-neutral-800">관심</button>
           <button className="relative pr-1 hover:text-neutral-800">
             알림
-            <span className="absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-brand" />
+            <span className="absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-[#f0143c]" />
           </button>
           <button onClick={handleLogout} className="hover:text-neutral-800">
             로그아웃
@@ -54,7 +54,7 @@ export default function Header() {
         <nav className="ml-auto flex items-center">
           <Link
             href="/products/new"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="rounded-lg bg-[#f0143c] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           >
             판매하기
           </Link>
