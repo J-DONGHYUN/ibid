@@ -1,5 +1,8 @@
 import type {
   LoginResponse,
+  MyOrdersResponse,
+  OrderDetail,
+  OrderRole,
   ProductDetail,
   ProductListResponse,
   ProductRegisterRequest,
@@ -146,4 +149,8 @@ export const api = {
       method: "POST",
       body: { productId, quantity },
     }),
+
+  getMyOrders: (role: OrderRole) => request<MyOrdersResponse>(`/api/orders?role=${role}`),
+
+  getMyOrder: (orderId: number) => request<OrderDetail>(`/api/orders/${orderId}`),
 };
