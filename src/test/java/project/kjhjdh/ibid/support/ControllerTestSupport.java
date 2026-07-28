@@ -27,6 +27,7 @@ import project.kjhjdh.ibid.auth.presentation.interceptor.AuthenticationIntercept
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.common.config.WebConfig;
 import project.kjhjdh.ibid.order.application.OrderService;
+import project.kjhjdh.ibid.payment.application.PaymentService;
 import project.kjhjdh.ibid.product.application.ProductService;
 
 @ActiveProfiles("test")
@@ -47,6 +48,9 @@ public abstract class ControllerTestSupport {
 
     @MockitoBean
     protected OrderService orderService;
+
+    @MockitoBean
+    protected PaymentService paymentService;
 
     @BeforeEach
     void setUpMockMvc() {

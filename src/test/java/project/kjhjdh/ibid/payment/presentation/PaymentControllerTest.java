@@ -1,29 +1,23 @@
 package project.kjhjdh.ibid.payment.presentation;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-
+import io.restassured.http.ContentType;
+import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
-import io.restassured.http.ContentType;
-import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
-import project.kjhjdh.ibid.payment.application.PaymentService;
 import project.kjhjdh.ibid.payment.infra.dto.PaymentTossDtoImpl;
 import project.kjhjdh.ibid.payment.presentation.dto.PaymentConfirmRequest;
 import project.kjhjdh.ibid.payment.presentation.dto.PaymentCreateRequest;
 import project.kjhjdh.ibid.payment.presentation.dto.PaymentCreateResponse;
 import project.kjhjdh.ibid.support.ControllerTestSupport;
 
-class PaymentControllerTest extends ControllerTestSupport {
+import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
-	@MockitoBean
-	private PaymentService paymentService;
+class PaymentControllerTest extends ControllerTestSupport {
 
 	@DisplayName("결제를 생성하면 201과 paymentId를 응답한다")
 	@Test

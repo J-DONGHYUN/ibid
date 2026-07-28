@@ -1,25 +1,17 @@
 package project.kjhjdh.ibid.payment.infra.dto;
 
-
-import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
-@Embeddable
-public class Card {
-
-	private Integer amount;
-	private String issuerCode;
-	private String acquirerCode;
-	private String number;
-	private Integer installmentPlanMonths;
-	private String approveNo;
-	private boolean useCardPoint;
-	private String cardType;
-	private String ownerType;
-	private String acquireStatus;
-	private String isInterestFree;
-	private String interestPayer;
+public record Card(
+	Integer amount,
+	String issuerCode,
+	String acquirerCode,
+	String number,
+	Integer installmentPlanMonths,
+	String approveNo,
+	boolean useCardPoint,
+	String cardType,
+	String ownerType,
+	String acquireStatus,
+	String isInterestFree,
+	String interestPayer
+) {
 }

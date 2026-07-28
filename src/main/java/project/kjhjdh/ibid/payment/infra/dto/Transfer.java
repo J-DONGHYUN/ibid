@@ -1,12 +1,7 @@
 package project.kjhjdh.ibid.payment.infra.dto;
 
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
-public class Transfer {
-
-	private String bankCode;
-	private String settlementStatus;
+public record Transfer(
+	String bankCode,
+	String settlementStatus
+) {
 }
