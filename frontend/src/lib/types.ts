@@ -65,6 +65,12 @@ export interface MyOrdersResponse {
   orders: OrderSummary[];
 }
 
+export interface MyTransactions {
+  purchases: OrderSummary[];
+  sales: OrderSummary[];
+  listings: ProductSummary[];
+}
+
 export interface OrderDetail {
   orderId: number;
   productId: number;

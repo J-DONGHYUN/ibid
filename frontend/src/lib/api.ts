@@ -1,6 +1,7 @@
 import type {
   LoginResponse,
   MyOrdersResponse,
+  MyTransactions,
   OrderDetail,
   OrderRole,
   ProductDetail,
@@ -166,6 +167,8 @@ export const api = {
     }),
 
   getMyOrders: (role: OrderRole) => request<MyOrdersResponse>(`/api/orders?role=${role}`),
+
+  getMyTransactions: () => request<MyTransactions>("/api/orders/me"),
 
   getMyOrder: (orderId: number) => request<OrderDetail>(`/api/orders/${orderId}`),
 

@@ -1,4 +1,26 @@
-import type { OrderRole, OrderStatus, OrderSummary } from "./types";
+import type { OrderRole, OrderStatus, OrderSummary, ProductStatus } from "./types";
+
+export function productStatusLabel(status: ProductStatus): string {
+  switch (status) {
+    case "PENDING":
+      return "판매대기";
+    case "ON_SALE":
+      return "판매중";
+    case "SOLD_OUT":
+      return "판매완료";
+  }
+}
+
+export function productStatusTone(status: ProductStatus): string {
+  switch (status) {
+    case "PENDING":
+      return "bg-neutral-100 text-neutral-500";
+    case "ON_SALE":
+      return "bg-emerald-50 text-emerald-600";
+    case "SOLD_OUT":
+      return "bg-neutral-100 text-neutral-400";
+  }
+}
 
 export function orderStatusLabel(status: OrderStatus, role: OrderRole = "buyer"): string {
   switch (status) {

@@ -6,8 +6,14 @@ import { ChevronRight, ImageIcon, User } from "lucide-react";
 import Header from "@/components/Header";
 import AuthGuard from "@/components/AuthGuard";
 import { api } from "@/lib/api";
-import { orderCounts, orderStatusLabel, orderStatusTone } from "@/lib/order";
-import type { OrderRole, OrderSummary } from "@/lib/types";
+import {
+  orderCounts,
+  orderStatusLabel,
+  orderStatusTone,
+  productStatusLabel,
+  productStatusTone,
+} from "@/lib/order";
+import type { MyTransactions, OrderRole, OrderSummary, ProductSummary } from "@/lib/types";
 
 const SIDEBAR: { group: string; items: string[] }[] = [
   { group: "쇼핑 정보", items: ["구매 내역", "판매 내역", "관심 상품", "후기 쓰기", "포인트", "쿠폰"] },
@@ -68,26 +74,15 @@ function OrderSection({
   title,
   role,
   accent,
+  orders,
   extra,
 }: {
   title: string;
   role: OrderRole;
   accent: string;
+  orders: OrderSummary[] | null;
   extra?: React.ReactNode;
 }) {
-  const [orders, setOrders] = useState<OrderSummary[] | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    api
-      .getMyOrders(role)
-      .then((res) => alive && setOrders(res.orders))
-      .catch(() => alive && setOrders([]));
-    return () => {
-      alive = false;
-    };
-  }, [role]);
-
   return (
     <section className="mt-14">
       <div className="mb-4 flex items-center justify-between">
@@ -108,7 +103,69 @@ function OrderSection({
   );
 }
 
+function ListingSection({ listings }: { listings: ProductSummary[] | null }) {
+  const active = listings?.filter((p) => p.status === "ON_SALE" || p.status === "PENDING").length ?? 0;
+  return (
+    <section className="mt-8">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold">판매 중인 상품</h2>
+          {active > 0 && (
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-600">{active}</span>
+          )}
+        </div>
+        <Link href="/products/new" className="flex items-center gap-0.5 text-sm text-neutral-500 hover:text-neutral-900">
+          상품 등록 <ChevronRight size={15} />
+        </Link>
+      </div>
+      <div className="rounded-xl border border-neutral-200">
+        {listings === null && <p className="py-10 text-center text-sm text-neutral-400">불러오는 중...</p>}
+        {listings !== null && listings.length === 0 && (
+          <p className="py-10 text-center text-sm text-neutral-400">등록한 상품이 없습니다.</p>
+        )}
+        {listings?.map((p, i) => (
+          <div
+            key={p.productId}
+            className={`flex items-center gap-4 px-5 py-4 ${i > 0 ? "border-t border-neutral-100" : ""}`}
+          >
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-300">
+              <ImageIcon size={20} strokeWidth={1.5} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Link
+                href={`/products/${p.productId}`}
+                className="truncate font-medium text-neutral-900 hover:underline"
+              >
+                {p.title}
+              </Link>
+              <p className="mt-1 text-sm text-neutral-400">
+                {p.price.toLocaleString()}원 · 재고 {p.stock}개
+              </p>
+            </div>
+            <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${productStatusTone(p.status)}`}>
+              {productStatusLabel(p.status)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function MyPageContent() {
+  const [data, setData] = useState<MyTransactions | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    api
+      .getMyTransactions()
+      .then((res) => alive && setData(res))
+      .catch(() => alive && setData({ purchases: [], sales: [], listings: [] }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <>
       <Header />
@@ -170,11 +227,14 @@ function MyPageContent() {
             ))}
           </div>
 
-          <OrderSection title="구매 내역" role="buyer" accent="text-[#f0143c]" />
+          <ListingSection listings={data?.listings ?? null} />
+
+          <OrderSection title="구매 내역" role="buyer" accent="text-[#f0143c]" orders={data?.purchases ?? null} />
           <OrderSection
             title="판매 내역"
             role="seller"
             accent="text-emerald-600"
+            orders={data?.sales ?? null}
             extra={
               <Link href="/products/new" className="flex items-center gap-0.5 text-sm text-neutral-500 hover:text-neutral-900">
                 판매하기 <ChevronRight size={15} />
