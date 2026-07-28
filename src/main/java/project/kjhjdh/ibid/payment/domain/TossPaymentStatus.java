@@ -11,7 +11,4 @@ public enum TossPaymentStatus {
 	ABORTED,
 	EXPIRED;
 
-    public static TossPaymentStatus from() {
-        return null;
-    }
 }

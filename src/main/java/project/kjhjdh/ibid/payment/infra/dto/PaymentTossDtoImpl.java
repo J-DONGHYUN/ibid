@@ -45,10 +45,6 @@ public class PaymentTossDtoImpl implements PaymentConfirmResponse {
 	private Discount discount;
 	private Checkout checkout;
 	private Long paymentId;
-
 	private String transactionKey;
 
-	public void setPaymentId(Long paymentId) {
-		this.paymentId = paymentId;
-	}
 }
