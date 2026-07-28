@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.order.domain.Order;
+import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.payment.domain.Payment;
 import project.kjhjdh.ibid.payment.infra.PaymentRepository;
 import project.kjhjdh.ibid.payment.presentation.dto.PaymentConfirmResponse;
@@ -14,6 +16,7 @@ import project.kjhjdh.ibid.payment.presentation.dto.PaymentConfirmResponse;
 public class PaymentProcessor {
 
     private final PaymentRepository paymentRepository;
+    private final OrderRepository orderRepository;
 
     @Transactional
     public void success(Long paymentId, PaymentConfirmResponse response) {
@@ -22,7 +25,9 @@ public class PaymentProcessor {
 
         payment.confirm(response.getPaymentKey());
 
-        // TODO:
-        //  - order 상태 처리
+        Order order = orderRepository.findById(payment.getOrderId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        order.paid();
     }
 }
