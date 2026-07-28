@@ -38,6 +38,7 @@ public enum ErrorCode {
     INVALID_PRODUCT_STOCK(HttpStatus.BAD_REQUEST, "재고 수량은 1개 이상이어야 합니다."),
     PRODUCT_NOT_PENDING(HttpStatus.CONFLICT, "판매 대기 상태의 상품만 판매를 시작할 수 있습니다."),
     PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다."),
+    CANNOT_RESTORE_STOCK(HttpStatus.CONFLICT, "판매 시작 전 상품은 재고를 복원할 수 없습니다."),
 
     // Trade
     INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다."),
@@ -45,12 +46,13 @@ public enum ErrorCode {
     INVALID_PURCHASE_QUANTITY(HttpStatus.BAD_REQUEST, "구매 수량은 1개 이상이어야 합니다."),
     SELF_TRADE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 등록한 상품은 구매할 수 없습니다."),
 
-    // Payment
-    PAYMENT_CONFIRM_FAILED(HttpStatus.BAD_REQUEST, "결제 승인에 실패했습니다."),
-    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제 정보를 찾을 수 없습니다."),
-
     // Order
-    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문 정보를 찾을 수 없습니다."),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
+    ORDER_NOT_CANCELABLE(HttpStatus.CONFLICT, "취소할 수 없는 주문 상태입니다."),
+    ORDER_NOT_PAYABLE(HttpStatus.CONFLICT, "결제 확정할 수 없는 주문 상태입니다."),
+    ORDER_NOT_SHIPPABLE(HttpStatus.CONFLICT, "발송할 수 없는 주문 상태입니다."),
+    ORDER_NOT_INSPECTABLE(HttpStatus.CONFLICT, "검수를 시작할 수 없는 주문 상태입니다."),
+    ORDER_NOT_JUDGEABLE(HttpStatus.CONFLICT, "검수 판정할 수 없는 주문 상태입니다."),
 
     ;
 

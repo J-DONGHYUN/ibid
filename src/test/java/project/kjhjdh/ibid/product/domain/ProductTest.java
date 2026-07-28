@@ -182,6 +182,64 @@ class ProductTest {
                 .hasMessage(ErrorCode.SOLD_OUT.getMessage());
     }
 
+    @DisplayName("취소된 수량만큼 재고를 복원한다")
+    @Test
+    void restoreStock() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+        product.decreaseStock(2);
+
+        // when
+        product.restoreStock(2);
+
+        // then
+        assertThat(product.getStock()).isEqualTo(3);
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+    }
+
+    @DisplayName("품절된 상품에 재고가 복원되면 다시 판매중이 된다")
+    @Test
+    void restoreStock_reopensSoldOut() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
+        product.decreaseStock(1);
+
+        // when
+        product.restoreStock(1);
+
+        // then
+        assertThat(product.getStock()).isEqualTo(1);
+        assertThat(product.isOnSale()).isTrue();
+    }
+
+    @DisplayName("복원 수량이 1개 미만이면 실패한다")
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void restoreStock_invalidQuantity(int quantity) {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+
+        // when & then
+        assertThatThrownBy(() -> product.restoreStock(quantity))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_PURCHASE_QUANTITY.getMessage());
+    }
+
+    @DisplayName("판매 시작 전(PENDING) 상품은 재고를 복원할 수 없다")
+    @Test
+    void restoreStock_pending() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+
+        // when & then
+        assertThatThrownBy(() -> product.restoreStock(1))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.CANNOT_RESTORE_STOCK.getMessage());
+    }
+
     @DisplayName("판매자 본인 여부를 판별한다")
     @Test
     void isOwnedBy() {
