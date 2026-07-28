@@ -81,9 +81,27 @@ class PaymentControllerTest extends ControllerTestSupport {
 				.body("code", equalTo("INVALID_INPUT"));
 	}
 
-	@DisplayName("결제 승인에 실패하면 400과 PAYMENT_CONFIRM_FAILED를 응답한다")
+	@DisplayName("결제 승인에 실패하면 400과 INVALID_PAYMENT_CONFIRM을 응답한다")
 	@Test
 	void confirm_failed() {
+		// given
+		given(paymentService.confirm(any(), any()))
+				.willThrow(new BusinessException(ErrorCode.INVALID_PAYMENT_CONFIRM));
+
+		// when & then
+		RestAssuredMockMvc.given()
+				.contentType(ContentType.JSON)
+				.body(new PaymentConfirmRequest("toss-order-1", "50000", "payment-key-1"))
+				.when()
+				.post("/api/payments/1/confirm")
+				.then()
+				.statusCode(HttpStatus.BAD_REQUEST.value())
+				.body("code", equalTo("INVALID_PAYMENT_CONFIRM"));
+	}
+
+	@DisplayName("토스 승인 자체가 실패하면 500과 PAYMENT_CONFIRM_FAILED를 응답한다")
+	@Test
+	void confirm_tossConfirmFailed() {
 		// given
 		given(paymentService.confirm(any(), any()))
 				.willThrow(new BusinessException(ErrorCode.PAYMENT_CONFIRM_FAILED));
@@ -95,7 +113,7 @@ class PaymentControllerTest extends ControllerTestSupport {
 				.when()
 				.post("/api/payments/1/confirm")
 				.then()
-				.statusCode(HttpStatus.BAD_REQUEST.value())
+				.statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
 				.body("code", equalTo("PAYMENT_CONFIRM_FAILED"));
 	}
 
