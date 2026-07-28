@@ -43,6 +43,18 @@ export function setToken(token: string | null) {
   }
 }
 
+export function currentUserId(): number | null {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const sub = JSON.parse(atob(part)).sub;
+    return sub != null ? Number(sub) : null;
+  } catch {
+    return null;
+  }
+}
+
 async function parseError(res: Response): Promise<ApiError> {
   try {
     const body = await res.json();
@@ -144,6 +156,9 @@ export const api = {
   registerProduct: (data: ProductRegisterRequest) =>
     request<{ productId: number }>("/api/products", { method: "POST", body: data }),
 
+  openForSale: (productId: number) =>
+    request<void>(`/api/products/${productId}/on-sale`, { method: "PATCH" }),
+
   purchase: (productId: number, quantity: number) =>
     request<{ orderId: number }>("/api/orders", {
       method: "POST",
@@ -153,4 +168,13 @@ export const api = {
   getMyOrders: (role: OrderRole) => request<MyOrdersResponse>(`/api/orders?role=${role}`),
 
   getMyOrder: (orderId: number) => request<OrderDetail>(`/api/orders/${orderId}`),
+
+  inspectionReceive: (orderId: number) =>
+    request<void>(`/api/inspections/${orderId}/receive`, { method: "POST" }),
+
+  inspectionPass: (orderId: number, memo: string) =>
+    request<void>(`/api/inspections/${orderId}/pass`, { method: "POST", body: { memo } }),
+
+  inspectionFail: (orderId: number, memo: string) =>
+    request<void>(`/api/inspections/${orderId}/fail`, { method: "POST", body: { memo } }),
 };

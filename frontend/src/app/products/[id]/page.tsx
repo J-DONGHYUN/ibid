@@ -16,7 +16,8 @@ import {
 import Header from "@/components/Header";
 import AuthGuard from "@/components/AuthGuard";
 import PurchaseModal from "@/components/PurchaseModal";
-import { api, ApiError } from "@/lib/api";
+import { useToast } from "@/components/Toast";
+import { api, ApiError, currentUserId } from "@/lib/api";
 import { formatWon, sellerName } from "@/lib/format";
 import type { ProductDetail } from "@/lib/types";
 
@@ -25,12 +26,28 @@ const SIMILAR = [35000, 129000, 78000, 92000, 64000, 155000];
 
 function DetailContent({ id }: { id: number }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [liked, setLiked] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const handleStartSale = async () => {
+    if (starting) return;
+    setStarting(true);
+    try {
+      await api.openForSale(id);
+      showToast("판매를 시작했습니다.");
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : "판매 시작에 실패했습니다.", "error");
+    } finally {
+      setStarting(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -53,6 +70,7 @@ function DetailContent({ id }: { id: number }) {
   const soldOut = product.status === "SOLD_OUT";
   const pending = product.status === "PENDING";
   const onSale = product.status === "ON_SALE";
+  const isSeller = currentUserId() === product.sellerId;
   const statusView = onSale
     ? { label: "판매중", color: "text-emerald-600" }
     : pending
@@ -170,7 +188,16 @@ function DetailContent({ id }: { id: number }) {
                 구매하기
               </button>
             )}
-            {pending && (
+            {pending && isSeller && (
+              <button
+                onClick={handleStartSale}
+                disabled={starting}
+                className="flex-1 rounded-xl bg-emerald-500 py-3.5 text-base font-bold text-white hover:bg-emerald-600 disabled:opacity-60"
+              >
+                {starting ? "처리 중..." : "판매 시작"}
+              </button>
+            )}
+            {pending && !isSeller && (
               <button disabled className="flex-1 cursor-not-allowed rounded-xl bg-amber-400 py-3.5 text-base font-bold text-white">
                 판매 대기중
               </button>
