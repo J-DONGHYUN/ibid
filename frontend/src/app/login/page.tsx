@@ -82,6 +82,15 @@ export default function LoginPage() {
           회원가입
         </Link>
       </div>
+
+      <div className="mt-8 text-center">
+        <Link
+          href="/admin/login"
+          className="text-xs text-neutral-400 underline underline-offset-4 hover:text-neutral-600"
+        >
+          운영자 로그인
+        </Link>
+      </div>
     </main>
   );
 }
