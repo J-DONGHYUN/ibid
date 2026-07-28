@@ -166,6 +166,21 @@ export const api = {
       body: { productId, quantity },
     }),
 
+  createPayment: (orderId: number) =>
+    request<{ paymentId: number }>("/api/payments", {
+      method: "POST",
+      body: { orderId },
+    }),
+
+  confirmPayment: (
+    paymentId: number,
+    data: { orderId: string; amount: string; paymentKey: string },
+  ) =>
+    request<{ paymentKey: string }>(`/api/payments/${paymentId}/confirm`, {
+      method: "POST",
+      body: data,
+    }),
+
   getMyOrders: (role: OrderRole) => request<MyOrdersResponse>(`/api/orders?role=${role}`),
 
   getMyTransactions: () => request<MyTransactions>("/api/orders/me"),

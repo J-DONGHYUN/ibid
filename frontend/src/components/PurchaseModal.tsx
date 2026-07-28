@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Minus, Plus, X } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { formatWon } from "@/lib/format";
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function PurchaseModal({ product, onClose, onPurchased }: Props) {
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const { showToast } = useToast();
@@ -27,13 +29,17 @@ export default function PurchaseModal({ product, onClose, onPurchased }: Props) 
   const handleConfirm = async () => {
     setSubmitting(true);
     try {
-      await api.purchase(product.productId, quantity);
-      showToast("구매가 완료되었습니다.");
+      const { orderId } = await api.purchase(product.productId, quantity);
+      const params = new URLSearchParams({
+        orderId: String(orderId),
+        amount: String(total),
+        orderName: product.title,
+      });
       onPurchased();
+      router.push(`/checkout?${params.toString()}`);
     } catch (e) {
       const message = e instanceof ApiError ? e.message : "구매에 실패했습니다.";
       showToast(message, "error");
-    } finally {
       setSubmitting(false);
     }
   };
