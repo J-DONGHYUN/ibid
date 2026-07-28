@@ -17,6 +17,7 @@ import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.order.application.OrderService;
 import project.kjhjdh.ibid.order.application.PurchaseResult;
 import project.kjhjdh.ibid.order.presentation.dto.MyOrdersResponse;
+import project.kjhjdh.ibid.order.presentation.dto.MyTransactionsResponse;
 import project.kjhjdh.ibid.order.presentation.dto.OrderDetailResponse;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseResponse;
@@ -53,6 +54,11 @@ public class OrderController {
             @RequestParam String role
     ) {
         return ResponseEntity.ok(orderService.getMyOrders(loginUser.userId(), role));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<MyTransactionsResponse> getMyTransactions(@LoginUser UserInfo loginUser) {
+        return ResponseEntity.ok(orderService.getMyTransactions(loginUser.userId()));
     }
 
     @GetMapping("/{orderId}")

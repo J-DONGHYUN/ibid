@@ -1,5 +1,6 @@
 package project.kjhjdh.ibid.product.infra;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,8 @@ import project.kjhjdh.ibid.product.domain.Product;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Slice<Product> findByIdLessThanOrderByIdDesc(Long id, Pageable pageable);
+
+    List<Product> findBySellerIdOrderByIdDesc(Long sellerId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Product p where p.id = :id")

@@ -3,6 +3,7 @@ package project.kjhjdh.ibid.order.application;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,11 +14,13 @@ import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.order.domain.Order;
 import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.order.presentation.dto.MyOrdersResponse;
+import project.kjhjdh.ibid.order.presentation.dto.MyTransactionsResponse;
 import project.kjhjdh.ibid.order.presentation.dto.OrderDetailResponse;
 import project.kjhjdh.ibid.order.presentation.dto.OrderSummaryResponse;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
+import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -98,6 +101,33 @@ public class OrderService {
                 .map(order -> OrderSummaryResponse.of(order, productsById.get(order.getProductId())))
                 .toList();
         return MyOrdersResponse.of(items);
+    }
+
+    @Transactional(readOnly = true)
+    public MyTransactionsResponse getMyTransactions(Long userId) {
+        List<Order> purchaseOrders = orderRepository.findByBuyerIdOrderByIdDesc(userId);
+        List<Order> saleOrders = orderRepository.findBySellerIdOrderByIdDesc(userId);
+
+        Map<Long, Product> productsById = productRepository.findAllById(
+                Stream.concat(purchaseOrders.stream(), saleOrders.stream())
+                        .map(Order::getProductId)
+                        .distinct()
+                        .toList()
+        ).stream().collect(Collectors.toMap(Product::getId, product -> product));
+
+        List<OrderSummaryResponse> purchases = toSummaries(purchaseOrders, productsById);
+        List<OrderSummaryResponse> sales = toSummaries(saleOrders, productsById);
+        List<ProductSummaryResponse> listings = productRepository.findBySellerIdOrderByIdDesc(userId).stream()
+                .map(ProductSummaryResponse::from)
+                .toList();
+
+        return new MyTransactionsResponse(purchases, sales, listings);
+    }
+
+    private List<OrderSummaryResponse> toSummaries(List<Order> orders, Map<Long, Product> productsById) {
+        return orders.stream()
+                .map(order -> OrderSummaryResponse.of(order, productsById.get(order.getProductId())))
+                .toList();
     }
 
     @Transactional(readOnly = true)
