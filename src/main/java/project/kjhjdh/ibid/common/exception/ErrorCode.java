@@ -45,6 +45,13 @@ public enum ErrorCode {
     INVALID_PURCHASE_QUANTITY(HttpStatus.BAD_REQUEST, "구매 수량은 1개 이상이어야 합니다."),
     SELF_TRADE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 등록한 상품은 구매할 수 없습니다."),
 
+    // Payment
+    PAYMENT_CONFIRM_FAILED(HttpStatus.BAD_REQUEST, "결제 승인에 실패했습니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제 정보를 찾을 수 없습니다."),
+
+    // Order
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문 정보를 찾을 수 없습니다."),
+
     ;
 
     private final HttpStatus httpStatus;
