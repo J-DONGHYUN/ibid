@@ -17,7 +17,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/**",
-            "/api/payments/**",
     };
 
     private final AuthenticationInterceptor authenticationInterceptor;
