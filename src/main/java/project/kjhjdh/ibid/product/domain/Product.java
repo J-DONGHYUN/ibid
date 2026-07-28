@@ -92,6 +92,19 @@ public class Product {
         }
     }
 
+    public void restoreStock(int quantity) {
+        if (quantity < MIN_QUANTITY) {
+            throw new BusinessException(ErrorCode.INVALID_PURCHASE_QUANTITY);
+        }
+        if (status == ProductStatus.PENDING) {
+            throw new BusinessException(ErrorCode.CANNOT_RESTORE_STOCK);
+        }
+        this.stock += quantity;
+        if (status == ProductStatus.SOLD_OUT) {
+            this.status = ProductStatus.ON_SALE;
+        }
+    }
+
     public boolean isSoldOut() {
         return status == ProductStatus.SOLD_OUT;
     }

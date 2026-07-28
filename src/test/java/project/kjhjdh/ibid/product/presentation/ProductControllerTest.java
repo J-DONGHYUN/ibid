@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 
 import java.util.List;
@@ -131,6 +132,52 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("description", equalTo("상태 좋음"))
                 .body("stock", equalTo(3))
                 .body("status", equalTo("ON_SALE"));
+    }
+
+    @DisplayName("판매 시작에 성공하면 200을 응답한다")
+    @Test
+    void openForSale() {
+        // given
+        willDoNothing().given(productService).openForSale(anyLong(), eq(1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .patch("/api/products/{productId}/on-sale", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+    }
+
+    @DisplayName("등록한 판매자가 아니면 판매 시작 시 403을 응답한다")
+    @Test
+    void openForSale_forbidden() {
+        // given
+        willThrow(new BusinessException(ErrorCode.ACCESS_DENIED))
+                .given(productService).openForSale(anyLong(), eq(1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .patch("/api/products/{productId}/on-sale", 1L)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value())
+                .body("code", equalTo("ACCESS_DENIED"));
+    }
+
+    @DisplayName("판매 대기 상태가 아닌 상품의 판매를 시작하면 409를 응답한다")
+    @Test
+    void openForSale_notPending() {
+        // given
+        willThrow(new BusinessException(ErrorCode.PRODUCT_NOT_PENDING))
+                .given(productService).openForSale(anyLong(), eq(1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .patch("/api/products/{productId}/on-sale", 1L)
+                .then()
+                .statusCode(HttpStatus.CONFLICT.value())
+                .body("code", equalTo("PRODUCT_NOT_PENDING"));
     }
 
     @DisplayName("존재하지 않는 상품을 조회하면 404를 응답한다")

@@ -1,5 +1,9 @@
 import type {
   LoginResponse,
+  MyOrdersResponse,
+  MyTransactions,
+  OrderDetail,
+  OrderRole,
   ProductDetail,
   ProductListResponse,
   ProductRegisterRequest,
@@ -37,6 +41,18 @@ export function setToken(token: string | null) {
     window.localStorage.setItem(TOKEN_KEY, token);
   } else {
     window.localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+export function currentUserId(): number | null {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const sub = JSON.parse(atob(part)).sub;
+    return sub != null ? Number(sub) : null;
+  } catch {
+    return null;
   }
 }
 
@@ -141,9 +157,27 @@ export const api = {
   registerProduct: (data: ProductRegisterRequest) =>
     request<{ productId: number }>("/api/products", { method: "POST", body: data }),
 
+  openForSale: (productId: number) =>
+    request<void>(`/api/products/${productId}/on-sale`, { method: "PATCH" }),
+
   purchase: (productId: number, quantity: number) =>
     request<{ orderId: number }>("/api/orders", {
       method: "POST",
       body: { productId, quantity },
     }),
+
+  getMyOrders: (role: OrderRole) => request<MyOrdersResponse>(`/api/orders?role=${role}`),
+
+  getMyTransactions: () => request<MyTransactions>("/api/orders/me"),
+
+  getMyOrder: (orderId: number) => request<OrderDetail>(`/api/orders/${orderId}`),
+
+  inspectionReceive: (orderId: number) =>
+    request<void>(`/api/inspections/${orderId}/receive`, { method: "POST" }),
+
+  inspectionPass: (orderId: number, memo: string) =>
+    request<void>(`/api/inspections/${orderId}/pass`, { method: "POST", body: { memo } }),
+
+  inspectionFail: (orderId: number, memo: string) =>
+    request<void>(`/api/inspections/${orderId}/fail`, { method: "POST", body: { memo } }),
 };

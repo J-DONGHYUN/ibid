@@ -40,3 +40,44 @@ export interface ProductRegisterRequest {
   price: number;
   stock: number;
 }
+
+export type OrderStatus =
+  | "CREATED"
+  | "PAID"
+  | "SHIPPED_TO_INSPECTOR"
+  | "UNDER_INSPECTION"
+  | "COMPLETED"
+  | "REFUNDED"
+  | "CANCELED";
+
+export type OrderRole = "buyer" | "seller";
+
+export interface OrderSummary {
+  orderId: number;
+  productId: number;
+  productTitle: string;
+  quantity: number;
+  totalPrice: number;
+  status: OrderStatus;
+}
+
+export interface MyOrdersResponse {
+  orders: OrderSummary[];
+}
+
+export interface MyTransactions {
+  purchases: OrderSummary[];
+  sales: OrderSummary[];
+  listings: ProductSummary[];
+}
+
+export interface OrderDetail {
+  orderId: number;
+  productId: number;
+  productTitle: string;
+  buyerId: number;
+  sellerId: number;
+  quantity: number;
+  totalPrice: number;
+  status: OrderStatus;
+}

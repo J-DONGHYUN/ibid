@@ -2,22 +2,52 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Heart, ImageIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Heart,
+  ImageIcon,
+  Info,
+  MessageSquare,
+  Share2,
+} from "lucide-react";
 import Header from "@/components/Header";
 import AuthGuard from "@/components/AuthGuard";
-import StatusBadge from "@/components/StatusBadge";
 import PurchaseModal from "@/components/PurchaseModal";
-import { api, ApiError } from "@/lib/api";
+import { useToast } from "@/components/Toast";
+import { api, ApiError, currentUserId } from "@/lib/api";
 import { formatWon, sellerName } from "@/lib/format";
 import type { ProductDetail } from "@/lib/types";
 
+const TAGS = ["#나이키", "#AirMax90", "#에어맥스", "#운동화", "#270"];
+const SIMILAR = [35000, 129000, 78000, 92000, 64000, 155000];
+
 function DetailContent({ id }: { id: number }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const handleStartSale = async () => {
+    if (starting) return;
+    setStarting(true);
+    try {
+      await api.openForSale(id);
+      showToast("판매를 시작했습니다.");
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : "판매 시작에 실패했습니다.", "error");
+    } finally {
+      setStarting(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -34,29 +64,32 @@ function DetailContent({ id }: { id: number }) {
     };
   }, [id, reloadKey]);
 
-  if (error) {
-    return <p className="py-24 text-center text-sm text-rose-500">{error}</p>;
-  }
-  if (!product) {
-    return <p className="py-24 text-center text-sm text-neutral-400">불러오는 중...</p>;
-  }
+  if (error) return <p className="py-24 text-center text-sm text-rose-500">{error}</p>;
+  if (!product) return <p className="py-24 text-center text-sm text-neutral-400">불러오는 중...</p>;
 
   const soldOut = product.status === "SOLD_OUT";
   const pending = product.status === "PENDING";
   const onSale = product.status === "ON_SALE";
+  const isSeller = currentUserId() === product.sellerId;
+  const statusView = onSale
+    ? { label: "판매중", color: "text-emerald-600" }
+    : pending
+      ? { label: "판매대기", color: "text-amber-500" }
+      : { label: "품절", color: "text-neutral-400" };
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-6">
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push("/")}
         className="mb-5 flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900"
       >
         <ArrowLeft size={18} />
         뒤로가기
       </button>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-100">
+      <div className="grid gap-10 md:grid-cols-2">
+        {/* 이미지 */}
+        <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100">
           <div className="flex h-full items-center justify-center text-neutral-300">
             <ImageIcon size={48} strokeWidth={1.5} />
           </div>
@@ -65,56 +98,112 @@ function DetailContent({ id }: { id: number }) {
               <span className="text-lg font-semibold tracking-widest text-white">품절</span>
             </div>
           )}
+          <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-neutral-800/70 px-3 py-1 text-xs text-white">
+            1/4
+          </span>
         </div>
 
+        {/* 정보 */}
         <div>
-          <StatusBadge status={product.status} />
-          <h1 className="mt-3 text-2xl font-bold">{product.title}</h1>
-          <p className="mt-2 text-3xl font-extrabold">
-            {formatWon(product.price)}
-            <span className="ml-0.5 text-lg font-bold">원</span>
-          </p>
+          <h1 className="text-2xl font-bold">{product.title}</h1>
+          <p className="mt-3 text-3xl font-extrabold">{formatWon(product.price)}원</p>
 
-          <dl className="mt-8 space-y-3 text-sm">
-            <SpecRow label="제품상태" value="중고" />
-            <SpecRow label="배송비" value="별도" />
-            <SpecRow label="재고" value={`${product.stock}개`} bold />
-            <SpecRow label="판매자" value={sellerName(product.sellerId)} />
+          <div className="mt-3 flex items-center justify-between text-sm text-neutral-400">
+            <div className="flex items-center gap-3">
+              <span>8시간 전</span>
+              <span className="flex items-center gap-1">
+                <Eye size={15} /> 164
+              </span>
+              <span className="flex items-center gap-1">
+                <Heart size={15} /> 5
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageSquare size={15} /> 1
+              </span>
+            </div>
+            <button className="hover:text-neutral-600">신고하기</button>
+          </div>
+
+          <dl className="mt-6 space-y-3 border-t border-neutral-100 pt-6 text-sm">
+            <SpecRow label="판매상태">
+              <span className={`font-bold ${statusView.color}`}>{statusView.label}</span>
+            </SpecRow>
+            <SpecRow label="상품상태">중고 (거의 새 것)</SpecRow>
+            <SpecRow label="사이즈">270</SpecRow>
+            <SpecRow label="수량">
+              <span className="font-semibold">{product.stock}개</span>
+            </SpecRow>
+            <SpecRow label="배송비">일반 3,000원</SpecRow>
+            <SpecRow label="직거래">서울특별시 강동구 천호제1동</SpecRow>
           </dl>
 
-          <div className="mt-8 flex gap-3">
+          <div className="mt-6 border-t border-neutral-100 pt-6">
+            <p className={`whitespace-pre-wrap text-sm leading-relaxed text-neutral-700 ${expanded ? "" : "line-clamp-2"}`}>
+              {product.description}
+            </p>
             <button
-              onClick={() => setLiked((v) => !v)}
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-neutral-200 hover:bg-neutral-50"
-              aria-label="찜하기"
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-2 text-sm text-neutral-500 hover:text-neutral-800"
             >
-              <Heart
-                size={22}
-                className={liked ? "fill-rose-500 text-rose-500" : "text-neutral-400"}
-              />
+              {expanded ? "접기" : "더보기"}
             </button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {TAGS.map((t) => (
+                <span key={t} className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs text-neutral-500">
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center justify-between border-t border-neutral-100 pt-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+                <ImageIcon size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-bold">{sellerName(product.sellerId)}</p>
+                <p className="text-xs text-neutral-400">상품 1개 판매 중 · 거래 12회</p>
+              </div>
+            </div>
+            <button className="text-sm text-neutral-500 hover:text-neutral-800">상점 보기</button>
+          </div>
+
+          <div className="mt-6 flex gap-3">
+            <IconBtn onClick={() => {}} label="공유">
+              <Share2 size={20} />
+            </IconBtn>
+            <IconBtn onClick={() => setLiked((v) => !v)} label="찜">
+              <Heart size={20} className={liked ? "fill-rose-500 text-rose-500" : "text-neutral-500"} />
+            </IconBtn>
+            <IconBtn onClick={() => {}} label="문의">
+              <MessageSquare size={20} />
+            </IconBtn>
 
             {onSale && (
               <button
                 onClick={() => setModalOpen(true)}
-                className="flex-1 rounded-xl bg-emerald-500 text-base font-bold text-white hover:bg-emerald-600"
+                className="flex-1 rounded-xl bg-[#f0143c] py-3.5 text-base font-bold text-white transition-opacity hover:opacity-90"
               >
-                즉시 구매
+                구매하기
               </button>
             )}
-            {pending && (
+            {pending && isSeller && (
               <button
-                disabled
-                className="flex-1 cursor-not-allowed rounded-xl bg-amber-400 text-base font-bold text-white"
+                onClick={handleStartSale}
+                disabled={starting}
+                className="flex-1 rounded-xl bg-emerald-500 py-3.5 text-base font-bold text-white hover:bg-emerald-600 disabled:opacity-60"
               >
+                {starting ? "처리 중..." : "판매 시작"}
+              </button>
+            )}
+            {pending && !isSeller && (
+              <button disabled className="flex-1 cursor-not-allowed rounded-xl bg-amber-400 py-3.5 text-base font-bold text-white">
                 판매 대기중
               </button>
             )}
             {soldOut && (
-              <button
-                disabled
-                className="flex-1 cursor-not-allowed rounded-xl bg-neutral-200 text-base font-bold text-neutral-400"
-              >
+              <button disabled className="flex-1 cursor-not-allowed rounded-xl bg-neutral-200 py-3.5 text-base font-bold text-neutral-400">
                 품절
               </button>
             )}
@@ -122,18 +211,35 @@ function DetailContent({ id }: { id: number }) {
         </div>
       </div>
 
-      <section className="mt-12 border-t border-neutral-100 pt-8">
-        <h2 className="mb-3 font-bold">상품정보</h2>
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-600">
-          {product.description}
-        </p>
-      </section>
-
-      <section className="mt-10 border-t border-neutral-100 pt-8">
-        <h2 className="mb-4 font-bold">판매자 정보</h2>
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-neutral-100" />
-          <p className="text-sm font-semibold">{sellerName(product.sellerId)}</p>
+      {/* 이 상품과 비슷해요 (정적) */}
+      <section className="mt-16">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-1.5 text-lg font-bold">
+            이 상품과 비슷해요 <Info size={16} className="text-neutral-300" />
+          </h2>
+          <div className="flex gap-1.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-400">
+              <ChevronLeft size={16} />
+            </span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-400">
+              <ChevronRight size={16} />
+            </span>
+          </div>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {SIMILAR.map((price, i) => (
+            <div key={i} className="w-44 shrink-0">
+              <div className="relative mb-2 aspect-square overflow-hidden rounded-xl bg-neutral-100">
+                <div className="flex h-full items-center justify-center text-neutral-300">
+                  <ImageIcon size={28} strokeWidth={1.5} />
+                </div>
+                <span className="absolute right-3 top-3 text-neutral-400">
+                  <Heart size={18} />
+                </span>
+              </div>
+              <p className="font-bold text-neutral-900">{price.toLocaleString()}원</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -151,12 +257,32 @@ function DetailContent({ id }: { id: number }) {
   );
 }
 
-function SpecRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+function SpecRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex gap-8">
-      <dt className="w-16 shrink-0 text-neutral-400">{label}</dt>
-      <dd className={bold ? "font-semibold" : "text-neutral-700"}>{value}</dd>
+      <dt className="w-20 shrink-0 text-neutral-400">{label}</dt>
+      <dd className="text-neutral-700">{children}</dd>
     </div>
+  );
+}
+
+function IconBtn({
+  children,
+  onClick,
+  label,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+    >
+      {children}
+    </button>
   );
 }
 
