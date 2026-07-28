@@ -71,6 +71,18 @@ export interface MyTransactions {
   listings: ProductSummary[];
 }
 
+export interface InspectionQueueItem {
+  orderId: number;
+  productTitle: string;
+  price: number;
+  sellerId: number;
+  status: OrderStatus;
+}
+
+export interface InspectionQueueResponse {
+  items: InspectionQueueItem[];
+}
+
 export interface OrderDetail {
   orderId: number;
   productId: number;
