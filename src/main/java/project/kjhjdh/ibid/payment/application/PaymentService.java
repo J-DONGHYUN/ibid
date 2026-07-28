@@ -8,31 +8,20 @@ import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.order.domain.Order;
 import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.payment.domain.Payment;
-import project.kjhjdh.ibid.payment.domain.TossPayment;
-import project.kjhjdh.ibid.payment.domain.TossPaymentMethod;
-import project.kjhjdh.ibid.payment.domain.TossPaymentStatus;
 import project.kjhjdh.ibid.payment.infra.PaymentRepository;
-import project.kjhjdh.ibid.payment.infra.TossPaymentClient;
-import project.kjhjdh.ibid.payment.infra.TossPaymentRepository;
-import project.kjhjdh.ibid.payment.infra.dto.PaymentTossDtoImpl;
 import project.kjhjdh.ibid.payment.presentation.dto.PaymentConfirmRequest;
 import project.kjhjdh.ibid.payment.presentation.dto.PaymentConfirmResponse;
 import project.kjhjdh.ibid.payment.presentation.dto.PaymentCreateRequest;
 import project.kjhjdh.ibid.payment.presentation.dto.PaymentCreateResponse;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
 
-    private static final String CONFIRM_FAILED_CANCEL_REASON = "결제 승인 실패";
-
-    private final TossPaymentClient tossPaymentClient;
-    private final TossPaymentRepository tossPaymentRepository;
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final PaymentTossConfirmHandler paymentTossConfirmHandler;
+    private final PaymentProcessor paymentProcessor;
 
     @Transactional
     public PaymentCreateResponse create(PaymentCreateRequest request) {
@@ -42,37 +31,18 @@ public class PaymentService {
         return new PaymentCreateResponse(payment.getId());
     }
 
-    @Transactional
     public PaymentConfirmResponse confirm(Long paymentId, PaymentConfirmRequest request) {
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+        // TODO:
+        //   - 주문: orderId + CREATED 로 조회, 없으면 NOT_FOUND_DATA
+        //   - 결제: state != READY                → PAYMENT_INVALID_STATE
+        //   - payment.paidAmount != 요청 amount   → PAYMENT_AMOUNT_MISMATCH (금액 위변조 방어)
 
-        PaymentTossDtoImpl paymentTossDto = tossPaymentClient.requestConfirm(request.toTossConfirmRequest());
-        try {
-            tossPaymentRepository.save(
-                    TossPayment.of(
-                            paymentTossDto.getPaymentKey(),
-                            paymentTossDto.getOrderId(),
-                            paymentId,
-                            paymentTossDto.getTotalAmount(),
-                            TossPaymentMethod.from(paymentTossDto.getMethod()),
-                            TossPaymentStatus.valueOf(paymentTossDto.getStatus()),
-                            toLocalDateTime(paymentTossDto.getRequestedAt()),
-                            toLocalDateTime(paymentTossDto.getApprovedAt())
-                    ));
-            payment.confirm(paymentTossDto.getPaymentKey());
+        PaymentConfirmResponse confirm = paymentTossConfirmHandler.confirm(paymentId, request.toTossConfirmRequest());
 
-            return paymentTossDto;
-        } catch (Exception e) {
-            tossPaymentClient.requestPaymentCancel(request.paymentKey(), CONFIRM_FAILED_CANCEL_REASON);
-            throw e;
-        }
+        paymentProcessor.success(paymentId, confirm);
+
+        // TODO: 재고 감소 로직
+        return confirm;
     }
 
-    private LocalDateTime toLocalDateTime(String offsetDateTime) {
-        if (offsetDateTime == null) {
-            return null;
-        }
-        return OffsetDateTime.parse(offsetDateTime).toLocalDateTime();
-    }
 }

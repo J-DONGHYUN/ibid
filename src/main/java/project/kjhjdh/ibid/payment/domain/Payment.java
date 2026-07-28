@@ -11,6 +11,8 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import project.kjhjdh.ibid.common.exception.BusinessException;
+import project.kjhjdh.ibid.common.exception.ErrorCode;
 
 @Getter
 @Entity
@@ -46,6 +48,9 @@ public class Payment {
 	}
 
 	public void confirm(String paymentKey) {
+        if (state != State.READY) {
+            throw new BusinessException(ErrorCode.INVALID_PAYMENT_CONFIRM);
+        }
 		this.paymentKey = paymentKey;
 		this.state = State.CONFIRMED;
 	}

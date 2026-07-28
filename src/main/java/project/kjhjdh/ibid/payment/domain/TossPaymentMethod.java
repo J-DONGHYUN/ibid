@@ -26,6 +26,6 @@ public enum TossPaymentMethod {
 		return Arrays.stream(values())
 			.filter(method -> method.label.equals(label))
 			.findFirst()
-			.orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_CONFIRM_FAILED));
+			.orElse(null);
 	}
 }
