@@ -5,6 +5,7 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import project.kjhjdh.ibid.common.exception.BusinessException;
@@ -45,8 +46,10 @@ public class JwtProvider {
             return Long.parseLong(subject);
         } catch (ExpiredJwtException e) {
             throw new BusinessException(ErrorCode.EXPIRED_TOKEN);
+        } catch (JwtException e) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         } catch (Exception e) {
-            throw new GlobalException(ErrorCode.INVALID_TOKEN);
+            throw new GlobalException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 }

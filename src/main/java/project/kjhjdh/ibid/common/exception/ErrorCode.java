@@ -54,6 +54,11 @@ public enum ErrorCode {
     ORDER_NOT_INSPECTABLE(HttpStatus.CONFLICT, "검수를 시작할 수 없는 주문 상태입니다."),
     ORDER_NOT_JUDGEABLE(HttpStatus.CONFLICT, "검수 판정할 수 없는 주문 상태입니다."),
 
+    // Payment
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제 내역을 찾을 수 없습니다."),
+    INVALID_PAYMENT_CONFIRM(HttpStatus.BAD_REQUEST, "올바르지 않은 결제 승인입니다."),
+    PAYMENT_CONFIRM_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "결제 승인에 실패했습니다."),
+
     ;
 
     private final HttpStatus httpStatus;
