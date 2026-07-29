@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -47,6 +48,9 @@ class PaymentServiceTest {
 	@Mock
 	private PaymentProcessor paymentProcessor;
 
+	@Mock
+	private PaymentValidator paymentValidator;
+
 	@InjectMocks
 	private PaymentService paymentService;
 
@@ -85,7 +89,7 @@ class PaymentServiceTest {
 				.hasMessage(ErrorCode.ORDER_NOT_FOUND.getMessage());
 	}
 
-	@DisplayName("결제를 승인하면 토스 승인 핸들러와 결제 처리기에 위임하고 승인 결과를 반환한다")
+	@DisplayName("결제를 승인하면 검증 후 토스 승인 핸들러와 결제 처리기에 위임하고 승인 결과를 반환한다")
 	@Test
 	void confirm() {
 		// given
@@ -99,8 +103,25 @@ class PaymentServiceTest {
 
 		// then
 		assertThat(result).isSameAs(tossResponse);
+		verify(paymentValidator).validate(1L, request);
 		verify(paymentTossConfirmHandler).confirm(eq(1L), any());
 		verify(paymentProcessor).success(1L, tossResponse);
+	}
+
+	@DisplayName("검증에 실패하면 토스 승인 핸들러를 호출하지 않고 예외를 전파한다")
+	@Test
+	void confirm_validationFailed() {
+		// given
+		PaymentConfirmRequest request = new PaymentConfirmRequest("toss-order-1", "999999", "pk-1");
+		doThrow(new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH))
+				.when(paymentValidator).validate(1L, request);
+
+		// when & then
+		assertThatThrownBy(() -> paymentService.confirm(1L, request))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage(ErrorCode.PAYMENT_AMOUNT_MISMATCH.getMessage());
+
+		verify(paymentTossConfirmHandler, never()).confirm(any(), any());
 	}
 
 	@DisplayName("토스 승인 핸들러가 실패하면 결제 처리기를 호출하지 않고 예외를 전파한다")
