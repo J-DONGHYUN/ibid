@@ -173,6 +173,8 @@ export const api = {
 
   getMyOrder: (orderId: number) => request<OrderDetail>(`/api/orders/${orderId}`),
 
+  ship: (orderId: number) => request<void>(`/api/orders/${orderId}/ship`, { method: "POST" }),
+
   inspectionQueue: () => request<InspectionQueueResponse>("/api/inspections/queue"),
 
   inspectionReceive: (orderId: number) =>
