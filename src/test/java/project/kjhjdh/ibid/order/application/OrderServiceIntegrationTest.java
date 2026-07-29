@@ -53,6 +53,21 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
         assertThat(found.getStatus()).isEqualTo(ProductStatus.ON_SALE);
     }
 
+    @DisplayName("재고가 부족하면 주문이 저장되지 않고 재고도 그대로다")
+    @Test
+    void purchase_insufficientStock() {
+        // given
+        Product product = onSaleProduct("나이키 후드", 89000, 1);
+
+        // when & then
+        assertThatThrownBy(() -> orderService.purchase(BUYER_ID, new PurchaseRequest(product.getId(), 2)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INSUFFICIENT_STOCK.getMessage());
+
+        assertThat(orderRepository.count()).isZero();
+        assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(1);
+    }
+
     @DisplayName("본인이 등록한 상품은 구매할 수 없다")
     @Test
     void purchase_selfTrade() {

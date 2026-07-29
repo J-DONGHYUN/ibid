@@ -81,6 +81,22 @@ class OrderServiceTest {
         verify(orderRepository, never()).save(any());
     }
 
+    @DisplayName("재고보다 많은 수량을 구매하면 실패하고 주문이 생성되지 않는다")
+    @Test
+    void purchase_insufficientStock() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
+        given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when & then
+        assertThatThrownBy(() -> orderService.purchase(BUYER_ID, new PurchaseRequest(PRODUCT_ID, 2)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INSUFFICIENT_STOCK.getMessage());
+        assertThat(product.getStock()).isEqualTo(1);
+        verify(orderRepository, never()).save(any());
+    }
+
     @DisplayName("본인이 등록한 상품은 구매할 수 없다")
     @Test
     void purchase_selfTrade() {

@@ -74,6 +74,21 @@ public class Product {
     }
 
     public void decreaseStock(int quantity) {
+        validateAvailableStock(quantity);
+        this.stock -= quantity;
+        if (this.stock == 0) {
+            this.status = ProductStatus.SOLD_OUT;
+        }
+    }
+
+    public void validatePurchasable(Long buyerId, int quantity) {
+        if (isOwnedBy(buyerId)) {
+            throw new BusinessException(ErrorCode.SELF_TRADE_NOT_ALLOWED);
+        }
+        validateAvailableStock(quantity);
+    }
+
+    private void validateAvailableStock(int quantity) {
         if (quantity < MIN_QUANTITY) {
             throw new BusinessException(ErrorCode.INVALID_PURCHASE_QUANTITY);
         }
@@ -85,10 +100,6 @@ public class Product {
         }
         if (quantity > stock) {
             throw new BusinessException(ErrorCode.INSUFFICIENT_STOCK);
-        }
-        this.stock -= quantity;
-        if (this.stock == 0) {
-            this.status = ProductStatus.SOLD_OUT;
         }
     }
 

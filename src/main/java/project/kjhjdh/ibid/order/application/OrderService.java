@@ -34,9 +34,7 @@ public class OrderService {
         Product product = productRepository.findByIdForUpdate(request.productId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        if (product.isOwnedBy(buyerId)) {
-            throw new BusinessException(ErrorCode.SELF_TRADE_NOT_ALLOWED);
-        }
+        product.validatePurchasable(buyerId, request.quantity());
 
         Order order = Order.create(
                 product.getId(),
