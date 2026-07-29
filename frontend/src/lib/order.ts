@@ -58,13 +58,12 @@ export function orderStatusTone(status: OrderStatus): string {
   }
 }
 
-const IN_PROGRESS: OrderStatus[] = ["PAID", "SHIPPED_TO_INSPECTOR", "UNDER_INSPECTION"];
+const IN_PROGRESS: OrderStatus[] = ["CREATED", "PAID", "SHIPPED_TO_INSPECTOR", "UNDER_INSPECTION"];
 const DONE: OrderStatus[] = ["COMPLETED", "REFUNDED", "CANCELED"];
 
 export function orderCounts(orders: OrderSummary[]) {
   return {
     total: orders.length,
-    waiting: orders.filter((o) => o.status === "CREATED").length,
     inProgress: orders.filter((o) => IN_PROGRESS.includes(o.status)).length,
     done: orders.filter((o) => DONE.includes(o.status)).length,
   };
