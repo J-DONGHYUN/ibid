@@ -33,12 +33,11 @@ function SummaryBar({ orders, accent }: { orders: OrderSummary[]; accent: string
   const c = orderCounts(orders);
   const cells = [
     { label: "전체", value: c.total, accent: true },
-    { label: "결제 대기", value: c.waiting, accent: false },
     { label: "진행 중", value: c.inProgress, accent: false },
     { label: "종료", value: c.done, accent: false },
   ];
   return (
-    <div className="grid grid-cols-4 rounded-xl bg-neutral-50">
+    <div className="grid grid-cols-3 rounded-xl bg-neutral-50">
       {cells.map((cell, i) => (
         <div key={cell.label} className={`py-6 text-center ${i > 0 ? "border-l border-neutral-200" : ""}`}>
           <p className="text-sm text-neutral-500">{cell.label}</p>

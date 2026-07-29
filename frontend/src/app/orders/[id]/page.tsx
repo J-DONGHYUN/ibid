@@ -6,7 +6,8 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ImageIcon } from "lucide-react";
 import Header from "@/components/Header";
 import AuthGuard from "@/components/AuthGuard";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, currentUserId } from "@/lib/api";
+import { useToast } from "@/components/Toast";
 import { formatWon } from "@/lib/format";
 import type { OrderDetail, OrderStatus } from "@/lib/types";
 
@@ -37,8 +38,24 @@ function doneSteps(status: OrderStatus): number {
 
 function DetailContent({ id }: { id: number }) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const handleShip = async () => {
+    if (!order || busy) return;
+    setBusy(true);
+    try {
+      await api.ship(order.orderId);
+      setOrder({ ...order, status: "SHIPPED_TO_INSPECTOR" });
+      showToast("발송 처리했습니다. 검수센터 입고를 기다려 주세요.");
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : "발송 처리에 실패했습니다.", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -77,6 +94,20 @@ function DetailContent({ id }: { id: number }) {
           <button className="hover:text-neutral-700">1:1 문의하기</button>
         </div>
       </div>
+
+      {currentUserId() === order.sellerId && order.status === "PAID" && (
+        <div className="mt-6 rounded-2xl bg-neutral-900 p-6 text-white">
+          <p className="font-bold">구매자가 결제를 완료했어요</p>
+          <p className="mt-1 text-sm text-neutral-300">상품을 검수센터로 발송한 뒤 아래 버튼을 눌러 주세요.</p>
+          <button
+            onClick={handleShip}
+            disabled={busy}
+            className="mt-4 w-full rounded-lg bg-[#f0143c] py-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {busy ? "처리 중..." : "발송 완료"}
+          </button>
+        </div>
+      )}
 
       <p className="mt-8 text-sm font-bold">주문번호 #{order.orderId}</p>
       <div className="mt-3 border-t border-neutral-900" />

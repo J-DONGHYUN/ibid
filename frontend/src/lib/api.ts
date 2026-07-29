@@ -1,4 +1,5 @@
 import type {
+  InspectionQueueResponse,
   LoginResponse,
   MyOrdersResponse,
   MyTransactions,
@@ -171,6 +172,10 @@ export const api = {
   getMyTransactions: () => request<MyTransactions>("/api/orders/me"),
 
   getMyOrder: (orderId: number) => request<OrderDetail>(`/api/orders/${orderId}`),
+
+  ship: (orderId: number) => request<void>(`/api/orders/${orderId}/ship`, { method: "POST" }),
+
+  inspectionQueue: () => request<InspectionQueueResponse>("/api/inspections/queue"),
 
   inspectionReceive: (orderId: number) =>
     request<void>(`/api/inspections/${orderId}/receive`, { method: "POST" }),

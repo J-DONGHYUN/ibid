@@ -1,6 +1,7 @@
 package project.kjhjdh.ibid.inspection.presentation;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,6 +13,7 @@ import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.inspection.application.InspectionService;
 import project.kjhjdh.ibid.inspection.presentation.dto.InspectionJudgeRequest;
+import project.kjhjdh.ibid.inspection.presentation.dto.InspectionQueueResponse;
 
 @RestController
 @RequestMapping("/api/inspections")
@@ -19,6 +21,11 @@ import project.kjhjdh.ibid.inspection.presentation.dto.InspectionJudgeRequest;
 public class InspectionController {
 
     private final InspectionService inspectionService;
+
+    @GetMapping("/queue")
+    public ResponseEntity<InspectionQueueResponse> queue() {
+        return ResponseEntity.ok(inspectionService.getQueue());
+    }
 
     @PostMapping("/{orderId}/receive")
     public ResponseEntity<Void> receive(@PathVariable Long orderId) {
