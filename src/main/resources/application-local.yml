@@ -4,6 +4,24 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
   h2:
     console:
       enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+
+jwt:
+  access:
+    secret: ${JWT_ACCESS_SECRET:local-access-secret-change-me-0123456789}
+    expiration: ${JWT_ACCESS_EXPIRATION:1800000}
+  refresh:
+    secret: ${JWT_REFRESH_SECRET:local-refresh-secret-change-me-0123456789}
+    expiration: ${JWT_REFRESH_EXPIRATION:1209600000}
+

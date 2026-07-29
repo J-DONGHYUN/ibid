@@ -47,7 +47,7 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
-    @DisplayName("즉시구매에 성공하면 재고가 차감되고 주문 id를 반환한다")
+    @DisplayName("즉시구매에 성공하면 주문이 생성되고 주문 id를 반환한다")
     @Test
     void purchase() {
         // given
@@ -65,7 +65,6 @@ class OrderServiceTest {
         // then
         assertThat(result.orderId()).isEqualTo(100L);
         assertThat(result.totalPrice()).isEqualTo(178000);
-        assertThat(product.getStock()).isEqualTo(1);
         verify(orderRepository).save(any(Order.class));
     }
 
@@ -82,21 +81,6 @@ class OrderServiceTest {
         verify(orderRepository, never()).save(any());
     }
 
-    @DisplayName("본인이 등록한 상품은 구매할 수 없다")
-    @Test
-    void purchase_selfTrade() {
-        // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
-        given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
-
-        // when & then
-        assertThatThrownBy(() -> orderService.purchase(SELLER_ID, new PurchaseRequest(PRODUCT_ID, 1)))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage(ErrorCode.SELF_TRADE_NOT_ALLOWED.getMessage());
-        assertThat(product.getStock()).isEqualTo(3);
-        verify(orderRepository, never()).save(any());
-    }
-
     @DisplayName("재고보다 많은 수량을 구매하면 실패하고 주문이 생성되지 않는다")
     @Test
     void purchase_insufficientStock() {
@@ -110,6 +94,21 @@ class OrderServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.INSUFFICIENT_STOCK.getMessage());
         assertThat(product.getStock()).isEqualTo(1);
+        verify(orderRepository, never()).save(any());
+    }
+
+    @DisplayName("본인이 등록한 상품은 구매할 수 없다")
+    @Test
+    void purchase_selfTrade() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when & then
+        assertThatThrownBy(() -> orderService.purchase(SELLER_ID, new PurchaseRequest(PRODUCT_ID, 1)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.SELF_TRADE_NOT_ALLOWED.getMessage());
+        assertThat(product.getStock()).isEqualTo(3);
         verify(orderRepository, never()).save(any());
     }
 

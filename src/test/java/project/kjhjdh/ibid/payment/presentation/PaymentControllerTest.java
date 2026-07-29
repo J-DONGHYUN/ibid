@@ -16,6 +16,8 @@ import project.kjhjdh.ibid.support.ControllerTestSupport;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 
 class PaymentControllerTest extends ControllerTestSupport {
 
@@ -115,6 +117,34 @@ class PaymentControllerTest extends ControllerTestSupport {
 				.then()
 				.statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
 				.body("code", equalTo("PAYMENT_CONFIRM_FAILED"));
+	}
+
+	@DisplayName("결제 실패를 알리면 200을 응답하고 해당 결제의 주문을 취소한다")
+	@Test
+	void fail() {
+		// when & then
+		RestAssuredMockMvc.given()
+				.when()
+				.post("/api/payments/1/fail")
+				.then()
+				.statusCode(HttpStatus.OK.value());
+
+		verify(paymentService).fail(1L);
+	}
+
+	@DisplayName("존재하지 않는 결제를 실패 처리하면 404와 PAYMENT_NOT_FOUND를 응답한다")
+	@Test
+	void fail_paymentNotFound() {
+		// given
+		doThrow(new BusinessException(ErrorCode.PAYMENT_NOT_FOUND)).when(paymentService).fail(999L);
+
+		// when & then
+		RestAssuredMockMvc.given()
+				.when()
+				.post("/api/payments/999/fail")
+				.then()
+				.statusCode(HttpStatus.NOT_FOUND.value())
+				.body("code", equalTo("PAYMENT_NOT_FOUND"));
 	}
 
 	private PaymentTossDtoImpl tossDto(String status) {

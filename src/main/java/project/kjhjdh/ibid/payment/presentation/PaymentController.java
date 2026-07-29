@@ -30,4 +30,10 @@ public class PaymentController {
 	) {
 		return ResponseEntity.ok(paymentService.confirm(paymentId, request));
 	}
+
+	@PostMapping("/{paymentId}/fail")
+	public ResponseEntity<Void> fail(@PathVariable Long paymentId) {
+		paymentService.fail(paymentId);
+		return ResponseEntity.ok().build();
+	}
 }

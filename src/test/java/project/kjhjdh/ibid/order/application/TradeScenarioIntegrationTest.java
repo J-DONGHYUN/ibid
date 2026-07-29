@@ -16,6 +16,7 @@ import project.kjhjdh.ibid.order.domain.Order;
 import project.kjhjdh.ibid.order.domain.OrderStatus;
 import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
+import project.kjhjdh.ibid.product.application.ProductStockHandler;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 import project.kjhjdh.ibid.support.IntegrationTestSupport;
@@ -31,6 +32,9 @@ class TradeScenarioIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
     private InspectionService inspectionService;
+
+    @Autowired
+    private ProductStockHandler productStockHandler;
 
     @Autowired
     private ProductRepository productRepository;
@@ -50,6 +54,7 @@ class TradeScenarioIntegrationTest extends IntegrationTestSupport {
 
         // when
         orderService.confirmPaid(orderId);
+        productStockHandler.decreaseStock(productId, 1);
         orderService.ship(SELLER_ID, orderId);
         inspectionService.receive(orderId);
         inspectionService.pass(INSPECTOR_ID, orderId, "정품 확인");
@@ -73,6 +78,7 @@ class TradeScenarioIntegrationTest extends IntegrationTestSupport {
         Long productId = productRepository.save(onSaleProduct(89000, 3)).getId();
         Long orderId = orderService.purchase(BUYER_ID, new PurchaseRequest(productId, 1)).orderId();
         orderService.confirmPaid(orderId);
+        productStockHandler.decreaseStock(productId, 1);
         orderService.ship(SELLER_ID, orderId);
         inspectionService.receive(orderId);
 

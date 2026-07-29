@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.order.application.OrderService;
 import project.kjhjdh.ibid.order.domain.Order;
 import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.payment.domain.Payment;
@@ -20,8 +21,10 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final OrderService orderService;
     private final PaymentTossConfirmHandler paymentTossConfirmHandler;
     private final PaymentProcessor paymentProcessor;
+    private final PaymentValidator paymentValidator;
 
     @Transactional
     public PaymentCreateResponse create(PaymentCreateRequest request) {
@@ -32,17 +35,22 @@ public class PaymentService {
     }
 
     public PaymentConfirmResponse confirm(Long paymentId, PaymentConfirmRequest request) {
-        // TODO:
-        //   - 주문: orderId + CREATED 로 조회, 없으면 NOT_FOUND_DATA
-        //   - 결제: state != READY                → PAYMENT_INVALID_STATE
-        //   - payment.paidAmount != 요청 amount   → PAYMENT_AMOUNT_MISMATCH (금액 위변조 방어)
+        paymentValidator.validate(paymentId, request);
 
         PaymentConfirmResponse confirm = paymentTossConfirmHandler.confirm(paymentId, request.toTossConfirmRequest());
 
         paymentProcessor.success(paymentId, confirm);
 
-        // TODO: 재고 감소 로직
         return confirm;
+    }
+
+    public void fail(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        orderService.cancel(payment.getOrderId());
+
+        // TODO: ??
     }
 
 }

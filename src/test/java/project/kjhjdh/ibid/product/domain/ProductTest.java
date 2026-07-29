@@ -15,6 +15,7 @@ import project.kjhjdh.ibid.common.exception.ErrorCode;
 class ProductTest {
 
     private static final Long SELLER_ID = 1L;
+    private static final Long BUYER_ID = 2L;
 
     @DisplayName("유효한 값으로 상품을 생성하면 판매 대기 상태가 된다")
     @Test
@@ -180,6 +181,87 @@ class ProductTest {
         assertThatThrownBy(() -> product.decreaseStock(1))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.SOLD_OUT.getMessage());
+    }
+
+    @DisplayName("판매중이고 재고가 충분하면 구매 가능 검증을 통과하고 재고는 변하지 않는다")
+    @Test
+    void validatePurchasable() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+
+        // when
+        product.validatePurchasable(BUYER_ID, 2);
+
+        // then
+        assertThat(product.getStock()).isEqualTo(3);
+    }
+
+    @DisplayName("본인이 등록한 상품은 구매 가능 검증에 실패한다")
+    @Test
+    void validatePurchasable_selfTrade() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+
+        // when & then
+        assertThatThrownBy(() -> product.validatePurchasable(SELLER_ID, 1))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.SELF_TRADE_NOT_ALLOWED.getMessage());
+    }
+
+    @DisplayName("판매를 시작하지 않은 상품은 구매 가능 검증에 실패한다")
+    @Test
+    void validatePurchasable_notOnSale() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+
+        // when & then
+        assertThatThrownBy(() -> product.validatePurchasable(BUYER_ID, 1))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_ON_SALE.getMessage());
+    }
+
+    @DisplayName("구매 수량이 재고보다 많으면 구매 가능 검증에 실패한다")
+    @Test
+    void validatePurchasable_insufficientStock() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
+
+        // when & then
+        assertThatThrownBy(() -> product.validatePurchasable(BUYER_ID, 2))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INSUFFICIENT_STOCK.getMessage());
+        assertThat(product.getStock()).isEqualTo(1);
+    }
+
+    @DisplayName("이미 품절된 상품은 구매 가능 검증에 실패한다")
+    @Test
+    void validatePurchasable_soldOut() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        product.openForSale();
+        product.decreaseStock(1);
+
+        // when & then
+        assertThatThrownBy(() -> product.validatePurchasable(BUYER_ID, 1))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.SOLD_OUT.getMessage());
+    }
+
+    @DisplayName("구매 수량이 1개 미만이면 구매 가능 검증에 실패한다")
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void validatePurchasable_invalidQuantity(int quantity) {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.openForSale();
+
+        // when & then
+        assertThatThrownBy(() -> product.validatePurchasable(BUYER_ID, quantity))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_PURCHASE_QUANTITY.getMessage());
     }
 
     @DisplayName("취소된 수량만큼 재고를 복원한다")
