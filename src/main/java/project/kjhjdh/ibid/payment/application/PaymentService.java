@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.order.application.OrderService;
 import project.kjhjdh.ibid.order.domain.Order;
 import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.payment.domain.Payment;
@@ -20,6 +21,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final OrderService orderService;
     private final PaymentTossConfirmHandler paymentTossConfirmHandler;
     private final PaymentProcessor paymentProcessor;
     private final PaymentValidator paymentValidator;
@@ -40,6 +42,15 @@ public class PaymentService {
         paymentProcessor.success(paymentId, confirm);
 
         return confirm;
+    }
+
+    public void fail(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        orderService.cancel(payment.getOrderId());
+
+        // TODO: ??
     }
 
 }

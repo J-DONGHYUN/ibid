@@ -67,7 +67,7 @@ function CheckoutContent({
         orderId: generateRandomString(),
         orderName,
         successUrl: `${window.location.origin}/checkout/success?paymentId=${paymentId}&internalOrderId=${orderId}`,
-        failUrl: `${window.location.origin}/checkout/fail`,
+        failUrl: `${window.location.origin}/checkout/fail?paymentId=${paymentId}`,
       });
     } catch (e) {
       showToast(e instanceof ApiError ? e.message : "결제 준비에 실패했습니다.", "error");

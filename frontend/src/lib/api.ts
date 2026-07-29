@@ -181,6 +181,9 @@ export const api = {
       body: data,
     }),
 
+  failPayment: (paymentId: number) =>
+    request<void>(`/api/payments/${paymentId}/fail`, { method: "POST" }),
+
   getMyOrders: (role: OrderRole) => request<MyOrdersResponse>(`/api/orders?role=${role}`),
 
   getMyTransactions: () => request<MyTransactions>("/api/orders/me"),

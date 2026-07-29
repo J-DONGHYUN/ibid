@@ -1,14 +1,24 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import AuthGuard from "@/components/AuthGuard";
+import { api } from "@/lib/api";
 
 function FailContent() {
   const searchParams = useSearchParams();
   const code = searchParams.get("code");
   const message = searchParams.get("message");
+  const paymentId = searchParams.get("paymentId");
+  const requested = useRef(false);
+
+  useEffect(() => {
+    if (requested.current || !paymentId) return;
+    requested.current = true;
+
+    api.failPayment(Number(paymentId)).catch(() => {});
+  }, [paymentId]);
 
   return (
     <main className="mx-auto max-w-lg px-6 py-8">
