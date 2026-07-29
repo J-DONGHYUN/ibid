@@ -30,8 +30,8 @@ public class PaymentProcessor {
         Order order = orderRepository.findById(payment.getOrderId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
-        order.paid();
-
+        order.confirmPaid();
+        
         productStockHandler.decreaseStock(order.getProductId(), order.getQuantity());
     }
 }

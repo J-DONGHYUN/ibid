@@ -122,11 +122,4 @@ public class Order {
             throw new BusinessException(ErrorCode.INVALID_PRODUCT_PRICE);
         }
     }
-
-    public void paid() {
-        if (status != OrderStatus.CREATED) {
-            throw new BusinessException(ErrorCode.ORDER_NOT_PAYABLE);
-        }
-        this.status = OrderStatus.PAID;
-    }
 }
