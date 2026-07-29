@@ -31,7 +31,7 @@ public class OrderService {
 
     @Transactional
     public PurchaseResult purchase(Long buyerId, PurchaseRequest request) {
-        Product product = productRepository.findByIdForUpdate(request.productId())
+        Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
         product.validatePurchasable(buyerId, request.quantity());

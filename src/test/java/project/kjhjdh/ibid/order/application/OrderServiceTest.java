@@ -53,7 +53,7 @@ class OrderServiceTest {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
         product.openForSale();
-        given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
         Order savedOrder = mock(Order.class);
         given(savedOrder.getId()).willReturn(100L);
         given(savedOrder.getTotalPrice()).willReturn(178000);
@@ -72,7 +72,7 @@ class OrderServiceTest {
     @Test
     void purchase_productNotFound() {
         // given
-        given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.empty());
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> orderService.purchase(BUYER_ID, new PurchaseRequest(PRODUCT_ID, 1)))
@@ -87,7 +87,7 @@ class OrderServiceTest {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
         product.openForSale();
-        given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
         assertThatThrownBy(() -> orderService.purchase(BUYER_ID, new PurchaseRequest(PRODUCT_ID, 2)))
@@ -102,7 +102,7 @@ class OrderServiceTest {
     void purchase_selfTrade() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
-        given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
         assertThatThrownBy(() -> orderService.purchase(SELLER_ID, new PurchaseRequest(PRODUCT_ID, 1)))
