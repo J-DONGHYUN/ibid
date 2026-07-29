@@ -36,7 +36,7 @@ READY ──(confirm 성공: confirm(paymentKey))──▶ CONFIRMED
 
 ```
 1. [FE] POST /api/orders {productId, quantity}
-       └ OrderService.purchase: 본인거래 체크 → Order 저장(CREATED). 재고는 건드리지 않음.
+       └ OrderService.purchase: product.validatePurchasable(buyerId, quantity)로 자기거래·재고 가능 여부만 확인(차감 없음) → Order 저장(CREATED)
 2. [FE] POST /api/payments {orderId}
        └ PaymentService.create: Payment 저장(READY)
 3. [FE] Toss 위젯 렌더링 → widgets.requestPayment(successUrl=/checkout/success, failUrl=/checkout/fail)
@@ -86,14 +86,20 @@ READY ──(confirm 성공: confirm(paymentKey))──▶ CONFIRMED
 
 | 시점 | 코드 | 비고 |
 | --- | --- | --- |
-| 주문 생성 (`purchase`) | 없음 | 재고 검증/차감을 하지 않는다 |
+| 주문 생성 (`purchase`) | `product.validatePurchasable` | 검증만 하고 차감하지 않는다 — 그 사이 다른 주문이 재고를 가져가면 이 검증은 무의미해진다 (6-1 참고) |
 | 결제 승인 완료 (`PaymentProcessor.success`) | `productStockHandler.decreaseStock` | 여기서만 차감 |
 | 결제 취소 통지 (`PaymentService.fail` → `OrderService.cancel`) | `product.restoreStock` | 차감된 적 없는 재고를 복원 시도 (6-2 참고) |
 
 ## 6. 알려진 이슈
 
-1. **재고 검증이 Toss 승인 이후에 일어난다.** `purchase()`가 재고를 확인/차감하지 않기 때문에, 재고보다 많은 동시 주문이 모두 `CREATED`로 생성될 수 있다. 뒤늦게 `PaymentProcessor.success()`에서 재고 부족(`INSUFFICIENT_STOCK`)으로 실패하면, 이미 Toss 승인(외부 결제)은 끝난 뒤라 트랜잭션 롤백만으로는 사용자의 결제를 되돌리지 못한다. (원본 리스크 — Codex adversarial review에서 `needs-attention`으로 지적됨)
-2. **`fail()` 경로가 활성화되면서 재고가 부풀어나는 문제.** 위 1번과 맞물려, `cancel()`은 재고가 `CREATED` 상태(=아직 차감 전)에서만 호출 가능한데도 무조건 `restoreStock`을 실행한다. 즉 결제 취소/이탈이 일어날 때마다 실제로 차감된 적 없는 수량만큼 재고가 늘어난다. **1번(재고 차감을 주문 생성 시점으로 이동)을 적용해야 같이 해소된다.**
+1. **재고 검증이 Toss 승인 이후에 일어난다. (여전히 존재함 — PR 리뷰에서 지적된 지점, `PaymentProcessor.success()`)** `purchase()`는 `Product.validatePurchasable`로 자기거래·재고 가능 여부를 확인만 할 뿐 차감하지 않는다(팀 결정: 실제 차감은 결제 확정 시점에 유지). 그래서 재고 1개짜리 상품에 두 명이 거의 동시에 결제까지 진행하면:
+   1. 구매자 A, B 모두 `purchase()` 통과 → `Order`(CREATED) 각각 생성 (이 시점엔 재고가 아직 그대로라 둘 다 통과)
+   2. A가 먼저 `confirm` → Toss 승인 완료 → `PaymentProcessor.success()`에서 `payment.confirm()`, `order.confirmPaid()` 이후 `productStockHandler.decreaseStock(productId, 1)` → 재고 1→0, 상품 상태 `SOLD_OUT`으로 전환
+   3. B도 `confirm` → **Toss 승인은 이미 성공(카드 결제 완료)** → `PaymentProcessor.success()`에서 `payment.confirm()`, `order.confirmPaid()`까지 실행된 뒤 `decreaseStock` → `Product.validateAvailableStock`이 `isSoldOut()`을 재고 부족보다 먼저 체크하므로 **`SOLD_OUT` 예외**를 던짐 (재고가 정확히 0이 된 경우; 그 전이면 `INSUFFICIENT_STOCK`)
+   4. `@Transactional`이라 `success()` 전체가 롤백돼 B의 `Payment`/`Order`는 DB상 `READY`/`CREATED`로 남지만, **Toss 쪽 결제는 이미 승인 완료된 상태로 남는다** — 이 예외 경로에선 `PaymentService.fail()`이 호출되지 않으므로 (3번 참고) B의 주문 취소도, Toss 결제 취소/환불도 자동으로 일어나지 않는다.
+
+   즉 B는 결제(출금)는 끝났는데 상품은 못 받고, 주문도 취소되지 않은 채 방치된다. (Codex adversarial review에서 `needs-attention`으로 지적된 원본 리스크와 동일)
+2. **`fail()` 경로가 활성화되면서 재고가 부풀어나는 문제.** `OrderService.cancel()`은 `order.status == CREATED`일 때만 호출 가능한데(`ORDER_NOT_CANCELABLE` 가드), 팀 결정상 재고는 `CREATED` 상태에서는 아직 차감된 적이 없다(차감은 결제 확정 시점에만 일어남). 그런데도 `cancel()`은 무조건 `product.restoreStock(order.getQuantity())`를 실행한다. 즉 결제 취소/이탈이 일어날 때마다 실제로 차감된 적 없는 수량만큼 재고가 늘어난다. **재고 차감 시점을 옮기는 것은 팀 결정으로 보류됐으므로(6-1), 대신 `OrderService.cancel()`에서 `restoreStock` 호출 자체를 제거해야 한다 — 이 경로로 취소되는 주문은 항상 차감 전 상태이기 때문이다.**
 3. **`/checkout/success`의 confirm 실패는 `fail` API를 호출하지 않는다.** 검증 실패나 Toss 승인 실패로 confirm이 예외를 던지면 주문이 `CREATED`로 방치되고 아무도 취소하지 않는다.
 4. **완전 이탈(리다이렉트 자체가 없는 경우) 대응 없음.** 사용자가 Toss 위젯이나 결과 페이지에서 아예 브라우저를 닫아버리면 `failUrl`/`successUrl` 어느 쪽도 호출되지 않아 주문이 `CREATED`로 영구히 남는다. 방치 주문 정리용 스케줄러가 없다 (`FEATURE_SPEC.md` §5에 후순위 과제로 명시됨).
 5. **`Payment.State`에 실패 상태가 없다.** `fail()`이 호출돼도 `Payment.state`는 계속 `READY`로 남는다. 현재는 `Order.status`가 `CANCELED`로 바뀌어 재승인을 막아주지만, `Payment`만 조회했을 때는 마치 아직 승인 대기 중인 것처럼 보인다.
