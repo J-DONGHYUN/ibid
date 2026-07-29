@@ -10,6 +10,7 @@ import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.payment.domain.Payment;
 import project.kjhjdh.ibid.payment.infra.PaymentRepository;
 import project.kjhjdh.ibid.payment.presentation.dto.PaymentConfirmResponse;
+import project.kjhjdh.ibid.product.application.ProductStockHandler;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +18,7 @@ public class PaymentProcessor {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final ProductStockHandler productStockHandler;
 
     @Transactional
     public void success(Long paymentId, PaymentConfirmResponse response) {
@@ -29,5 +31,7 @@ public class PaymentProcessor {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
         order.paid();
+
+        productStockHandler.decreaseStock(order.getProductId(), order.getQuantity());
     }
 }

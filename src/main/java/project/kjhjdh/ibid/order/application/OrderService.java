@@ -33,7 +33,20 @@ public class OrderService {
     public PurchaseResult purchase(Long buyerId, PurchaseRequest request) {
         Product product = productRepository.findByIdForUpdate(request.productId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-        return settle(product, buyerId, request.quantity());
+
+        if (product.isOwnedBy(buyerId)) {
+            throw new BusinessException(ErrorCode.SELF_TRADE_NOT_ALLOWED);
+        }
+
+        Order order = Order.create(
+                product.getId(),
+                buyerId,
+                product.getSellerId(),
+                request.quantity(),
+                product.getPrice()
+        );
+        Order saved = orderRepository.save(order);
+        return new PurchaseResult(saved.getId(), saved.getTotalPrice());
     }
 
     @Transactional
@@ -141,21 +154,4 @@ public class OrderService {
         return OrderDetailResponse.of(order, product);
     }
 
-    private PurchaseResult settle(Product product, Long buyerId, int quantity) {
-        if (product.isOwnedBy(buyerId)) {
-            throw new BusinessException(ErrorCode.SELF_TRADE_NOT_ALLOWED);
-        }
-
-        product.decreaseStock(quantity);
-
-        Order order = Order.create(
-                product.getId(),
-                buyerId,
-                product.getSellerId(),
-                quantity,
-                product.getPrice()
-        );
-        Order saved = orderRepository.save(order);
-        return new PurchaseResult(saved.getId(), saved.getTotalPrice());
-    }
 }

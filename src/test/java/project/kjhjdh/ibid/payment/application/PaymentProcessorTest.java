@@ -3,6 +3,7 @@ package project.kjhjdh.ibid.payment.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 import java.util.Optional;
 
@@ -16,10 +17,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.order.domain.Order;
+import project.kjhjdh.ibid.order.domain.OrderStatus;
+import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.payment.domain.Payment;
 import project.kjhjdh.ibid.payment.domain.State;
 import project.kjhjdh.ibid.payment.infra.PaymentRepository;
 import project.kjhjdh.ibid.payment.infra.dto.PaymentTossDtoImpl;
+import project.kjhjdh.ibid.product.application.ProductStockHandler;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentProcessorTest {
@@ -27,10 +32,16 @@ class PaymentProcessorTest {
 	@Mock
 	private PaymentRepository paymentRepository;
 
+	@Mock
+	private OrderRepository orderRepository;
+
+	@Mock
+	private ProductStockHandler productStockHandler;
+
 	@InjectMocks
 	private PaymentProcessor paymentProcessor;
 
-	@DisplayName("승인 결과를 반영하면 Payment가 CONFIRMED 상태가 되고 paymentKey가 저장된다")
+	@DisplayName("승인 결과를 반영하면 Payment가 CONFIRMED 상태가 되고 paymentKey가 저장되며 주문이 PAID 상태가 되고 재고가 감소한다")
 	@Test
 	void success() {
 		// given
@@ -38,12 +49,17 @@ class PaymentProcessorTest {
 		ReflectionTestUtils.setField(payment, "id", 1L);
 		given(paymentRepository.findById(1L)).willReturn(Optional.of(payment));
 
+		Order order = Order.create(1L, 2L, 3L, 4, 50000);
+		given(orderRepository.findById(10L)).willReturn(Optional.of(order));
+
 		// when
 		paymentProcessor.success(1L, tossDto("pk-1"));
 
 		// then
 		assertThat(payment.getState()).isEqualTo(State.CONFIRMED);
 		assertThat(payment.getPaymentKey()).isEqualTo("pk-1");
+		assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
+		verify(productStockHandler).decreaseStock(1L, 4);
 	}
 
 	@DisplayName("준비된 결제가 없으면 PAYMENT_NOT_FOUND 예외를 던진다")

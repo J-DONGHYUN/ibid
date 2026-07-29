@@ -1,4 +1,4 @@
-package project.kjhjdh.ibid.order.application;
+package project.kjhjdh.ibid.product.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,44 +11,36 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import project.kjhjdh.ibid.order.infra.OrderRepository;
-import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 import project.kjhjdh.ibid.support.IntegrationTestSupport;
 
-class OrderConcurrencyTest extends IntegrationTestSupport {
+class ProductStockHandlerConcurrencyTest extends IntegrationTestSupport {
 
     private static final Long SELLER_ID = 10L;
-    private static final Long BUYER_ID = 20L;
     private static final int THREAD_COUNT = 30;
 
     @Autowired
-    private OrderService orderService;
+    private ProductStockHandler productStockHandler;
 
     @Autowired
     private ProductRepository productRepository;
 
-    @Autowired
-    private OrderRepository orderRepository;
-
-    @DisplayName("재고 1개에 다수가 동시 구매해도 비관적 락으로 재고 수만큼만 팔린다")
+    @DisplayName("재고 1개에 다수가 동시에 재고 감소를 시도해도 비관적 락으로 재고 수만큼만 성공한다")
     @Test
-    void purchase_preventsOversell() throws InterruptedException {
+    void decreaseStock_preventsOversell() throws InterruptedException {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
         product.openForSale();
-        productRepository.save(product);
+        Long productId = productRepository.save(product).getId();
 
         // when
-        ConcurrencyResult result = runConcurrently(THREAD_COUNT, () ->
-                orderService.purchase(BUYER_ID, new PurchaseRequest(product.getId(), 1)));
+        ConcurrencyResult result = runConcurrently(THREAD_COUNT, () -> productStockHandler.decreaseStock(productId, 1));
 
         // then
-        Product found = productRepository.findById(product.getId()).orElseThrow();
-        assertThat(result.success()).as("성공한 구매 수").isEqualTo(1);
-        assertThat(result.failure()).as("실패한 구매 수").isEqualTo(THREAD_COUNT - 1);
-        assertThat(orderRepository.count()).as("저장된 주문 수").isEqualTo(1);
+        Product found = productRepository.findById(productId).orElseThrow();
+        assertThat(result.success()).as("성공한 재고 감소 수").isEqualTo(1);
+        assertThat(result.failure()).as("실패한 재고 감소 수").isEqualTo(THREAD_COUNT - 1);
         assertThat(found.getStock()).as("남은 재고").isZero();
     }
 

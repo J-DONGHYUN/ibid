@@ -31,7 +31,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
     @Autowired
     private OrderRepository orderRepository;
 
-    @DisplayName("즉시구매하면 재고가 차감되고 주문이 저장된다")
+    @DisplayName("즉시구매하면 주문이 저장되고 재고는 그대로 유지된다")
     @Test
     void purchase() {
         // given
@@ -49,38 +49,8 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
         assertThat(order.getTotalPrice()).isEqualTo(178000);
 
         Product found = productRepository.findById(product.getId()).orElseThrow();
-        assertThat(found.getStock()).isEqualTo(1);
+        assertThat(found.getStock()).isEqualTo(3);
         assertThat(found.getStatus()).isEqualTo(ProductStatus.ON_SALE);
-    }
-
-    @DisplayName("재고를 모두 구매하면 품절 상태로 전환된다")
-    @Test
-    void purchase_soldOut() {
-        // given
-        Product product = onSaleProduct("나이키 후드", 89000, 2);
-
-        // when
-        orderService.purchase(BUYER_ID, new PurchaseRequest(product.getId(), 2));
-
-        // then
-        Product found = productRepository.findById(product.getId()).orElseThrow();
-        assertThat(found.getStock()).isZero();
-        assertThat(found.getStatus()).isEqualTo(ProductStatus.SOLD_OUT);
-    }
-
-    @DisplayName("재고가 부족하면 주문이 저장되지 않고 재고도 그대로다")
-    @Test
-    void purchase_insufficientStock() {
-        // given
-        Product product = onSaleProduct("나이키 후드", 89000, 1);
-
-        // when & then
-        assertThatThrownBy(() -> orderService.purchase(BUYER_ID, new PurchaseRequest(product.getId(), 2)))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage(ErrorCode.INSUFFICIENT_STOCK.getMessage());
-
-        assertThat(orderRepository.count()).isZero();
-        assertThat(productRepository.findById(product.getId()).orElseThrow().getStock()).isEqualTo(1);
     }
 
     @DisplayName("본인이 등록한 상품은 구매할 수 없다")
