@@ -28,21 +28,28 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 		if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
 			return true;
 		}
-        if (!(handler instanceof HandlerMethod)) {
+        if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
         }
 
         UserInfo userInfo = authenticate(request);
         request.setAttribute(USER_INFO_ATTRIBUTE, userInfo);
 
+        if (requiresAdmin(handlerMethod) && !userInfo.isAdmin()) {
+            throw new GlobalException(ErrorCode.ACCESS_DENIED);
+        }
+
         return true;
+    }
+
+    private boolean requiresAdmin(HandlerMethod handlerMethod) {
+        return handlerMethod.getMethodAnnotation(AdminOnly.class) != null
+                || handlerMethod.getBeanType().isAnnotationPresent(AdminOnly.class);
     }
 
     private UserInfo authenticate(HttpServletRequest request) {
         String token = extractToken(request);
-
-		Long userId = tokenProvider.parseAccessToken(token);
-		return new UserInfo(userId);
+        return tokenProvider.parseAccessToken(token);
     }
 
     private String extractToken(HttpServletRequest request) {

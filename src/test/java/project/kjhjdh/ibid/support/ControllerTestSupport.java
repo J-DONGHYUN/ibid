@@ -30,6 +30,7 @@ import project.kjhjdh.ibid.inspection.application.InspectionService;
 import project.kjhjdh.ibid.order.application.OrderService;
 import project.kjhjdh.ibid.payment.application.PaymentService;
 import project.kjhjdh.ibid.product.application.ProductService;
+import project.kjhjdh.ibid.user.domain.Role;
 
 @ActiveProfiles("test")
 @Import({RefreshTokenCookieHandler.class, ControllerTestSupport.LoginUserArgumentResolverTest.class})
@@ -80,7 +81,7 @@ public abstract class ControllerTestSupport {
                                               ModelAndViewContainer mavContainer,
                                               NativeWebRequest webRequest,
                                               WebDataBinderFactory binderFactory) {
-                    return new UserInfo(LOGIN_USER_ID);
+                    return new UserInfo(LOGIN_USER_ID, Role.USER);
                 }
             });
         }

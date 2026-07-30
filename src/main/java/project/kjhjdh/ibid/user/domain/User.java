@@ -2,6 +2,8 @@ package project.kjhjdh.ibid.user.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -37,15 +39,28 @@ public class User {
     @Column(nullable = false)
     private String username;
 
-    private User(String email, String encodedPassword, String username) {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    private User(String email, String encodedPassword, String username, Role role) {
         validateUsername(username);
         this.email = new Email(email);
         this.password = encodedPassword;
         this.username = username;
+        this.role = role;
     }
 
     public static User create(String email, String encodedPassword, String username) {
-        return new User(email, encodedPassword, username);
+        return new User(email, encodedPassword, username, Role.USER);
+    }
+
+    public static User createAdmin(String email, String encodedPassword, String username) {
+        return new User(email, encodedPassword, username, Role.ADMIN);
+    }
+
+    public boolean isAdmin() {
+        return role == Role.ADMIN;
     }
 
     public static void validateRawPassword(String rawPassword) {

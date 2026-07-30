@@ -19,6 +19,7 @@ import project.kjhjdh.ibid.auth.application.TokenProvider;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.exception.GlobalException;
+import project.kjhjdh.ibid.user.domain.Role;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationInterceptorTest {
@@ -45,7 +46,7 @@ class AuthenticationInterceptorTest {
     void preHandle() {
         // given
         request.addHeader("Authorization", "Bearer valid-token");
-        when(tokenProvider.parseAccessToken("valid-token")).thenReturn(7L);
+        when(tokenProvider.parseAccessToken("valid-token")).thenReturn(new UserInfo(7L, Role.USER));
 
         // when
         boolean result = interceptor.preHandle(request, response, handlerMethod);
@@ -53,7 +54,7 @@ class AuthenticationInterceptorTest {
         // then
         assertThat(result).isTrue();
         assertThat(request.getAttribute(AuthenticationInterceptor.USER_INFO_ATTRIBUTE))
-                .isEqualTo(new UserInfo(7L));
+                .isEqualTo(new UserInfo(7L, Role.USER));
     }
 
     @DisplayName("토큰이 없으면 인증에 실패한다")
@@ -102,5 +103,40 @@ class AuthenticationInterceptorTest {
         // then
         assertThat(result).isTrue();
         assertThat(request.getAttribute(AuthenticationInterceptor.USER_INFO_ATTRIBUTE)).isNull();
+    }
+
+    @DisplayName("@AdminOnly 엔드포인트는 관리자가 아니면 접근이 거부된다")
+    @Test
+    void preHandle_adminOnly_denied() throws NoSuchMethodException {
+        // given
+        request.addHeader("Authorization", "Bearer valid-token");
+        when(tokenProvider.parseAccessToken("valid-token")).thenReturn(new UserInfo(7L, Role.USER));
+        HandlerMethod adminHandler = new HandlerMethod(new AdminHandler(), AdminHandler.class.getMethod("run"));
+
+        // when & then
+        assertThatThrownBy(() -> interceptor.preHandle(request, response, adminHandler))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
+    }
+
+    @DisplayName("@AdminOnly 엔드포인트는 관리자면 통과시킨다")
+    @Test
+    void preHandle_adminOnly_allowed() throws NoSuchMethodException {
+        // given
+        request.addHeader("Authorization", "Bearer valid-token");
+        when(tokenProvider.parseAccessToken("valid-token")).thenReturn(new UserInfo(9L, Role.ADMIN));
+        HandlerMethod adminHandler = new HandlerMethod(new AdminHandler(), AdminHandler.class.getMethod("run"));
+
+        // when
+        boolean result = interceptor.preHandle(request, response, adminHandler);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @AdminOnly
+    static class AdminHandler {
+        public void run() {
+        }
     }
 }
