@@ -272,23 +272,19 @@ class OrderServiceTest {
         verify(productRepository, never()).findByIdForUpdate(any());
     }
 
-    @DisplayName("주문을 취소하면 재고가 복원되고 상태가 CANCELED가 된다")
+    @DisplayName("주문을 취소하면 상태가 CANCELED가 되고 재고는 건드리지 않는다 (차감 전 상태)")
     @Test
     void cancel() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
-        product.openForSale();
-        product.decreaseStock(2);
         Order order = Order.create(PRODUCT_ID, BUYER_ID, SELLER_ID, 2, 89000);
         given(orderRepository.findById(ORDER_ID)).willReturn(Optional.of(order));
-        given(productRepository.findByIdForUpdate(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
         orderService.cancel(ORDER_ID);
 
         // then
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELED);
-        assertThat(product.getStock()).isEqualTo(3);
+        verify(productRepository, never()).findByIdForUpdate(any());
     }
 
     @DisplayName("존재하지 않는 주문은 취소할 수 없다")
