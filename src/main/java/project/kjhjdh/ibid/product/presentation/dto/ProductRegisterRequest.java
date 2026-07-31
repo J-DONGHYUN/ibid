@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import project.kjhjdh.ibid.product.domain.ProductCondition;
 
 public record ProductRegisterRequest(
         @NotBlank(message = "상품 제목을 입력해주세요.")
@@ -20,6 +21,9 @@ public record ProductRegisterRequest(
 
         @NotNull(message = "재고 수량을 입력해주세요.")
         @Positive(message = "재고 수량은 1개 이상이어야 합니다.")
-        Integer stock
+        Integer stock,
+
+        @NotNull(message = "상품 상태를 선택해주세요.")
+        ProductCondition condition
 ) {
 }

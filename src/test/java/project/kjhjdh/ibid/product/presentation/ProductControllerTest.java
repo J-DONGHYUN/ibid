@@ -18,6 +18,7 @@ import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.domain.ProductStatus;
 import project.kjhjdh.ibid.product.presentation.dto.ProductDetailResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductListResponse;
@@ -36,7 +37,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 3))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW))
                 .when()
                 .post("/api/products")
                 .then()
@@ -50,7 +51,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("", "상태 좋음", 89000, 3))
+                .body(new ProductRegisterRequest("", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW))
                 .when()
                 .post("/api/products")
                 .then()
@@ -64,7 +65,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, 3))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, 3, ProductCondition.LIKE_NEW))
                 .when()
                 .post("/api/products")
                 .then()
@@ -78,7 +79,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 0))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 0, ProductCondition.LIKE_NEW))
                 .when()
                 .post("/api/products")
                 .then()
@@ -118,7 +119,7 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct() {
         // given
         given(productService.getProduct(1L)).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE));
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, ProductCondition.LIKE_NEW));
 
         // when & then
         RestAssuredMockMvc.given()

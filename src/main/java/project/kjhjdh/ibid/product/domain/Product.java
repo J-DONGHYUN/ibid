@@ -49,7 +49,11 @@ public class Product {
     @Column(nullable = false)
     private ProductStatus status;
 
-    private Product(Long sellerId, String title, String description, int price, int stock) {
+    @Enumerated(EnumType.STRING)
+    @Column(name = "product_condition", nullable = false)
+    private ProductCondition condition;
+
+    private Product(Long sellerId, String title, String description, int price, int stock, ProductCondition condition) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
@@ -60,10 +64,15 @@ public class Product {
         this.price = price;
         this.stock = stock;
         this.status = ProductStatus.PENDING;
+        this.condition = condition;
     }
 
     public static Product create(Long sellerId, String title, String description, int price, int stock) {
-        return new Product(sellerId, title, description, price, stock);
+        return create(sellerId, title, description, price, stock, ProductCondition.USED);
+    }
+
+    public static Product create(Long sellerId, String title, String description, int price, int stock, ProductCondition condition) {
+        return new Product(sellerId, title, description, price, stock, condition);
     }
 
     public void openForSale() {

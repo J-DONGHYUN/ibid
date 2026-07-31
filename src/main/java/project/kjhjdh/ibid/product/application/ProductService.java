@@ -30,7 +30,8 @@ public class ProductService {
                 request.title(),
                 request.description(),
                 request.price(),
-                request.stock()
+                request.stock(),
+                request.condition()
         );
         return productRepository.save(product).getId();
     }
