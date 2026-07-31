@@ -10,7 +10,6 @@ import {
   Heart,
   ImageIcon,
   Info,
-  MessageSquare,
   Share2,
 } from "lucide-react";
 import Header from "@/components/Header";
@@ -19,6 +18,7 @@ import PurchaseModal from "@/components/PurchaseModal";
 import { useToast } from "@/components/Toast";
 import { api, ApiError, currentUserId } from "@/lib/api";
 import { formatWon, sellerName } from "@/lib/format";
+import { CONDITION_LABEL } from "@/lib/types";
 import type { ProductDetail } from "@/lib/types";
 
 const TAGS = ["#나이키", "#AirMax90", "#에어맥스", "#운동화", "#270"];
@@ -117,9 +117,6 @@ function DetailContent({ id }: { id: number }) {
               <span className="flex items-center gap-1">
                 <Heart size={15} /> 5
               </span>
-              <span className="flex items-center gap-1">
-                <MessageSquare size={15} /> 1
-              </span>
             </div>
             <button className="hover:text-neutral-600">신고하기</button>
           </div>
@@ -128,13 +125,11 @@ function DetailContent({ id }: { id: number }) {
             <SpecRow label="판매상태">
               <span className={`font-bold ${statusView.color}`}>{statusView.label}</span>
             </SpecRow>
-            <SpecRow label="상품상태">중고 (거의 새 것)</SpecRow>
-            <SpecRow label="사이즈">270</SpecRow>
+            <SpecRow label="상품상태">{CONDITION_LABEL[product.condition]}</SpecRow>
             <SpecRow label="수량">
               <span className="font-semibold">{product.stock}개</span>
             </SpecRow>
             <SpecRow label="배송비">일반 3,000원</SpecRow>
-            <SpecRow label="직거래">서울특별시 강동구 천호제1동</SpecRow>
           </dl>
 
           <div className="mt-6 border-t border-neutral-100 pt-6">
@@ -175,9 +170,6 @@ function DetailContent({ id }: { id: number }) {
             </IconBtn>
             <IconBtn onClick={() => setLiked((v) => !v)} label="찜">
               <Heart size={20} className={liked ? "fill-rose-500 text-rose-500" : "text-neutral-500"} />
-            </IconBtn>
-            <IconBtn onClick={() => {}} label="문의">
-              <MessageSquare size={20} />
             </IconBtn>
 
             {onSale && (

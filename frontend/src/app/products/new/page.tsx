@@ -7,6 +7,8 @@ import Header from "@/components/Header";
 import AuthGuard from "@/components/AuthGuard";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/Toast";
+import { CONDITION_LABEL } from "@/lib/types";
+import type { ProductCondition } from "@/lib/types";
 
 const QUICK_PRICES = [1000, 5000, 10000, 100000];
 const TITLE_MAX = 40;
@@ -20,6 +22,7 @@ function RegisterContent() {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
+  const [condition, setCondition] = useState<ProductCondition>("LIKE_NEW");
   const [submitting, setSubmitting] = useState(false);
 
   const valid = useMemo(() => {
@@ -48,6 +51,7 @@ function RegisterContent() {
         description: description.trim(),
         price: Number(price),
         stock: Number(stock),
+        condition,
       });
       showToast("검수 대기 상태로 등록되었습니다.");
       router.push(`/products/${productId}`);
@@ -146,6 +150,28 @@ function RegisterContent() {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+
+        <div className={rowClass}>
+          <p className={labelClass}>
+            상품상태 <span className="text-rose-500">*</span>
+          </p>
+          <div className="flex gap-2">
+            {(["NEW", "LIKE_NEW", "USED"] as ProductCondition[]).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCondition(c)}
+                className={`rounded-lg border px-4 py-2.5 text-sm ${
+                  condition === c
+                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    : "border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+                }`}
+              >
+                {CONDITION_LABEL[c]}
+              </button>
+            ))}
           </div>
         </div>
 
