@@ -31,7 +31,7 @@ public class OrderService {
 
     @Transactional
     public PurchaseResult purchase(Long buyerId, PurchaseRequest request) {
-        Product product = productRepository.findByIdForUpdate(request.productId())
+        Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
         product.validatePurchasable(buyerId, request.quantity());
@@ -92,10 +92,7 @@ public class OrderService {
     public void cancel(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
-        Product product = productRepository.findByIdForUpdate(order.getProductId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         order.cancel();
-        product.restoreStock(order.getQuantity());
     }
 
     @Transactional(readOnly = true)

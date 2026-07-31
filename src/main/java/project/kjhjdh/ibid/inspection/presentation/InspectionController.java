@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
+import project.kjhjdh.ibid.auth.presentation.interceptor.AdminOnly;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.inspection.application.InspectionService;
 import project.kjhjdh.ibid.inspection.presentation.dto.InspectionJudgeRequest;
@@ -18,6 +19,7 @@ import project.kjhjdh.ibid.inspection.presentation.dto.InspectionQueueResponse;
 @RestController
 @RequestMapping("/api/inspections")
 @RequiredArgsConstructor
+@AdminOnly
 public class InspectionController {
 
     private final InspectionService inspectionService;

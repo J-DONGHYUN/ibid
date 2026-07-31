@@ -51,7 +51,7 @@ public class AuthService {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
-        return tokenProvider.createTokenPair(user.getId());
+        return tokenProvider.createTokenPair(user.getId(), user.getRole());
     }
 
     public TokenPair refresh(String oldToken) {

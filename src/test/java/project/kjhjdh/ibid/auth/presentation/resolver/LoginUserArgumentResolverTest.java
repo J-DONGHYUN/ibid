@@ -13,6 +13,7 @@ import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.interceptor.AuthenticationInterceptor;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.exception.GlobalException;
+import project.kjhjdh.ibid.user.domain.Role;
 
 class LoginUserArgumentResolverTest {
 
@@ -42,7 +43,7 @@ class LoginUserArgumentResolverTest {
     @Test
     void resolveArgument() throws NoSuchMethodException {
         // given
-        UserInfo userInfo = new UserInfo(3L);
+        UserInfo userInfo = new UserInfo(3L, Role.USER);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setAttribute(AuthenticationInterceptor.USER_INFO_ATTRIBUTE, userInfo);
 

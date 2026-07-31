@@ -5,8 +5,11 @@ import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import project.kjhjdh.ibid.auth.domain.TokenClaims;
 import project.kjhjdh.ibid.auth.domain.TokenPair;
+import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.infra.RefreshTokenRedisRepository;
+import project.kjhjdh.ibid.user.domain.Role;
 
 @Component
 public class TokenProvider {
@@ -29,16 +32,17 @@ public class TokenProvider {
         this.refreshExpiration = refreshExpiration;
     }
 
-    public TokenPair createTokenPair(Long userId) {
-        String accessToken = accessTokenProvider.createToken(userId);
-        String refreshToken = refreshTokenProvider.createToken(userId);
+    public TokenPair createTokenPair(Long userId, Role role) {
+        String accessToken = accessTokenProvider.createToken(userId, role);
+        String refreshToken = refreshTokenProvider.createToken(userId, role);
         refreshTokenRedisRepository.save(userId, refreshToken, Duration.ofMillis(refreshExpiration));
 
         return new TokenPair(accessToken, refreshToken);
     }
 
-    public Long parseAccessToken(String token) {
-        return accessTokenProvider.parseUserId(token);
+    public UserInfo parseAccessToken(String token) {
+        TokenClaims claims = accessTokenProvider.parseClaims(token);
+        return new UserInfo(claims.userId(), claims.role());
     }
 
     public Long parseRefreshToken(String token) {
