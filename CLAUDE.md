@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-**중고 전자기기** 거래 + 검수 에스크로 이커머스 애플리케이션. 모든 거래를 플랫폼이 검수해 **정품·정상작동을 보장**하는 것이 핵심 가치입니다(고정가 즉시구매 · 전 거래 강제 검수). Spring Boot 기반 백엔드입니다.
+**일반 중고 거래 + 검수 에스크로** 이커머스 애플리케이션. 모든 거래를 **배송으로 진행**하고 플랫폼이 검수해 안전을 보장합니다(고정가 즉시구매 · 전 거래 강제 검수 · **직거래/채팅 없음**). 배송비는 결제 시 합산되어 플랫폼이 수취·관리합니다. Spring Boot 기반 백엔드입니다.
 
 - **성격**: **포트폴리오 프로젝트** — 동작하는 기능뿐 아니라 **기술적 성장(설계·동시성·이벤트기반·인프라·트러블슈팅)** 을 보여주는 것을 우선합니다. 기술/설계 선택 시 이 관점을 반영하세요.
 - **artifact / root project 이름**: `ibid` (`settings.gradle`, `application.yml`의 `spring.application.name`)
