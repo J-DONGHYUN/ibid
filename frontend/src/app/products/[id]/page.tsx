@@ -11,6 +11,7 @@ import {
   ImageIcon,
   Info,
   Share2,
+  X,
 } from "lucide-react";
 import Header from "@/components/Header";
 import AuthGuard from "@/components/AuthGuard";
@@ -36,6 +37,8 @@ function DetailContent({ id }: { id: number }) {
   const [reloadKey, setReloadKey] = useState(0);
   const [imgIdx, setImgIdx] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   const handleStartSale = async () => {
     if (starting) return;
@@ -48,6 +51,21 @@ function DetailContent({ id }: { id: number }) {
       showToast(e instanceof ApiError ? e.message : "판매 시작에 실패했습니다.", "error");
     } finally {
       setStarting(false);
+    }
+  };
+
+  const openShare = () => {
+    setShareUrl(window.location.href);
+    setShareOpen(true);
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast("링크를 복사했어요.");
+      setShareOpen(false);
+    } catch {
+      showToast("복사에 실패했어요. 직접 복사해주세요.", "error");
     }
   };
 
@@ -211,7 +229,7 @@ function DetailContent({ id }: { id: number }) {
           </div>
 
           <div className="mt-6 flex gap-3">
-            <IconBtn onClick={() => {}} label="공유">
+            <IconBtn onClick={openShare} label="공유">
               <Share2 size={20} />
             </IconBtn>
             <IconBtn onClick={() => setLiked((v) => !v)} label="찜">
@@ -308,6 +326,44 @@ function DetailContent({ id }: { id: number }) {
             setReloadKey((k) => k + 1);
           }}
         />
+      )}
+
+      {shareOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShareOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-1 flex items-center justify-between">
+              <h3 className="text-base font-bold">공유하기</h3>
+              <button
+                onClick={() => setShareOpen(false)}
+                className="text-neutral-400 hover:text-neutral-700"
+                aria-label="닫기"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="mb-3 text-sm text-neutral-500">이 링크를 복사해 공유하세요.</p>
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                value={shareUrl}
+                onFocus={(e) => e.target.select()}
+                className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600"
+              />
+              <button
+                onClick={copyLink}
+                className="shrink-0 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+              >
+                복사
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
