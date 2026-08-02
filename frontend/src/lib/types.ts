@@ -25,6 +25,22 @@ export interface ProductDetail {
   stock: number;
   status: ProductStatus;
   condition: ProductCondition;
+  imageUrls: string[];
+}
+
+export interface ImagePresignRequest {
+  filename: string;
+  contentType: string;
+}
+
+export interface ImagePresignResponse {
+  presignedUrl: string;
+  key: string;
+  imageUrl: string;
+}
+
+export interface ImageConfirmRequest {
+  imageUrls: string[];
 }
 
 export interface LoginResponse {

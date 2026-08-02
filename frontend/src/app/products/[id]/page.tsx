@@ -34,6 +34,7 @@ function DetailContent({ id }: { id: number }) {
   const [expanded, setExpanded] = useState(false);
   const [starting, setStarting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [imgIdx, setImgIdx] = useState(0);
 
   const handleStartSale = async () => {
     if (starting) return;
@@ -90,16 +91,45 @@ function DetailContent({ id }: { id: number }) {
       <div className="grid gap-10 md:grid-cols-2">
         {/* 이미지 */}
         <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100">
-          <div className="flex h-full items-center justify-center text-neutral-300">
-            <ImageIcon size={48} strokeWidth={1.5} />
-          </div>
+          {product.imageUrls.length > 0 ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={product.imageUrls[imgIdx] ?? product.imageUrls[0]}
+                alt={product.title}
+                className="h-full w-full object-cover"
+              />
+              {product.imageUrls.length > 1 && (
+                <>
+                  <button
+                    onClick={() =>
+                      setImgIdx((i) => (i - 1 + product.imageUrls.length) % product.imageUrls.length)
+                    }
+                    className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 hover:bg-white"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    onClick={() => setImgIdx((i) => (i + 1) % product.imageUrls.length)}
+                    className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 hover:bg-white"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <div className="flex h-full items-center justify-center text-neutral-300">
+              <ImageIcon size={48} strokeWidth={1.5} />
+            </div>
+          )}
           {soldOut && (
             <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/55">
               <span className="text-lg font-semibold tracking-widest text-white">품절</span>
             </div>
           )}
           <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-neutral-800/70 px-3 py-1 text-xs text-white">
-            1/4
+            {product.imageUrls.length > 0 ? imgIdx + 1 : 0}/{product.imageUrls.length}
           </span>
         </div>
 

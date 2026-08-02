@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Camera } from "lucide-react";
+import { ArrowLeft, Camera, X } from "lucide-react";
 import Header from "@/components/Header";
 import AuthGuard from "@/components/AuthGuard";
 import { api, ApiError } from "@/lib/api";
@@ -13,6 +13,8 @@ import type { ProductCondition } from "@/lib/types";
 const QUICK_PRICES = [1000, 5000, 10000, 100000];
 const TITLE_MAX = 40;
 const DESC_MAX = 2000;
+const MAX_IMAGES = 12;
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif"];
 
 function RegisterContent() {
   const router = useRouter();
@@ -23,7 +25,18 @@ function RegisterContent() {
   const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState<ProductCondition>("LIKE_NEW");
+  const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
+  useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
+
+  const onSelectFiles = (e: ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []).filter((f) => ALLOWED_TYPES.includes(f.type));
+    setFiles((prev) => [...prev, ...picked].slice(0, MAX_IMAGES));
+    e.target.value = "";
+  };
+  const removeFile = (idx: number) => setFiles((prev) => prev.filter((_, i) => i !== idx));
 
   const valid = useMemo(() => {
     const p = Number(price);
@@ -31,12 +44,13 @@ function RegisterContent() {
     return (
       title.trim().length > 0 &&
       description.trim().length > 0 &&
+      files.length > 0 &&
       Number.isInteger(p) &&
       p > 0 &&
       Number.isInteger(s) &&
       s > 0
     );
-  }, [title, price, stock, description]);
+  }, [title, price, stock, description, files]);
 
   const numericOnly = (v: string) => v.replace(/[^0-9]/g, "");
   const addPrice = (amount: number) => setPrice(String((Number(price) || 0) + amount));
@@ -53,6 +67,16 @@ function RegisterContent() {
         stock: Number(stock),
         condition,
       });
+
+      if (files.length > 0) {
+        const presigns = await api.presignImages(
+          productId,
+          files.map((f) => ({ filename: f.name, contentType: f.type })),
+        );
+        await Promise.all(presigns.map((p, i) => api.uploadToS3(p.presignedUrl, files[i])));
+        await api.confirmImages(productId, presigns.map((p) => p.imageUrl));
+      }
+
       showToast("검수 대기 상태로 등록되었습니다.");
       router.push(`/products/${productId}`);
     } catch (err) {
@@ -89,17 +113,48 @@ function RegisterContent() {
           <p className={labelClass}>
             상품이미지 <span className="text-rose-500">*</span>
           </p>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <div className="flex h-36 w-36 shrink-0 cursor-not-allowed flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-neutral-200 text-neutral-400">
-              <Camera size={24} strokeWidth={1.5} />
-              <span className="text-xs">이미지 등록</span>
-              <span className="text-xs text-neutral-300">0/12</span>
+          <div>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex h-28 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-neutral-300 text-neutral-400 hover:border-neutral-500 hover:text-neutral-600">
+                <Camera size={22} strokeWidth={1.5} />
+                <span className="text-xs">이미지 등록</span>
+                <span className="text-xs text-neutral-300">
+                  {files.length}/{MAX_IMAGES}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  multiple
+                  onChange={onSelectFiles}
+                  className="hidden"
+                />
+              </label>
+
+              {previews.map((src, idx) => (
+                <div
+                  key={src}
+                  className="relative h-28 w-28 shrink-0 overflow-hidden rounded-lg border border-neutral-200"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt={`상품 이미지 ${idx + 1}`} className="h-full w-full object-cover" />
+                  {idx === 0 && (
+                    <span className="absolute left-1 top-1 rounded bg-neutral-900/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      대표
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeFile(idx)}
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900/70 text-white hover:bg-neutral-900"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="flex-1 rounded-lg bg-neutral-50 px-5 py-4 text-sm leading-relaxed text-neutral-500">
-              · 클릭 또는 이미지를 드래그하여 등록할 수 있어요.
-              <br />· 드래그하여 상품 이미지 순서를 변경할 수 있어요.
-              <br />· 첫 번째 이미지가 대표 이미지로 사용돼요.
-            </div>
+            <p className="mt-3 text-sm leading-relaxed text-neutral-500">
+              · jpg, jpeg, png, gif · 최대 {MAX_IMAGES}장 · 첫 번째 이미지가 대표로 사용돼요.
+            </p>
           </div>
         </div>
 
