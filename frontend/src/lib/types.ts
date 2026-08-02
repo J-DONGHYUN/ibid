@@ -8,6 +8,7 @@ export interface ProductSummary {
   price: number;
   stock: number;
   status: ProductStatus;
+  thumbnailUrl: string | null;
 }
 
 export interface ProductListResponse {
@@ -54,6 +55,14 @@ export interface SignupRequest {
 }
 
 export interface ProductRegisterRequest {
+  title: string;
+  description: string;
+  price: number;
+  stock: number;
+  condition: ProductCondition;
+}
+
+export interface ProductUpdateRequest {
   title: string;
   description: string;
   price: number;

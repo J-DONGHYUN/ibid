@@ -35,6 +35,7 @@ function DetailContent({ id }: { id: number }) {
   const [starting, setStarting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [imgIdx, setImgIdx] = useState(0);
+  const [deleting, setDeleting] = useState(false);
 
   const handleStartSale = async () => {
     if (starting) return;
@@ -47,6 +48,21 @@ function DetailContent({ id }: { id: number }) {
       showToast(e instanceof ApiError ? e.message : "판매 시작에 실패했습니다.", "error");
     } finally {
       setStarting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (deleting) return;
+    if (!window.confirm("이 상품을 삭제할까요? 등록한 이미지도 함께 삭제됩니다.")) return;
+    setDeleting(true);
+    try {
+      await api.deleteProduct(id);
+      showToast("상품을 삭제했습니다.");
+      router.push("/");
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : "삭제에 실패했습니다.", "error");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -230,6 +246,24 @@ function DetailContent({ id }: { id: number }) {
               </button>
             )}
           </div>
+
+          {isSeller && (
+            <div className="mt-3 flex gap-3">
+              <button
+                onClick={() => router.push(`/products/${id}/edit`)}
+                className="flex-1 rounded-xl border border-neutral-300 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+              >
+                수정
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 rounded-xl border border-rose-200 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"
+              >
+                {deleting ? "삭제 중..." : "삭제"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

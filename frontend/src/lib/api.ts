@@ -11,6 +11,7 @@ import type {
   ProductDetail,
   ProductListResponse,
   ProductRegisterRequest,
+  ProductUpdateRequest,
   SignupRequest,
 } from "./types";
 
@@ -163,6 +164,15 @@ export const api = {
 
   openForSale: (productId: number) =>
     request<void>(`/api/products/${productId}/on-sale`, { method: "PATCH" }),
+
+  updateProduct: (productId: number, data: ProductUpdateRequest) =>
+    request<void>(`/api/products/${productId}`, { method: "PATCH", body: data }),
+
+  deleteProduct: (productId: number) =>
+    request<void>(`/api/products/${productId}`, { method: "DELETE" }),
+
+  deleteImages: (productId: number, imageUrls: string[]) =>
+    request<void>(`/api/products/${productId}/images`, { method: "DELETE", body: { imageUrls } }),
 
   // STEP 1: presigned URL 발급
   presignImages: (productId: number, requests: ImagePresignRequest[]) =>
