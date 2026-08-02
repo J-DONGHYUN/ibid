@@ -3,7 +3,10 @@ package project.kjhjdh.ibid.product.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,12 +21,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 import project.kjhjdh.ibid.product.infra.s3.PresignedUploadResult;
 import project.kjhjdh.ibid.product.infra.s3.S3ImageUploader;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
+import project.kjhjdh.ibid.product.presentation.dto.ProductUpdateRequest;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
@@ -169,5 +174,82 @@ class ProductServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
         assertThat(product.getImageUrls()).isEmpty();
+    }
+
+    @DisplayName("본인 상품이면 상품 정보를 수정한다")
+    @Test
+    void update() {
+        // given
+        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, 1);
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when
+        productService.update(SELLER_ID, PRODUCT_ID,
+                new ProductUpdateRequest("새 제목", "새 설명", 50000, 5, ProductCondition.NEW));
+
+        // then
+        assertThat(product.getTitle()).isEqualTo("새 제목");
+        assertThat(product.getPrice()).isEqualTo(50000);
+        assertThat(product.getStock()).isEqualTo(5);
+        assertThat(product.getCondition()).isEqualTo(ProductCondition.NEW);
+    }
+
+    @DisplayName("본인 상품이 아니면 수정할 수 없다")
+    @Test
+    void update_notOwner() {
+        // given
+        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, 1);
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when & then
+        assertThatThrownBy(() -> productService.update(OTHER_USER_ID, PRODUCT_ID,
+                new ProductUpdateRequest("새 제목", "새 설명", 50000, 5, ProductCondition.NEW)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
+    }
+
+    @DisplayName("선택한 이미지를 상품과 S3에서 삭제한다")
+    @Test
+    void deleteImages() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, 1);
+        product.addImageUrls(List.of("https://img1", "https://img2", "https://img3"));
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when
+        productService.deleteImages(SELLER_ID, PRODUCT_ID, List.of("https://img1", "https://img2"));
+
+        // then
+        assertThat(product.getImageUrls()).containsExactly("https://img3");
+        then(s3ImageUploader).should(times(2)).delete(anyString());
+    }
+
+    @DisplayName("본인 상품을 삭제하면 상품과 S3 이미지를 함께 삭제한다")
+    @Test
+    void delete() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, 1);
+        product.addImageUrls(List.of("https://img1", "https://img2"));
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when
+        productService.delete(SELLER_ID, PRODUCT_ID);
+
+        // then
+        then(productRepository).should().delete(product);
+        then(s3ImageUploader).should(times(2)).delete(anyString());
+    }
+
+    @DisplayName("본인 상품이 아니면 삭제할 수 없다")
+    @Test
+    void delete_notOwner() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, 1);
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when & then
+        assertThatThrownBy(() -> productService.delete(OTHER_USER_ID, PRODUCT_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
     }
 }

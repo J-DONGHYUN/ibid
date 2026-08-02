@@ -27,6 +27,7 @@ import project.kjhjdh.ibid.product.presentation.dto.ProductDetailResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductListResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
+import project.kjhjdh.ibid.product.presentation.dto.ProductUpdateRequest;
 import project.kjhjdh.ibid.support.ControllerTestSupport;
 
 class ProductControllerTest extends ControllerTestSupport {
@@ -96,8 +97,8 @@ class ProductControllerTest extends ControllerTestSupport {
         // given
         given(productService.getProducts(any())).willReturn(new ProductListResponse(
                 List.of(
-                        new ProductSummaryResponse(2L, "나이키 후드", 89000, 3, ProductStatus.ON_SALE),
-                        new ProductSummaryResponse(1L, "아디다스 슬리퍼", 30000, 0, ProductStatus.SOLD_OUT)
+                        new ProductSummaryResponse(2L, "나이키 후드", 89000, 3, ProductStatus.ON_SALE, "https://image/thumb.jpg"),
+                        new ProductSummaryResponse(1L, "아디다스 슬리퍼", 30000, 0, ProductStatus.SOLD_OUT, null)
                 ),
                 1L, true
         ));
@@ -112,6 +113,7 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("products[0].productId", equalTo(2))
                 .body("products[0].stock", equalTo(3))
                 .body("products[0].status", equalTo("ON_SALE"))
+                .body("products[0].thumbnailUrl", equalTo("https://image/thumb.jpg"))
                 .body("products[1].status", equalTo("SOLD_OUT"))
                 .body("nextCursor", equalTo(1))
                 .body("hasNext", equalTo(true));
@@ -192,6 +194,52 @@ class ProductControllerTest extends ControllerTestSupport {
                 .then()
                 .statusCode(HttpStatus.FORBIDDEN.value())
                 .body("code", equalTo("ACCESS_DENIED"));
+    }
+
+    @DisplayName("상품 수정에 성공하면 200을 응답한다")
+    @Test
+    void update() {
+        // given
+        willDoNothing().given(productService).update(anyLong(), eq(1L), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, 2, ProductCondition.USED))
+                .when()
+                .patch("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+    }
+
+    @DisplayName("상품 삭제에 성공하면 204를 응답한다")
+    @Test
+    void delete() {
+        // given
+        willDoNothing().given(productService).delete(anyLong(), eq(1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .delete("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.NO_CONTENT.value());
+    }
+
+    @DisplayName("거래된 상품을 삭제하면 409를 응답한다")
+    @Test
+    void delete_conflict() {
+        // given
+        willThrow(new BusinessException(ErrorCode.PRODUCT_NOT_MODIFIABLE))
+                .given(productService).delete(anyLong(), eq(1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .delete("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.CONFLICT.value())
+                .body("code", equalTo("PRODUCT_NOT_MODIFIABLE"));
     }
 
     @DisplayName("판매 시작에 성공하면 200을 응답한다")

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,14 +19,15 @@ import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.product.application.ProductService;
-import jakarta.validation.Valid;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
+import project.kjhjdh.ibid.product.presentation.dto.ImageDeleteRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductDetailResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductListResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterResponse;
+import project.kjhjdh.ibid.product.presentation.dto.ProductUpdateRequest;
 
 @RestController
 @RequestMapping("/api/products")
@@ -83,6 +85,35 @@ public class ProductController {
             @PathVariable Long productId
     ) {
         productService.openForSale(loginUser.userId(), productId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{productId}")
+    public ResponseEntity<Void> update(
+            @LoginUser UserInfo loginUser,
+            @PathVariable Long productId,
+            @Valid @RequestBody ProductUpdateRequest request
+    ) {
+        productService.update(loginUser.userId(), productId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<Void> delete(
+            @LoginUser UserInfo loginUser,
+            @PathVariable Long productId
+    ) {
+        productService.delete(loginUser.userId(), productId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{productId}/images")
+    public ResponseEntity<Void> deleteImages(
+            @LoginUser UserInfo loginUser,
+            @PathVariable Long productId,
+            @RequestBody ImageDeleteRequest request
+    ) {
+        productService.deleteImages(loginUser.userId(), productId, request.imageUrls());
         return ResponseEntity.ok().build();
     }
 }

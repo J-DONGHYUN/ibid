@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.BatchSize;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -64,6 +65,7 @@ public class Product {
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "image_url")
     @OrderColumn(name = "image_order")
+    @BatchSize(size = 100)
     private List<String> imageUrls = new ArrayList<>();
 
     private Product(Long sellerId, String title, String description, int price, int stock, ProductCondition condition) {
@@ -146,8 +148,31 @@ public class Product {
         return status == ProductStatus.ON_SALE;
     }
 
+    public void update(String title, String description, int price, int stock, ProductCondition condition) {
+        validateModifiable();
+        validateTitle(title);
+        validateDescription(description);
+        validatePrice(price);
+        validateStock(stock);
+        this.title = title;
+        this.description = description;
+        this.price = price;
+        this.stock = stock;
+        this.condition = condition;
+    }
+
     public void addImageUrls(List<String> urls) {
         this.imageUrls.addAll(urls);
+    }
+
+    public void removeImageUrls(List<String> urls) {
+        this.imageUrls.removeAll(urls);
+    }
+
+    public void validateModifiable() {
+        if (status == ProductStatus.SOLD_OUT) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_MODIFIABLE);
+        }
     }
 
     public boolean isOwnedBy(Long userId) {
