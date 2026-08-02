@@ -19,12 +19,13 @@
 
 ### Phase 2 — 상품 데이터·미디어
 - [ ] **DTL-4 상품 필드확장** — `tags` · `createdAt` · **`shippingFee`(플랫폼 관리)** (BE+FE)
-- [ ] ★ **DTL-5 이미지 S3** — 업로드(다중) + 썸네일 + 갤러리 (BE+FE)
+- [x] ★ **DTL-5 이미지 S3** — presigned 업로드(다중)·상세 갤러리·홈 썸네일 (BE+FE)
+- [x] **DTL-5+ 상품 수정/삭제** — 수정 페이지·삭제 버튼, 이미지 추가/개별삭제·상품삭제 시 **S3 동기 삭제** (BE+FE)
 
 ### Phase 3 — 알림 발행
 - [ ] **NOTI-1** `OrderPaid` 이벤트 발행 — 결제확정(`OrderService.confirmPaid`) 시 (BE)
 
-**권장 순서**: DTL-1·DTL-4(가벼움) → **DTL-5 이미지** → DTL-2 찜 → NOTI-1
+**권장 순서**: ~~DTL-5 이미지~~ ✅ → DTL-1 공유 → DTL-2 찜 → DTL-4 필드확장 → NOTI-1
 
 ---
 
