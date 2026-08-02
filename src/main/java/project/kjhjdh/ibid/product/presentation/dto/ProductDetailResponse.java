@@ -1,5 +1,7 @@
 package project.kjhjdh.ibid.product.presentation.dto;
 
+import java.util.List;
+
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.domain.ProductStatus;
@@ -12,7 +14,8 @@ public record ProductDetailResponse(
         int price,
         int stock,
         ProductStatus status,
-        ProductCondition condition
+        ProductCondition condition,
+        List<String> imageUrls
 ) {
 
     public static ProductDetailResponse from(Product product) {
@@ -24,7 +27,8 @@ public record ProductDetailResponse(
                 product.getPrice(),
                 product.getStock(),
                 product.getStatus(),
-                product.getCondition()
+                product.getCondition(),
+                List.copyOf(product.getImageUrls())
         );
     }
 }

@@ -54,6 +54,12 @@ public enum ErrorCode {
     ORDER_NOT_INSPECTABLE(HttpStatus.CONFLICT, "검수를 시작할 수 없는 주문 상태입니다."),
     ORDER_NOT_JUDGEABLE(HttpStatus.CONFLICT, "검수 판정할 수 없는 주문 상태입니다."),
 
+    // File
+    FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),
+    FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일 크기는 10MB 이하여야 합니다."),
+    FILE_INVALID_EXTENSION(HttpStatus.BAD_REQUEST, "jpg, jpeg, png, gif 형식만 업로드 가능합니다."),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
+
     // Payment
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제 내역을 찾을 수 없습니다."),
     INVALID_PAYMENT_CONFIRM(HttpStatus.BAD_REQUEST, "올바르지 않은 결제 승인입니다."),

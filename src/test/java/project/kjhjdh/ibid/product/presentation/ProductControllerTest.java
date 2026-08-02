@@ -20,6 +20,9 @@ import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.domain.ProductStatus;
+import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
+import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
+import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductDetailResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductListResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterRequest;
@@ -119,7 +122,8 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct() {
         // given
         given(productService.getProduct(1L)).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, ProductCondition.LIKE_NEW));
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE,
+                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg")));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -132,7 +136,62 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("title", equalTo("나이키 후드"))
                 .body("description", equalTo("상태 좋음"))
                 .body("stock", equalTo(3))
-                .body("status", equalTo("ON_SALE"));
+                .body("status", equalTo("ON_SALE"))
+                .body("condition", equalTo("LIKE_NEW"))
+                .body("imageUrls[0]", equalTo("https://image/a.jpg"));
+    }
+
+    @DisplayName("presigned URL 발급에 성공하면 200과 URL 목록을 응답한다")
+    @Test
+    void presignImages() {
+        // given
+        given(productService.generatePresignedUrls(anyLong(), eq(1L), any()))
+                .willReturn(List.of(new ImagePresignResponse("https://presigned", "products/1/uuid.jpg", "https://image")));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(List.of(new ImagePresignRequest("a.jpg", "image/jpeg")))
+                .when()
+                .post("/api/products/{productId}/images/presign", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("[0].presignedUrl", equalTo("https://presigned"))
+                .body("[0].imageUrl", equalTo("https://image"));
+    }
+
+    @DisplayName("이미지 확정 저장에 성공하면 200을 응답한다")
+    @Test
+    void confirmImages() {
+        // given
+        willDoNothing().given(productService).confirmImages(anyLong(), eq(1L), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ImageConfirmRequest(List.of("https://image1", "https://image2")))
+                .when()
+                .post("/api/products/{productId}/images/confirm", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value());
+    }
+
+    @DisplayName("본인 상품이 아니면 이미지 확정 시 403을 응답한다")
+    @Test
+    void confirmImages_forbidden() {
+        // given
+        willThrow(new BusinessException(ErrorCode.ACCESS_DENIED))
+                .given(productService).confirmImages(anyLong(), eq(1L), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ImageConfirmRequest(List.of("https://image1")))
+                .when()
+                .post("/api/products/{productId}/images/confirm", 1L)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value())
+                .body("code", equalTo("ACCESS_DENIED"));
     }
 
     @DisplayName("판매 시작에 성공하면 200을 응답한다")

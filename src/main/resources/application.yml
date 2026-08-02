@@ -12,6 +12,14 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+aws:
+  s3:
+    bucket: ${AWS_S3_BUCKET:ibid-product-images}
+  credentials:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+  region: ap-northeast-2
+
 jwt:
   access:
     secret: ${JWT_ACCESS_SECRET:local-access-secret-change-me-0123456789}
