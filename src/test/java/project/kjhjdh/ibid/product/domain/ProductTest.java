@@ -29,6 +29,7 @@ class ProductTest {
         assertThat(product.getPrice()).isEqualTo(89000);
         assertThat(product.getStock()).isEqualTo(3);
         assertThat(product.getStatus()).isEqualTo(ProductStatus.PENDING);
+        assertThat(product.getViewCount()).isZero();
     }
 
     @DisplayName("제목이 비었거나 100자를 초과하면 생성에 실패한다")
