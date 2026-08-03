@@ -19,9 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
-import project.kjhjdh.ibid.common.image.application.ImageService;
-import project.kjhjdh.ibid.common.image.application.PresignedImage;
-import project.kjhjdh.ibid.common.image.domain.ImageOwnerType;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
@@ -41,7 +38,7 @@ class ProductServiceTest {
     private ProductRepository productRepository;
 
     @Mock
-    private ImageService imageService;
+    private ProductImageService productImageService;
 
     @InjectMocks
     private ProductService productService;
@@ -86,16 +83,16 @@ class ProductServiceTest {
         assertThat(product.isOnSale()).isFalse();
     }
 
-    @DisplayName("본인 상품이면 요청한 이미지 수만큼 presigned URL을 발급한다")
+    @DisplayName("본인 상품이면 이미지 서비스가 발급한 presigned URL을 그대로 응답한다")
     @Test
     void generatePresignedUrls() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
-        given(imageService.presign(eq(ImageOwnerType.PRODUCT), eq(PRODUCT_ID), any()))
-                .willReturn(List.of(
-                        new PresignedImage("https://presigned1", "products/1/a.jpg", "https://image1"),
-                        new PresignedImage("https://presigned2", "products/1/b.png", "https://image2")));
+        List<ImagePresignResponse> presigned = List.of(
+                new ImagePresignResponse("https://presigned1", "products/1/a.jpg", "https://image1"),
+                new ImagePresignResponse("https://presigned2", "products/1/b.png", "https://image2"));
+        given(productImageService.presign(eq(PRODUCT_ID), any())).willReturn(presigned);
         List<ImagePresignRequest> requests = List.of(
                 new ImagePresignRequest("a.jpg", "image/jpeg"),
                 new ImagePresignRequest("b.png", "image/png"));
@@ -104,9 +101,7 @@ class ProductServiceTest {
         List<ImagePresignResponse> result = productService.generatePresignedUrls(SELLER_ID, PRODUCT_ID, requests);
 
         // then
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).presignedUrl()).isEqualTo("https://presigned1");
-        assertThat(result.get(0).imageUrl()).isEqualTo("https://image1");
+        assertThat(result).isEqualTo(presigned);
     }
 
     @DisplayName("본인 상품이 아니면 presigned URL을 발급할 수 없다")
@@ -122,7 +117,7 @@ class ProductServiceTest {
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
     }
 
-    @DisplayName("본인 상품이면 업로드된 이미지 URL을 이미지 서비스에 저장 위임한다")
+    @DisplayName("본인 상품이면 업로드된 이미지 URL 저장을 이미지 서비스에 위임한다")
     @Test
     void confirmImages() {
         // given
@@ -134,8 +129,7 @@ class ProductServiceTest {
                 new ImageConfirmRequest(List.of("https://image1", "https://image2")));
 
         // then
-        then(imageService).should().attach(ImageOwnerType.PRODUCT, PRODUCT_ID,
-                List.of("https://image1", "https://image2"));
+        then(productImageService).should().attach(PRODUCT_ID, List.of("https://image1", "https://image2"));
     }
 
     @DisplayName("본인 상품이 아니면 이미지 URL을 저장할 수 없다")
@@ -150,7 +144,7 @@ class ProductServiceTest {
                 new ImageConfirmRequest(List.of("https://image1"))))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
-        then(imageService).shouldHaveNoInteractions();
+        then(productImageService).shouldHaveNoInteractions();
     }
 
     @DisplayName("본인 상품이면 상품 정보를 수정한다")
@@ -196,8 +190,7 @@ class ProductServiceTest {
         productService.deleteImages(SELLER_ID, PRODUCT_ID, List.of("https://img1", "https://img2"));
 
         // then
-        then(imageService).should().deleteByUrls(ImageOwnerType.PRODUCT, PRODUCT_ID,
-                List.of("https://img1", "https://img2"));
+        then(productImageService).should().deleteByUrls(PRODUCT_ID, List.of("https://img1", "https://img2"));
     }
 
     @DisplayName("본인 상품을 삭제하면 상품과 이미지를 함께 삭제한다")
@@ -212,7 +205,7 @@ class ProductServiceTest {
 
         // then
         then(productRepository).should().delete(product);
-        then(imageService).should().deleteAll(ImageOwnerType.PRODUCT, PRODUCT_ID);
+        then(productImageService).should().deleteAll(PRODUCT_ID);
     }
 
     @DisplayName("본인 상품이 아니면 삭제할 수 없다")
@@ -226,6 +219,6 @@ class ProductServiceTest {
         assertThatThrownBy(() -> productService.delete(OTHER_USER_ID, PRODUCT_ID))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
-        then(imageService).shouldHaveNoInteractions();
+        then(productImageService).shouldHaveNoInteractions();
     }
 }

@@ -12,10 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
-import project.kjhjdh.ibid.common.image.application.ImageService;
-import project.kjhjdh.ibid.common.image.application.PresignTarget;
-import project.kjhjdh.ibid.common.image.application.PresignedImage;
-import project.kjhjdh.ibid.common.image.domain.ImageOwnerType;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
@@ -33,22 +29,17 @@ public class ProductService {
     private static final int PAGE_SIZE = 16;
 
     private final ProductRepository productRepository;
-    private final ImageService imageService;
+    private final ProductImageService productImageService;
 
     public List<ImagePresignResponse> generatePresignedUrls(Long sellerId, Long productId, List<ImagePresignRequest> requests) {
         findOwnedProduct(sellerId, productId);
-        List<PresignTarget> targets = requests.stream()
-                .map(req -> new PresignTarget(req.filename(), req.contentType()))
-                .toList();
-        return imageService.presign(ImageOwnerType.PRODUCT, productId, targets).stream()
-                .map(this::toResponse)
-                .toList();
+        return productImageService.presign(productId, requests);
     }
 
     @Transactional
     public void confirmImages(Long sellerId, Long productId, ImageConfirmRequest request) {
         findOwnedProduct(sellerId, productId);
-        imageService.attach(ImageOwnerType.PRODUCT, productId, request.imageUrls());
+        productImageService.attach(productId, request.imageUrls());
     }
 
     @Transactional
@@ -60,7 +51,7 @@ public class ProductService {
     @Transactional
     public void deleteImages(Long sellerId, Long productId, List<String> imageUrls) {
         findOwnedProduct(sellerId, productId);
-        imageService.deleteByUrls(ImageOwnerType.PRODUCT, productId, imageUrls);
+        productImageService.deleteByUrls(productId, imageUrls);
     }
 
     @Transactional
@@ -68,7 +59,7 @@ public class ProductService {
         Product product = findOwnedProduct(sellerId, productId);
         product.validateModifiable();
         productRepository.delete(product);
-        imageService.deleteAll(ImageOwnerType.PRODUCT, productId);
+        productImageService.deleteAll(productId);
     }
 
     @Transactional
@@ -96,7 +87,7 @@ public class ProductService {
         Long effectiveCursor = (cursor == null) ? Long.MAX_VALUE : cursor;
         Slice<Product> slice = productRepository.findByIdLessThanOrderByIdDesc(effectiveCursor, pageable);
         List<Long> productIds = slice.getContent().stream().map(Product::getId).toList();
-        Map<Long, String> thumbnails = imageService.findThumbnails(ImageOwnerType.PRODUCT, productIds);
+        Map<Long, String> thumbnails = productImageService.findThumbnails(productIds);
         return ProductListResponse.of(slice, thumbnails);
     }
 
@@ -104,12 +95,8 @@ public class ProductService {
     public ProductDetailResponse getProduct(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-        List<String> imageUrls = imageService.findUrls(ImageOwnerType.PRODUCT, productId);
+        List<String> imageUrls = productImageService.findUrls(productId);
         return ProductDetailResponse.from(product, imageUrls);
-    }
-
-    private ImagePresignResponse toResponse(PresignedImage presigned) {
-        return new ImagePresignResponse(presigned.presignedUrl(), presigned.key(), presigned.imageUrl());
     }
 
     private Product findOwnedProduct(Long sellerId, Long productId) {

@@ -1,4 +1,4 @@
-package project.kjhjdh.ibid.common.image.domain;
+package project.kjhjdh.ibid.product.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,23 +12,20 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import project.kjhjdh.ibid.common.image.domain.ImageExtension;
 
 @Getter
 @Entity
-@Table(name = "images", indexes = @Index(name = "idx_images_owner", columnList = "ownerType, ownerId, sortOrder"))
+@Table(name = "product_images", indexes = @Index(name = "idx_product_images_product", columnList = "productId, sortOrder"))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Image {
+public class ProductImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ImageOwnerType ownerType;
-
-    @Column(nullable = false)
-    private Long ownerId;
+    private Long productId;
 
     @Column(nullable = false)
     private String url;
@@ -40,15 +37,14 @@ public class Image {
     @Column(nullable = false)
     private int sortOrder;
 
-    private Image(ImageOwnerType ownerType, Long ownerId, String url, int sortOrder) {
-        this.ownerType = ownerType;
-        this.ownerId = ownerId;
+    private ProductImage(Long productId, String url, int sortOrder) {
+        this.productId = productId;
         this.url = url;
         this.extension = ImageExtension.fromUrl(url);
         this.sortOrder = sortOrder;
     }
 
-    public static Image of(ImageOwnerType ownerType, Long ownerId, String url, int sortOrder) {
-        return new Image(ownerType, ownerId, url, sortOrder);
+    public static ProductImage of(Long productId, String url, int sortOrder) {
+        return new ProductImage(productId, url, sortOrder);
     }
 }
