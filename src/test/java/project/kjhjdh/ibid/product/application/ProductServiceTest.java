@@ -129,7 +129,7 @@ class ProductServiceTest {
                 new ImageConfirmRequest(List.of("https://image1", "https://image2")));
 
         // then
-        then(productImageService).should().attach(PRODUCT_ID, List.of("https://image1", "https://image2"));
+        then(productImageService).should().attach(product, List.of("https://image1", "https://image2"));
     }
 
     @DisplayName("본인 상품이 아니면 이미지 URL을 저장할 수 없다")
@@ -162,7 +162,7 @@ class ProductServiceTest {
         assertThat(product.getTitle()).isEqualTo("새 제목");
         assertThat(product.getPrice()).isEqualTo(50000);
         assertThat(product.getStock()).isEqualTo(5);
-        assertThat(product.getCondition()).isEqualTo(ProductCondition.NEW);
+        assertThat(product.getProductCondition()).isEqualTo(ProductCondition.NEW);
     }
 
     @DisplayName("본인 상품이 아니면 수정할 수 없다")

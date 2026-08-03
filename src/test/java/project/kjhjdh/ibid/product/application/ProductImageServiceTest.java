@@ -18,9 +18,11 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.common.image.infra.S3ImageUploader;
+import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductImage;
 import project.kjhjdh.ibid.product.infra.ProductImageRepository;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
@@ -43,6 +45,16 @@ class ProductImageServiceTest {
     @Captor
     private ArgumentCaptor<List<ProductImage>> imagesCaptor;
 
+    private Product product(Long id) {
+        Product product = Product.create(10L, "상품", "설명", 1000, 1);
+        ReflectionTestUtils.setField(product, "id", id);
+        return product;
+    }
+
+    private ProductImage productImage(Long productId, String url, int sortOrder) {
+        return ProductImage.of(product(productId), url, sortOrder);
+    }
+
     @DisplayName("파일명·타입으로 presigned URL을 발급해 응답으로 매핑한다")
     @Test
     void presign() {
@@ -64,10 +76,11 @@ class ProductImageServiceTest {
     @Test
     void attach() {
         // given
+        Product product = product(PRODUCT_ID);
         given(productImageRepository.countByProductId(PRODUCT_ID)).willReturn(2);
 
         // when
-        productImageService.attach(PRODUCT_ID, List.of("https://img/a.jpg", "https://img/b.png"));
+        productImageService.attach(product, List.of("https://img/a.jpg", "https://img/b.png"));
 
         // then
         then(productImageRepository).should().saveAll(imagesCaptor.capture());
@@ -83,9 +96,9 @@ class ProductImageServiceTest {
         // given
         given(productImageRepository.findByProductIdInOrderBySortOrder(List.of(1L, 2L)))
                 .willReturn(List.of(
-                        ProductImage.of(1L, "https://img/1a.jpg", 0),
-                        ProductImage.of(1L, "https://img/1b.jpg", 1),
-                        ProductImage.of(2L, "https://img/2a.png", 0)
+                        productImage(1L, "https://img/1a.jpg", 0),
+                        productImage(1L, "https://img/1b.jpg", 1),
+                        productImage(2L, "https://img/2a.png", 0)
                 ));
 
         // when
@@ -111,8 +124,8 @@ class ProductImageServiceTest {
     void deleteByUrls() {
         // given
         List<ProductImage> images = List.of(
-                ProductImage.of(PRODUCT_ID, "https://img/a.jpg", 0),
-                ProductImage.of(PRODUCT_ID, "https://img/b.jpg", 1)
+                productImage(PRODUCT_ID, "https://img/a.jpg", 0),
+                productImage(PRODUCT_ID, "https://img/b.jpg", 1)
         );
         given(productImageRepository.findByProductIdAndUrlIn(PRODUCT_ID,
                 List.of("https://img/a.jpg", "https://img/b.jpg"))).willReturn(images);
@@ -130,8 +143,8 @@ class ProductImageServiceTest {
     void deleteAll() {
         // given
         List<ProductImage> images = List.of(
-                ProductImage.of(PRODUCT_ID, "https://img/a.jpg", 0),
-                ProductImage.of(PRODUCT_ID, "https://img/b.jpg", 1)
+                productImage(PRODUCT_ID, "https://img/a.jpg", 0),
+                productImage(PRODUCT_ID, "https://img/b.jpg", 1)
         );
         given(productImageRepository.findByProductId(PRODUCT_ID)).willReturn(images);
 

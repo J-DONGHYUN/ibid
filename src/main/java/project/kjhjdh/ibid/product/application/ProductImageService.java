@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.common.image.infra.S3ImageUploader;
+import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductImage;
 import project.kjhjdh.ibid.product.infra.ProductImageRepository;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
@@ -37,11 +38,11 @@ public class ProductImageService {
     }
 
     @Transactional
-    public void attach(Long productId, List<String> urls) {
-        int base = productImageRepository.countByProductId(productId);
+    public void attach(Product product, List<String> urls) {
+        int base = productImageRepository.countByProductId(product.getId());
         List<ProductImage> images = new ArrayList<>();
         for (int i = 0; i < urls.size(); i++) {
-            images.add(ProductImage.of(productId, urls.get(i), base + i));
+            images.add(ProductImage.of(product, urls.get(i), base + i));
         }
         productImageRepository.saveAll(images);
     }
@@ -59,7 +60,7 @@ public class ProductImageService {
             return Map.of();
         }
         return productImageRepository.findByProductIdInOrderBySortOrder(productIds).stream()
-                .collect(Collectors.toMap(ProductImage::getProductId, ProductImage::getUrl, (first, second) -> first));
+                .collect(Collectors.toMap(image -> image.getProduct().getId(), ProductImage::getUrl, (first, second) -> first));
     }
 
     @Transactional

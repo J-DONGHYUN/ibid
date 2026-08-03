@@ -38,14 +38,14 @@ public class ProductService {
 
     @Transactional
     public void confirmImages(Long sellerId, Long productId, ImageConfirmRequest request) {
-        findOwnedProduct(sellerId, productId);
-        productImageService.attach(productId, request.imageUrls());
+        Product product = findOwnedProduct(sellerId, productId);
+        productImageService.attach(product, request.imageUrls());
     }
 
     @Transactional
     public void update(Long sellerId, Long productId, ProductUpdateRequest request) {
         Product product = findOwnedProduct(sellerId, productId);
-        product.update(request.title(), request.description(), request.price(), request.stock(), request.condition());
+        product.update(request.title(), request.description(), request.price(), request.stock(), request.productCondition());
     }
 
     @Transactional
@@ -58,8 +58,8 @@ public class ProductService {
     public void delete(Long sellerId, Long productId) {
         Product product = findOwnedProduct(sellerId, productId);
         product.validateModifiable();
-        productRepository.delete(product);
         productImageService.deleteAll(productId);
+        productRepository.delete(product);
     }
 
     @Transactional
@@ -70,7 +70,7 @@ public class ProductService {
                 request.description(),
                 request.price(),
                 request.stock(),
-                request.condition()
+                request.productCondition()
         );
         return productRepository.save(product).getId();
     }

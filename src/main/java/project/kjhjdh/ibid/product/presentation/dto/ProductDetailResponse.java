@@ -14,7 +14,7 @@ public record ProductDetailResponse(
         int price,
         int stock,
         ProductStatus status,
-        ProductCondition condition,
+        ProductCondition productCondition,
         List<String> imageUrls
 ) {
 
@@ -27,7 +27,7 @@ public record ProductDetailResponse(
                 product.getPrice(),
                 product.getStock(),
                 product.getStatus(),
-                product.getCondition(),
+                product.getProductCondition(),
                 imageUrls
         );
     }

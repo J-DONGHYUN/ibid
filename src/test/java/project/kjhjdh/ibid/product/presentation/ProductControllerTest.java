@@ -139,7 +139,7 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("description", equalTo("상태 좋음"))
                 .body("stock", equalTo(3))
                 .body("status", equalTo("ON_SALE"))
-                .body("condition", equalTo("LIKE_NEW"))
+                .body("productCondition", equalTo("LIKE_NEW"))
                 .body("imageUrls[0]", equalTo("https://image/a.jpg"));
     }
 

@@ -50,10 +50,10 @@ public class Product {
     private ProductStatus status;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "product_condition", nullable = false)
-    private ProductCondition condition;
+    @Column(nullable = false)
+    private ProductCondition productCondition;
 
-    private Product(Long sellerId, String title, String description, int price, int stock, ProductCondition condition) {
+    private Product(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
@@ -64,15 +64,15 @@ public class Product {
         this.price = price;
         this.stock = stock;
         this.status = ProductStatus.PENDING;
-        this.condition = condition;
+        this.productCondition = productCondition;
     }
 
     public static Product create(Long sellerId, String title, String description, int price, int stock) {
         return create(sellerId, title, description, price, stock, ProductCondition.USED);
     }
 
-    public static Product create(Long sellerId, String title, String description, int price, int stock, ProductCondition condition) {
-        return new Product(sellerId, title, description, price, stock, condition);
+    public static Product create(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
+        return new Product(sellerId, title, description, price, stock, productCondition);
     }
 
     public void openForSale() {
@@ -133,7 +133,7 @@ public class Product {
         return status == ProductStatus.ON_SALE;
     }
 
-    public void update(String title, String description, int price, int stock, ProductCondition condition) {
+    public void update(String title, String description, int price, int stock, ProductCondition productCondition) {
         validateModifiable();
         validateTitle(title);
         validateDescription(description);
@@ -143,7 +143,7 @@ public class Product {
         this.description = description;
         this.price = price;
         this.stock = stock;
-        this.condition = condition;
+        this.productCondition = productCondition;
     }
 
     public void validateModifiable() {

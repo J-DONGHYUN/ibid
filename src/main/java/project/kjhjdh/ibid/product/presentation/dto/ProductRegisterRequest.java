@@ -24,6 +24,6 @@ public record ProductRegisterRequest(
         Integer stock,
 
         @NotNull(message = "상품 상태를 선택해주세요.")
-        ProductCondition condition
+        ProductCondition productCondition
 ) {
 }
