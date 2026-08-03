@@ -1,11 +1,14 @@
 export type ProductStatus = "PENDING" | "ON_SALE" | "SOLD_OUT";
 
+export type ProductCondition = "NEW" | "LIKE_NEW" | "USED";
+
 export interface ProductSummary {
   productId: number;
   title: string;
   price: number;
   stock: number;
   status: ProductStatus;
+  thumbnailUrl: string | null;
 }
 
 export interface ProductListResponse {
@@ -22,6 +25,23 @@ export interface ProductDetail {
   price: number;
   stock: number;
   status: ProductStatus;
+  productCondition: ProductCondition;
+  imageUrls: string[];
+}
+
+export interface ImagePresignRequest {
+  filename: string;
+  contentType: string;
+}
+
+export interface ImagePresignResponse {
+  presignedUrl: string;
+  key: string;
+  imageUrl: string;
+}
+
+export interface ImageConfirmRequest {
+  imageUrls: string[];
 }
 
 export interface LoginResponse {
@@ -39,7 +59,22 @@ export interface ProductRegisterRequest {
   description: string;
   price: number;
   stock: number;
+  productCondition: ProductCondition;
 }
+
+export interface ProductUpdateRequest {
+  title: string;
+  description: string;
+  price: number;
+  stock: number;
+  productCondition: ProductCondition;
+}
+
+export const CONDITION_LABEL: Record<ProductCondition, string> = {
+  NEW: "새 상품",
+  LIKE_NEW: "거의 새 것",
+  USED: "사용감 있음",
+};
 
 export type OrderStatus =
   | "CREATED"

@@ -1,6 +1,9 @@
 package project.kjhjdh.ibid.product.presentation.dto;
 
+import java.util.List;
+
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.domain.ProductStatus;
 
 public record ProductDetailResponse(
@@ -10,10 +13,12 @@ public record ProductDetailResponse(
         String description,
         int price,
         int stock,
-        ProductStatus status
+        ProductStatus status,
+        ProductCondition productCondition,
+        List<String> imageUrls
 ) {
 
-    public static ProductDetailResponse from(Product product) {
+    public static ProductDetailResponse from(Product product, List<String> imageUrls) {
         return new ProductDetailResponse(
                 product.getId(),
                 product.getSellerId(),
@@ -21,7 +26,9 @@ public record ProductDetailResponse(
                 product.getDescription(),
                 product.getPrice(),
                 product.getStock(),
-                product.getStatus()
+                product.getStatus(),
+                product.getProductCondition(),
+                imageUrls
         );
     }
 }

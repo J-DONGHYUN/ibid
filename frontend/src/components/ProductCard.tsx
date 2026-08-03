@@ -9,9 +9,18 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
   return (
     <Link href={`/products/${product.productId}`} className="group block">
       <div className="relative mb-2.5 aspect-square overflow-hidden rounded-xl bg-neutral-100">
-        <div className="flex h-full items-center justify-center text-neutral-300">
-          <ImageIcon size={32} strokeWidth={1.5} />
-        </div>
+        {product.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={product.thumbnailUrl}
+            alt={product.title}
+            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-neutral-300">
+            <ImageIcon size={32} strokeWidth={1.5} />
+          </div>
+        )}
         <span className="absolute right-3 top-3 text-neutral-400">
           <Heart size={18} />
         </span>
