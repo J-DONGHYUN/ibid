@@ -14,7 +14,7 @@
 ## 🧑‍💻 장동현 (본인)
 
 ### Phase 1 — 상호작용
-- [ ] **DTL-1 공유** — 링크 복사 / Web Share (FE)
+- [x] **DTL-1 공유** — 링크 복사 / Web Share (FE)
 - [ ] **DTL-2 찜/좋아요** — like API + **Redis 찜수**·내 찜여부 (BE+FE)
 
 ### Phase 2 — 상품 데이터·미디어
