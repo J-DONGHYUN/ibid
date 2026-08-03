@@ -25,7 +25,7 @@ export interface ProductDetail {
   price: number;
   stock: number;
   status: ProductStatus;
-  condition: ProductCondition;
+  productCondition: ProductCondition;
   imageUrls: string[];
 }
 
@@ -59,7 +59,7 @@ export interface ProductRegisterRequest {
   description: string;
   price: number;
   stock: number;
-  condition: ProductCondition;
+  productCondition: ProductCondition;
 }
 
 export interface ProductUpdateRequest {
@@ -67,7 +67,7 @@ export interface ProductUpdateRequest {
   description: string;
   price: number;
   stock: number;
-  condition: ProductCondition;
+  productCondition: ProductCondition;
 }
 
 export const CONDITION_LABEL: Record<ProductCondition, string> = {

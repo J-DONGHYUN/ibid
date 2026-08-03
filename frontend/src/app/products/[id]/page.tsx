@@ -189,7 +189,7 @@ function DetailContent({ id }: { id: number }) {
             <SpecRow label="판매상태">
               <span className={`font-bold ${statusView.color}`}>{statusView.label}</span>
             </SpecRow>
-            <SpecRow label="상품상태">{CONDITION_LABEL[product.condition]}</SpecRow>
+            <SpecRow label="상품상태">{CONDITION_LABEL[product.productCondition]}</SpecRow>
             <SpecRow label="수량">
               <span className="font-semibold">{product.stock}개</span>
             </SpecRow>

@@ -65,7 +65,7 @@ function RegisterContent() {
         description: description.trim(),
         price: Number(price),
         stock: Number(stock),
-        condition,
+        productCondition: condition,
       });
 
       if (files.length > 0) {

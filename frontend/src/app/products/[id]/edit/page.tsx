@@ -44,7 +44,7 @@ function EditContent({ id }: { id: number }) {
         setPrice(String(p.price));
         setStock(String(p.stock));
         setDescription(p.description);
-        setCondition(p.condition);
+        setCondition(p.productCondition);
         setImages(p.imageUrls);
         setLoaded(true);
       } catch (e) {
@@ -117,7 +117,7 @@ function EditContent({ id }: { id: number }) {
         description: description.trim(),
         price: Number(price),
         stock: Number(stock),
-        condition,
+        productCondition: condition,
       });
       showToast("수정되었습니다.");
       router.push(`/products/${id}`);
