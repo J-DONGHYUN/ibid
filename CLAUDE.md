@@ -32,12 +32,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 project.kjhjdh.ibid
 ├── auth       인증 (JWT 발급/검증, 리프레시 토큰 회전 — Redis 저장, 쿠키 전달)
 ├── user       사용자 (email 값객체, BCrypt 비밀번호)
-├── product    상품 (등록/수정/삭제·목록[커서 페이지네이션]/상세, 상태 PENDING→ON_SALE→SOLD_OUT, 재고 차감/복원 — 이미지는 common image 모듈 사용)
+├── product    상품 (등록/수정/삭제·목록[커서 페이지네이션]/상세, 상태 PENDING→ON_SALE→SOLD_OUT, 재고 차감/복원 — 이미지 ProductImage를 자기 도메인이 소유, S3 기술은 common.image 재사용)
 ├── order      주문 (7상태 상태기계, 재고 비관적 락 동시성 제어, 본인 거래 차단 — payment를 모름)
 ├── inspection 검수 (수령/합격/불합격 판정 기록 + 판정 도메인 이벤트 발행)
 ├── payment    결제 (Toss 연동, 결제 승인/취소, order 호출·검수 이벤트 구독 — 팀원 담당)
 ├── common     공통 (예외 체계 ErrorCode/BusinessException/GlobalExceptionHandler, CORS/Web 설정)
-└── common.image  재사용 이미지 모듈 — Image 엔티티(ownerType+ownerId 다형 소유·확장자 enum), S3 presigned 업로드/삭제(ImageService). 상품·프로필 등 어디서든 사용
+└── common.image  이미지 S3 기술만 (presigned 업로드/삭제 S3ImageUploader·확장자 enum) — **도메인 비의존**. 이미지 소유·연관은 각 도메인이 가짐(예: product.ProductImage). 의존 방향: 도메인 → common.image (역방향 금지)
 ```
 
 - 예외는 `ErrorCode` enum + `BusinessException`으로 던지고, 응답 변환은 `GlobalExceptionHandler`가 담당합니다.
