@@ -68,6 +68,36 @@ class LoginUserArgumentResolverTest {
                 .hasMessage(ErrorCode.UNAUTHORIZED.getMessage());
     }
 
+    @DisplayName("필수가 아닌 @LoginUser는 UserInfo가 없어도 null로 주입된다")
+    @Test
+    void resolveArgument_optional() throws NoSuchMethodException {
+        // given
+        ServletWebRequest webRequest = new ServletWebRequest(new MockHttpServletRequest());
+        MethodParameter parameter = methodParameter("withOptionalLoginUser");
+
+        // when
+        Object resolved = resolver.resolveArgument(parameter, null, webRequest, null);
+
+        // then
+        assertThat(resolved).isNull();
+    }
+
+    @DisplayName("필수가 아닌 @LoginUser도 UserInfo가 있으면 주입된다")
+    @Test
+    void resolveArgument_optionalPresent() throws NoSuchMethodException {
+        // given
+        UserInfo userInfo = new UserInfo(3L, Role.USER);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setAttribute(AuthenticationInterceptor.USER_INFO_ATTRIBUTE, userInfo);
+
+        // when
+        Object resolved = resolver.resolveArgument(
+                methodParameter("withOptionalLoginUser"), null, new ServletWebRequest(request), null);
+
+        // then
+        assertThat(resolved).isEqualTo(userInfo);
+    }
+
     private MethodParameter methodParameter(String methodName) throws NoSuchMethodException {
         return new MethodParameter(Target.class.getDeclaredMethod(methodName, UserInfo.class), 0);
     }
@@ -76,6 +106,9 @@ class LoginUserArgumentResolverTest {
     static class Target {
 
         void withLoginUser(@LoginUser UserInfo user) {
+        }
+
+        void withOptionalLoginUser(@LoginUser(required = false) UserInfo user) {
         }
 
         void withoutAnnotation(UserInfo user) {
