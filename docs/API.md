@@ -5,7 +5,8 @@
 ## 공통
 
 - **Base URL**: `/api`
-- **인증**: 로그인 후 발급받은 액세스 토큰을 `Authorization: Bearer <accessToken>` 헤더로 전달. `/api/auth/**` 를 제외한 **모든 엔드포인트는 인증 필요**(인터셉터가 강제). 리프레시 토큰은 쿠키로 전달.
+- **인증**: 로그인 후 발급받은 액세스 토큰을 `Authorization: Bearer <accessToken>` 헤더로 전달. `/api/auth/**` 와 **`@PublicApi`로 지정한 조회 엔드포인트**(`GET /api/products`, `GET /api/products/{id}`)를 제외한 모든 엔드포인트는 인증이 필요하다(인터셉터가 강제). 리프레시 토큰은 쿠키로 전달.
+- **공개 엔드포인트의 토큰 처리**: 토큰 없이 호출하면 익명으로 통과하지만, **토큰을 보냈다면 유효해야 한다**(만료·위조 시 `401 INVALID_TOKEN`). 프론트의 `401 → refresh → 재시도` 흐름을 유지하기 위한 규칙이다.
 - **에러 응답 형식**:
   ```json
   { "code": "PRODUCT_NOT_FOUND", "message": "상품을 찾을 수 없습니다." }
@@ -36,9 +37,11 @@
 | 상품 등록 | POST | `/api/products` | O | `{title, description, price, stock}` | `201 {productId}` (생성 시 `PENDING`) |
 | 판매 시작 | PATCH | `/api/products/{id}/on-sale` | 판매자 본인 | - | `200` (`PENDING`→`ON_SALE`) |
 | 상품 목록 | GET | `/api/products?cursor=` | X | - | `200 {products:[{productId,title,price,stock,status}], nextCursor, hasNext}` |
-| 상품 상세 | GET | `/api/products/{id}` | X | - | `200 {productId, sellerId, title, description, price, stock, status}` |
+| 상품 상세 | GET | `/api/products/{id}` | X | - | `200 {productId, sellerId, title, description, price, stock, status, viewCount}` + `Set-Cookie: visitor_id` |
 
 - `title` 1~100자, `description` 1~2000자, `price`≥1, `stock`≥1. 목록은 커서 기반(16개, id 내림차순).
+- **조회수(`viewCount`)**: 상세 조회 시 증가한다. 조회자는 `visitor_id` 쿠키(UUID, `HttpOnly`·`Secure`·`Path=/`·`SameSite=Strict`·1년)로 식별하며 쿠키가 없으면 발급한다. 같은 방문자·같은 상품은 **30분간 1회만** 집계된다(로그인 여부와 무관 — 판매자 본인 조회도 집계). 응답값은 `DB 누적값 + Redis 미반영 delta`라 내 조회가 즉시 반영된다.
+- 존재하지 않는 상품(`404`)은 조회수를 기록하지 않고 `Set-Cookie`도 내려주지 않는다.
 - 오류: `INVALID_PRODUCT_*`(400), `PRODUCT_NOT_FOUND`(404), `PRODUCT_NOT_PENDING`(409), `ACCESS_DENIED`(403, 판매자 아님).
 
 ---

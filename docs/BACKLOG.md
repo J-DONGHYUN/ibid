@@ -39,7 +39,7 @@
 | ID | 작업 | 우선 | 기술포인트 |
 | --- | --- | --- | --- |
 | CACHE-1 | **Redis 캐시** (상품 목록/상세 등 핫 데이터) + **무효화 전략** | P1 | 캐시 설계 |
-| CACHE-2 | **조회수·인기 랭킹** (Redis Sorted Set) | P2 | Redis 자료구조 |
+| CACHE-2 | **조회수·인기 랭킹** (Redis Sorted Set) — 조회수(`PROD-7`)는 **완료**(Redis 카운터 + Lua 원자 중복방지 + 60초 write-back), 남은 것은 Sorted Set 인기 랭킹(ZINCRBY) | P2 | Redis 자료구조 |
 | CACHE-3 | 캐시 **적중률 측정** · TTL/스탬피드(캐시 쇄도) 방지 | P2 | 캐시 운영 |
 
 ---

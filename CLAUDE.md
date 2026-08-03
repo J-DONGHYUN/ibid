@@ -20,6 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **주문/구매/검수/결제 등 기능 흐름 작업** → `docs/FEATURE_SPEC.md` (기능 정의·전체 플로우·담당 경계)
 - **무엇을 할지/진행 상태** → `docs/MVP.md`(MVP1·2 완료 기록) · `docs/BACKLOG.md`(MVP3+ 전체 백로그·2인 분담)
 - **결제 프로세스 현재 상태·알려진 결함** → `docs/PAYMENT_PROCESS.md`
+- **상품 조회수(Redis 카운터·쿠키·write-back) 구현 상태** → `docs/PRODUCT_VIEW_PROCESS.md`
 - **테스트 코드 작성** → `docs/TEST.md` (계층/네이밍/Fixture/DbCleaner 규칙)
 
 기능을 추가·변경하면 `docs/FEATURE_SPEC.md`와 `docs/MVP.md`를 최신 상태로 갱신하세요.
@@ -41,6 +42,8 @@ project.kjhjdh.ibid
 
 - 예외는 `ErrorCode` enum + `BusinessException`으로 던지고, 응답 변환은 `GlobalExceptionHandler`가 담당합니다.
 - 인증이 필요한 컨트롤러는 `@LoginUser UserInfo`로 로그인 사용자를 주입받습니다(`AuthenticationInterceptor` + `LoginUserArgumentResolver`).
+- 비로그인 사용자에게 열어야 하는 엔드포인트는 **`@PublicApi`** 를 핸들러 메서드(또는 클래스)에 붙입니다. `WebConfig.PUBLIC_ENDPOINTS`의 경로 기반 제외는 **HTTP 메서드를 구분하지 못해** 같은 경로의 쓰기 API까지 열리므로 쓰지 마세요. `@PublicApi`는 토큰이 없으면 통과시키지만 **토큰을 보냈다면 유효해야** 합니다(만료·위조는 401 — 프론트의 `401 → refresh → 재시도` 흐름 보존).
+- `@PublicApi` 핸들러에서 로그인 사용자를 알아야 하면 `@LoginUser(required = false) UserInfo`로 받습니다(비로그인이면 `null`).
 - **의존성 방향**: `payment → order`. order/inspection은 payment를 import하지 않습니다. 정산/환불은 inspection이 **도메인 이벤트**(`InspectionPassed`/`InspectionFailed`) 발행 → payment가 구독.
 - **향후 도메인**(notification, chat, review, community, search, file 등)도 같은 4계층 + 이벤트 원칙을 따르세요. 전체 계획은 `docs/BACKLOG.md`.
 
@@ -95,5 +98,6 @@ DB 구성이 코드에 아직 명시돼 있지 않다는 점이 이 저장소의
 - `docs/FEATURE_SPEC.md` : 기능 정의·전체 플로우·담당 경계 (기능 작업 전 필독)
 - `docs/MVP.md` : MVP1·2 작업 기록
 - `docs/PAYMENT_PROCESS.md` : 결제 프로세스 현재 상태·알려진 결함
+- `docs/PRODUCT_VIEW_PROCESS.md` : 상품 조회수 프로세스(Redis 카운터·Lua 원자성·쿠키·write-back)·설계 근거·알려진 리스크
 - `docs/API.md` : REST API 명세(엔드포인트 종합)
 - `docs/TEST.md` : 테스트 작성 규칙
