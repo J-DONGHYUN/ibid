@@ -10,10 +10,11 @@ public record ProductDetailResponse(
         String description,
         int price,
         int stock,
-        ProductStatus status
+        ProductStatus status,
+        long viewCount
 ) {
 
-    public static ProductDetailResponse from(Product product) {
+    public static ProductDetailResponse of(Product product, long viewCount) {
         return new ProductDetailResponse(
                 product.getId(),
                 product.getSellerId(),
@@ -21,7 +22,8 @@ public record ProductDetailResponse(
                 product.getDescription(),
                 product.getPrice(),
                 product.getStock(),
-                product.getStatus()
+                product.getStatus(),
+                viewCount
         );
     }
 }
