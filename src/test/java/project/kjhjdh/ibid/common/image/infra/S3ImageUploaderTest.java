@@ -1,4 +1,4 @@
-package project.kjhjdh.ibid.product.infra.s3;
+package project.kjhjdh.ibid.common.image.infra;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

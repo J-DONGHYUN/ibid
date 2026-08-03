@@ -1,4 +1,4 @@
-package project.kjhjdh.ibid.product.infra.s3;
+package project.kjhjdh.ibid.common.image.infra;
 
 public record PresignedUploadResult(
         String presignedUrl,

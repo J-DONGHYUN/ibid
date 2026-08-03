@@ -1,4 +1,4 @@
-package project.kjhjdh.ibid.product.infra.s3;
+package project.kjhjdh.ibid.common.image.infra;
 
 import java.time.Duration;
 import java.util.List;
@@ -10,12 +10,12 @@ import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
-import software.amazon.awssdk.services.s3.S3Client;
 
 @Component
 @RequiredArgsConstructor
@@ -27,10 +27,10 @@ public class S3ImageUploader {
     private final S3Presigner s3Presigner;
     private final S3Client s3Client;
 
-    @Value("${aws.s3.bucket}")
+    @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
 
-    @Value("${aws.region}")
+    @Value("${spring.cloud.aws.region.static}")
     private String region;
 
     public PresignedUploadResult generatePresignedUrl(String directory, String originalFilename, String contentType) {

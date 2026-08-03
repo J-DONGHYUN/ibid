@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.common.image.application.ImageService;
+import project.kjhjdh.ibid.common.image.domain.ImageOwnerType;
 import project.kjhjdh.ibid.order.domain.Order;
 import project.kjhjdh.ibid.order.infra.OrderRepository;
 import project.kjhjdh.ibid.order.presentation.dto.MyOrdersResponse;
@@ -28,6 +30,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final ImageService imageService;
 
     @Transactional
     public PurchaseResult purchase(Long buyerId, PurchaseRequest request) {
@@ -125,8 +128,13 @@ public class OrderService {
 
         List<OrderSummaryResponse> purchases = toSummaries(purchaseOrders, productsById);
         List<OrderSummaryResponse> sales = toSummaries(saleOrders, productsById);
-        List<ProductSummaryResponse> listings = productRepository.findBySellerIdOrderByIdDesc(userId).stream()
-                .map(ProductSummaryResponse::from)
+        List<Product> sellerProducts = productRepository.findBySellerIdOrderByIdDesc(userId);
+        Map<Long, String> listingThumbnails = imageService.findThumbnails(
+                ImageOwnerType.PRODUCT,
+                sellerProducts.stream().map(Product::getId).toList()
+        );
+        List<ProductSummaryResponse> listings = sellerProducts.stream()
+                .map(product -> ProductSummaryResponse.from(product, listingThumbnails.get(product.getId())))
                 .toList();
 
         return new MyTransactionsResponse(purchases, sales, listings);

@@ -18,7 +18,7 @@ public record ProductDetailResponse(
         List<String> imageUrls
 ) {
 
-    public static ProductDetailResponse from(Product product) {
+    public static ProductDetailResponse from(Product product, List<String> imageUrls) {
         return new ProductDetailResponse(
                 product.getId(),
                 product.getSellerId(),
@@ -28,7 +28,7 @@ public record ProductDetailResponse(
                 product.getStock(),
                 product.getStatus(),
                 product.getCondition(),
-                List.copyOf(product.getImageUrls())
+                imageUrls
         );
     }
 }

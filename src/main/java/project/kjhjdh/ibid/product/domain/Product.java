@@ -1,21 +1,13 @@
 package project.kjhjdh.ibid.product.domain;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.BatchSize;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -60,13 +52,6 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(name = "product_condition", nullable = false)
     private ProductCondition condition;
-
-    @ElementCollection
-    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "image_url")
-    @OrderColumn(name = "image_order")
-    @BatchSize(size = 100)
-    private List<String> imageUrls = new ArrayList<>();
 
     private Product(Long sellerId, String title, String description, int price, int stock, ProductCondition condition) {
         validateTitle(title);
@@ -159,14 +144,6 @@ public class Product {
         this.price = price;
         this.stock = stock;
         this.condition = condition;
-    }
-
-    public void addImageUrls(List<String> urls) {
-        this.imageUrls.addAll(urls);
-    }
-
-    public void removeImageUrls(List<String> urls) {
-        this.imageUrls.removeAll(urls);
     }
 
     public void validateModifiable() {
