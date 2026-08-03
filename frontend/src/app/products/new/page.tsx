@@ -266,22 +266,15 @@ function RegisterContent() {
       </form>
 
       <div className="mt-8 rounded-lg bg-neutral-50 px-5 py-4 text-sm text-neutral-500">
-        등록된 상품은 검수 후 노출되며, 검수 전까지 <span className="font-bold text-[#f0143c]">판매대기</span> 상태로 표시됩니다.
+        등록하면 <span className="font-bold text-[#f0143c]">판매대기</span> 상태로 저장돼요. 상세 페이지에서 <span className="font-bold text-neutral-800">판매 시작</span>을 누르면 판매중으로 전환됩니다.
       </div>
 
-      <div className="sticky bottom-0 z-30 -mx-6 mt-10 flex justify-center gap-3 border-t border-neutral-100 bg-white px-6 py-4">
-        <button
-          type="button"
-          onClick={() => showToast("임시 저장은 준비 중이에요.")}
-          className="rounded-lg border border-neutral-300 px-10 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
-        >
-          임시 저장
-        </button>
+      <div className="sticky bottom-0 z-30 -mx-6 mt-10 flex justify-end border-t border-neutral-100 bg-white px-6 py-4">
         <button
           type="submit"
           form="register-form"
           disabled={!valid || submitting}
-          className="rounded-lg bg-[#f0143c] px-12 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:bg-neutral-200 disabled:text-neutral-400"
+          className="rounded-lg bg-[#f0143c] px-14 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:bg-neutral-200 disabled:text-neutral-400"
         >
           {submitting ? "등록 중..." : "등록하기"}
         </button>
