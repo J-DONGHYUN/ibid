@@ -39,7 +39,7 @@ public class ProductService {
     @Transactional
     public void confirmImages(Long sellerId, Long productId, ImageConfirmRequest request) {
         Product product = findOwnedProduct(sellerId, productId);
-        productImageService.attach(product, request.imageUrls());
+        product.addImages(request.imageUrls());
     }
 
     @Transactional
@@ -50,16 +50,18 @@ public class ProductService {
 
     @Transactional
     public void deleteImages(Long sellerId, Long productId, List<String> imageUrls) {
-        findOwnedProduct(sellerId, productId);
-        productImageService.deleteByUrls(productId, imageUrls);
+        Product product = findOwnedProduct(sellerId, productId);
+        List<String> removed = product.removeImages(imageUrls);
+        productImageService.deleteFiles(removed);
     }
 
     @Transactional
     public void delete(Long sellerId, Long productId) {
         Product product = findOwnedProduct(sellerId, productId);
         product.validateModifiable();
-        productImageService.deleteAll(productId);
+        List<String> imageUrls = product.imageUrls();
         productRepository.delete(product);
+        productImageService.deleteFiles(imageUrls);
     }
 
     @Transactional
@@ -95,8 +97,7 @@ public class ProductService {
     public ProductDetailResponse getProduct(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-        List<String> imageUrls = productImageService.findUrls(productId);
-        return ProductDetailResponse.from(product, imageUrls);
+        return ProductDetailResponse.from(product, product.imageUrls());
     }
 
     private Product findOwnedProduct(Long sellerId, Long productId) {

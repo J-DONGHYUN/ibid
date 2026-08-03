@@ -13,8 +13,6 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -42,24 +40,17 @@ class ProductImageServiceTest {
     @InjectMocks
     private ProductImageService productImageService;
 
-    @Captor
-    private ArgumentCaptor<List<ProductImage>> imagesCaptor;
-
-    private Product product(Long id) {
-        Product product = Product.create(10L, "상품", "설명", 1000, 1);
-        ReflectionTestUtils.setField(product, "id", id);
-        return product;
-    }
-
     private ProductImage productImage(Long productId, String url, int sortOrder) {
-        return ProductImage.of(product(productId), url, sortOrder);
+        Product product = Product.create(10L, "상품", "설명", 1000, 1);
+        ReflectionTestUtils.setField(product, "id", productId);
+        return ProductImage.of(product, url, sortOrder);
     }
 
-    @DisplayName("파일명·타입으로 presigned URL을 발급해 응답으로 매핑한다")
+    @DisplayName("파일명으로 presigned URL을 발급해 응답으로 매핑한다")
     @Test
     void presign() {
         // given
-        given(s3ImageUploader.generatePresignedUrl(any(), any(), any()))
+        given(s3ImageUploader.generatePresignedUrl(any(), any()))
                 .willReturn(new PresignedUploadResult("https://presigned", "products/1/uuid.jpg", "https://image"));
 
         // when
@@ -70,24 +61,6 @@ class ProductImageServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).presignedUrl()).isEqualTo("https://presigned");
         assertThat(result.get(0).imageUrl()).isEqualTo("https://image");
-    }
-
-    @DisplayName("기존 이미지 뒤에 이어서 sortOrder를 매겨 저장한다")
-    @Test
-    void attach() {
-        // given
-        Product product = product(PRODUCT_ID);
-        given(productImageRepository.countByProductId(PRODUCT_ID)).willReturn(2);
-
-        // when
-        productImageService.attach(product, List.of("https://img/a.jpg", "https://img/b.png"));
-
-        // then
-        then(productImageRepository).should().saveAll(imagesCaptor.capture());
-        List<ProductImage> saved = imagesCaptor.getValue();
-        assertThat(saved).hasSize(2);
-        assertThat(saved.get(0).getSortOrder()).isEqualTo(2);
-        assertThat(saved.get(1).getSortOrder()).isEqualTo(3);
     }
 
     @DisplayName("상품별 첫 이미지를 대표 이미지로 매핑한다")
@@ -119,40 +92,13 @@ class ProductImageServiceTest {
         assertThat(thumbnails).isEmpty();
     }
 
-    @DisplayName("선택한 이미지를 DB와 S3에서 함께 삭제한다")
+    @DisplayName("전달받은 URL들을 S3에서 삭제한다")
     @Test
-    void deleteByUrls() {
-        // given
-        List<ProductImage> images = List.of(
-                productImage(PRODUCT_ID, "https://img/a.jpg", 0),
-                productImage(PRODUCT_ID, "https://img/b.jpg", 1)
-        );
-        given(productImageRepository.findByProductIdAndUrlIn(PRODUCT_ID,
-                List.of("https://img/a.jpg", "https://img/b.jpg"))).willReturn(images);
-
+    void deleteFiles() {
         // when
-        productImageService.deleteByUrls(PRODUCT_ID, List.of("https://img/a.jpg", "https://img/b.jpg"));
+        productImageService.deleteFiles(List.of("https://img/a.jpg", "https://img/b.jpg"));
 
         // then
-        then(productImageRepository).should().deleteAll(images);
-        then(s3ImageUploader).should(times(2)).delete(anyString());
-    }
-
-    @DisplayName("상품의 모든 이미지를 DB와 S3에서 삭제한다")
-    @Test
-    void deleteAll() {
-        // given
-        List<ProductImage> images = List.of(
-                productImage(PRODUCT_ID, "https://img/a.jpg", 0),
-                productImage(PRODUCT_ID, "https://img/b.jpg", 1)
-        );
-        given(productImageRepository.findByProductId(PRODUCT_ID)).willReturn(images);
-
-        // when
-        productImageService.deleteAll(PRODUCT_ID);
-
-        // then
-        then(productImageRepository).should().deleteAll(images);
         then(s3ImageUploader).should(times(2)).delete(anyString());
     }
 }

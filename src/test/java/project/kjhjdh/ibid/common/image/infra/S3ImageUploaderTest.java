@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
 
 import java.net.URI;
 
@@ -17,21 +16,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import io.awspring.cloud.s3.S3Template;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 @ExtendWith(MockitoExtension.class)
 class S3ImageUploaderTest {
 
     @Mock
-    private S3Presigner s3Presigner;
-
-    @Mock
-    private S3Client s3Client;
+    private S3Template s3Template;
 
     @InjectMocks
     private S3ImageUploader s3ImageUploader;
@@ -46,12 +39,11 @@ class S3ImageUploaderTest {
     @Test
     void generatePresignedUrl() throws Exception {
         // given
-        PresignedPutObjectRequest presigned = mock(PresignedPutObjectRequest.class);
-        given(presigned.url()).willReturn(URI.create("https://presigned-put-url").toURL());
-        given(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).willReturn(presigned);
+        given(s3Template.createSignedPutURL(any(), any(), any()))
+                .willReturn(URI.create("https://presigned-put-url").toURL());
 
         // when
-        PresignedUploadResult result = s3ImageUploader.generatePresignedUrl("products/1", "photo.JPG", "image/jpeg");
+        PresignedUploadResult result = s3ImageUploader.generatePresignedUrl("products/1", "photo.JPG");
 
         // then
         assertThat(result.presignedUrl()).isEqualTo("https://presigned-put-url");
@@ -64,7 +56,7 @@ class S3ImageUploaderTest {
     @Test
     void generatePresignedUrl_invalidExtension() {
         // when & then
-        assertThatThrownBy(() -> s3ImageUploader.generatePresignedUrl("products/1", "malware.txt", "text/plain"))
+        assertThatThrownBy(() -> s3ImageUploader.generatePresignedUrl("products/1", "malware.txt"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.FILE_INVALID_EXTENSION.getMessage());
     }
@@ -73,8 +65,19 @@ class S3ImageUploaderTest {
     @Test
     void generatePresignedUrl_noExtension() {
         // when & then
-        assertThatThrownBy(() -> s3ImageUploader.generatePresignedUrl("products/1", "noext", "image/jpeg"))
+        assertThatThrownBy(() -> s3ImageUploader.generatePresignedUrl("products/1", "noext"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.FILE_INVALID_EXTENSION.getMessage());
+    }
+
+    @DisplayName("이미지 URL에서 key를 추출해 S3에서 삭제한다")
+    @Test
+    void delete() {
+        // when
+        s3ImageUploader.delete("https://ibid-product-images.s3.ap-northeast-2.amazonaws.com/products/1/uuid.jpg");
+
+        // then
+        org.mockito.BDDMockito.then(s3Template).should()
+                .deleteObject("ibid-product-images", "products/1/uuid.jpg");
     }
 }

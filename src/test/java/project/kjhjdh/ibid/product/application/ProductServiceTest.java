@@ -126,10 +126,10 @@ class ProductServiceTest {
 
         // when
         productService.confirmImages(SELLER_ID, PRODUCT_ID,
-                new ImageConfirmRequest(List.of("https://image1", "https://image2")));
+                new ImageConfirmRequest(List.of("https://image1.jpg", "https://image2.png")));
 
         // then
-        then(productImageService).should().attach(product, List.of("https://image1", "https://image2"));
+        assertThat(product.imageUrls()).containsExactly("https://image1.jpg", "https://image2.png");
     }
 
     @DisplayName("본인 상품이 아니면 이미지 URL을 저장할 수 없다")
@@ -179,25 +179,28 @@ class ProductServiceTest {
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
     }
 
-    @DisplayName("본인 상품이면 선택한 이미지 삭제를 이미지 서비스에 위임한다")
+    @DisplayName("선택한 이미지를 상품에서 제거하고 S3 삭제를 위임한다")
     @Test
     void deleteImages() {
         // given
         Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, 1);
+        product.addImages(List.of("https://img1.jpg", "https://img2.png", "https://img3.gif"));
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
-        productService.deleteImages(SELLER_ID, PRODUCT_ID, List.of("https://img1", "https://img2"));
+        productService.deleteImages(SELLER_ID, PRODUCT_ID, List.of("https://img1.jpg", "https://img2.png"));
 
         // then
-        then(productImageService).should().deleteByUrls(PRODUCT_ID, List.of("https://img1", "https://img2"));
+        assertThat(product.imageUrls()).containsExactly("https://img3.gif");
+        then(productImageService).should().deleteFiles(List.of("https://img1.jpg", "https://img2.png"));
     }
 
-    @DisplayName("본인 상품을 삭제하면 상품과 이미지를 함께 삭제한다")
+    @DisplayName("본인 상품을 삭제하면 상품과 이미지(DB·S3)를 함께 삭제한다")
     @Test
     void delete() {
         // given
         Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, 1);
+        product.addImages(List.of("https://img1.jpg", "https://img2.png"));
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
@@ -205,7 +208,7 @@ class ProductServiceTest {
 
         // then
         then(productRepository).should().delete(product);
-        then(productImageService).should().deleteAll(PRODUCT_ID);
+        then(productImageService).should().deleteFiles(List.of("https://img1.jpg", "https://img2.png"));
     }
 
     @DisplayName("본인 상품이 아니면 삭제할 수 없다")
