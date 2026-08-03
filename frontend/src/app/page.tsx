@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import Header from "@/components/Header";
-import AuthGuard from "@/components/AuthGuard";
 import ProductCard from "@/components/ProductCard";
 import { api, ApiError } from "@/lib/api";
 import type { ProductSummary } from "@/lib/types";
@@ -195,9 +194,5 @@ function HomeContent() {
 }
 
 export default function HomePage() {
-  return (
-    <AuthGuard>
-      <HomeContent />
-    </AuthGuard>
-  );
+  return <HomeContent />;
 }

@@ -22,6 +22,7 @@ export interface ProductDetail {
   price: number;
   stock: number;
   status: ProductStatus;
+  viewCount: number;
 }
 
 export interface LoginResponse {
