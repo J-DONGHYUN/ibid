@@ -27,6 +27,7 @@ export interface ProductDetail {
   status: ProductStatus;
   productCondition: ProductCondition;
   imageUrls: string[];
+  createdAt: string;
 }
 
 export interface ImagePresignRequest {

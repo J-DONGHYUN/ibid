@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -125,7 +126,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // given
         given(productService.getProduct(1L)).willReturn(
                 new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE,
-                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg")));
+                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0)));
 
         // when & then
         RestAssuredMockMvc.given()

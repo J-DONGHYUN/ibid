@@ -1,5 +1,6 @@
 package project.kjhjdh.ibid.product.domain;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,6 +64,9 @@ public class Product {
     @OrderBy("sortOrder")
     private List<ProductImage> images = new ArrayList<>();
 
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     private Product(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
         validateTitle(title);
         validateDescription(description);
@@ -75,6 +79,7 @@ public class Product {
         this.stock = stock;
         this.status = ProductStatus.PENDING;
         this.productCondition = productCondition;
+        this.createdAt = LocalDateTime.now();
     }
 
     public static Product create(Long sellerId, String title, String description, int price, int stock) {

@@ -18,7 +18,7 @@ import AuthGuard from "@/components/AuthGuard";
 import PurchaseModal from "@/components/PurchaseModal";
 import { useToast } from "@/components/Toast";
 import { api, ApiError, currentUserId } from "@/lib/api";
-import { formatWon, sellerName } from "@/lib/format";
+import { formatWon, sellerName, timeAgo } from "@/lib/format";
 import { CONDITION_LABEL } from "@/lib/types";
 import type { ProductDetail } from "@/lib/types";
 
@@ -205,7 +205,7 @@ function DetailContent({ id }: { id: number }) {
 
           <div className="mt-3 flex items-center justify-between text-sm text-neutral-400">
             <div className="flex items-center gap-3">
-              <span>8시간 전</span>
+              <span>{timeAgo(product.createdAt)}</span>
               <span className="flex items-center gap-1">
                 <Eye size={15} /> 164
               </span>
