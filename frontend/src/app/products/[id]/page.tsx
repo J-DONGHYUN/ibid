@@ -246,17 +246,14 @@ function DetailContent({ id }: { id: number }) {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-between border-t border-neutral-100 pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
-                <ImageIcon size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-bold">{sellerName(product.sellerId)}</p>
-                <p className="text-xs text-neutral-400">상품 1개 판매 중 · 거래 12회</p>
-              </div>
+          <div className="mt-6 flex items-center gap-3 border-t border-neutral-100 pt-6">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+              <ImageIcon size={18} />
             </div>
-            <button className="text-sm text-neutral-500 hover:text-neutral-800">상점 보기</button>
+            <div>
+              <p className="text-sm font-bold">{sellerName(product.sellerId)}</p>
+              <p className="text-xs text-neutral-400">판매자</p>
+            </div>
           </div>
 
           <div className="mt-6 flex gap-3">
