@@ -15,7 +15,10 @@
 
 ### Phase 1 — 상호작용
 - [x] **DTL-1 공유** — 링크 복사 / Web Share (FE)
-- [ ] **DTL-2 찜/좋아요** — like API + **Redis 찜수**·내 찜여부 (BE+FE)
+- [~] **DTL-2 찜/좋아요** — 진행 중 (`feat/product-like`)
+  - Phase 1(CRUD): `ProductLike`(DB 원본, unique 유저·상품) · like/unlike(멱등) · 내 찜여부 · 찜수 · 관심목록 · 상세 `likeCount`/`likedByMe`
+  - Phase 2(Redis 캐시): 찜수를 Redis `INCR/DECR`로 캐싱(미스 시 DB COUNT로 워밍) — **DB 원본·Redis 캐시**(조회수와 반대 역할)
+  - ⚠️ 접점: 상세 응답·메타행이 #34 조회수와 겹침 → 필드·자리 합의 후 통합
 
 ### Phase 2 — 상품 데이터·미디어
 - [ ] **DTL-4 상품 필드확장** — `tags` · `createdAt` · **`shippingFee`(플랫폼 관리)** (BE+FE)
