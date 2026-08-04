@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,7 +30,7 @@ public class ProductLikeController {
         return ResponseEntity.ok(productLikeService.status(loginUser.userId(), productId));
     }
 
-    @PutMapping("/{productId}/like")
+    @PostMapping("/{productId}/like")
     public ResponseEntity<Void> like(@LoginUser UserInfo loginUser, @PathVariable Long productId) {
         productLikeService.like(loginUser.userId(), productId);
         return ResponseEntity.ok().build();

@@ -32,7 +32,7 @@ class ProductLikeControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .when()
-                .put("/api/products/{productId}/like", 1L)
+                .post("/api/products/{productId}/like", 1L)
                 .then()
                 .statusCode(HttpStatus.OK.value());
     }
@@ -47,7 +47,7 @@ class ProductLikeControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .when()
-                .put("/api/products/{productId}/like", 999L)
+                .post("/api/products/{productId}/like", 999L)
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value())
                 .body("code", equalTo("PRODUCT_NOT_FOUND"));

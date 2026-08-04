@@ -165,7 +165,7 @@ export const api = {
     request<ProductLikeStatus>(`/api/products/${productId}/like`),
 
   likeProduct: (productId: number) =>
-    request<void>(`/api/products/${productId}/like`, { method: "PUT" }),
+    request<void>(`/api/products/${productId}/like`, { method: "POST" }),
 
   unlikeProduct: (productId: number) =>
     request<void>(`/api/products/${productId}/like`, { method: "DELETE" }),
