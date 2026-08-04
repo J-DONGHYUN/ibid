@@ -9,8 +9,10 @@ import type {
   OrderDetail,
   OrderRole,
   ProductDetail,
+  ProductLikeStatus,
   ProductListResponse,
   ProductRegisterRequest,
+  ProductSummary,
   ProductUpdateRequest,
   SignupRequest,
 } from "./types";
@@ -158,6 +160,17 @@ export const api = {
     ),
 
   getProduct: (id: number) => request<ProductDetail>(`/api/products/${id}`),
+
+  getLikeStatus: (productId: number) =>
+    request<ProductLikeStatus>(`/api/products/${productId}/like`),
+
+  likeProduct: (productId: number) =>
+    request<void>(`/api/products/${productId}/like`, { method: "PUT" }),
+
+  unlikeProduct: (productId: number) =>
+    request<void>(`/api/products/${productId}/like`, { method: "DELETE" }),
+
+  myLikes: () => request<ProductSummary[]>("/api/products/me/likes"),
 
   registerProduct: (data: ProductRegisterRequest) =>
     request<{ productId: number }>("/api/products", { method: "POST", body: data }),

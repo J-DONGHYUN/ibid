@@ -15,6 +15,7 @@ import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductLike;
 import project.kjhjdh.ibid.product.infra.ProductLikeRepository;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
+import project.kjhjdh.ibid.product.presentation.dto.ProductLikeStatusResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
 
 @Service
@@ -49,6 +50,14 @@ public class ProductLikeService {
     @Transactional(readOnly = true)
     public long countLikes(Long productId) {
         return productLikeRepository.countByProductId(productId);
+    }
+
+    @Transactional(readOnly = true)
+    public ProductLikeStatusResponse status(Long userId, Long productId) {
+        return new ProductLikeStatusResponse(
+                productLikeRepository.countByProductId(productId),
+                productLikeRepository.existsByUserIdAndProductId(userId, productId)
+        );
     }
 
     @Transactional(readOnly = true)

@@ -44,6 +44,11 @@ export interface ImageConfirmRequest {
   imageUrls: string[];
 }
 
+export interface ProductLikeStatus {
+  count: number;
+  liked: boolean;
+}
+
 export interface LoginResponse {
   accessToken: string;
 }

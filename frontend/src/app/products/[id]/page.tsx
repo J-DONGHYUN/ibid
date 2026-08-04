@@ -32,6 +32,7 @@ function DetailContent({ id }: { id: number }) {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [starting, setStarting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -83,6 +84,36 @@ function DetailContent({ id }: { id: number }) {
       setDeleting(false);
     }
   };
+
+  const toggleLike = async () => {
+    const next = !liked;
+    setLiked(next);
+    setLikeCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    try {
+      if (next) await api.likeProduct(id);
+      else await api.unlikeProduct(id);
+    } catch (e) {
+      setLiked(!next);
+      setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
+      showToast(e instanceof ApiError ? e.message : "찜 처리에 실패했어요.", "error");
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    api
+      .getLikeStatus(id)
+      .then((s) => {
+        if (active) {
+          setLiked(s.liked);
+          setLikeCount(s.count);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [id, reloadKey]);
 
   useEffect(() => {
     let active = true;
@@ -179,7 +210,7 @@ function DetailContent({ id }: { id: number }) {
                 <Eye size={15} /> 164
               </span>
               <span className="flex items-center gap-1">
-                <Heart size={15} /> 5
+                <Heart size={15} className={liked ? "fill-rose-500 text-rose-500" : ""} /> {likeCount}
               </span>
             </div>
             <button className="hover:text-neutral-600">신고하기</button>
@@ -232,7 +263,7 @@ function DetailContent({ id }: { id: number }) {
             <IconBtn onClick={openShare} label="공유">
               <Share2 size={20} />
             </IconBtn>
-            <IconBtn onClick={() => setLiked((v) => !v)} label="찜">
+            <IconBtn onClick={toggleLike} label="찜">
               <Heart size={20} className={liked ? "fill-rose-500 text-rose-500" : "text-neutral-500"} />
             </IconBtn>
 

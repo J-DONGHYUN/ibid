@@ -17,6 +17,7 @@ import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.domain.ProductStatus;
+import project.kjhjdh.ibid.product.presentation.dto.ProductLikeStatusResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
 import project.kjhjdh.ibid.support.ControllerTestSupport;
 
@@ -50,6 +51,23 @@ class ProductLikeControllerTest extends ControllerTestSupport {
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value())
                 .body("code", equalTo("PRODUCT_NOT_FOUND"));
+    }
+
+    @DisplayName("찜 상태 조회에 성공하면 200과 찜수·내 찜여부를 응답한다")
+    @Test
+    void likeStatus() {
+        // given
+        given(productLikeService.status(anyLong(), eq(1L)))
+                .willReturn(new ProductLikeStatusResponse(7L, true));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/products/{productId}/like", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("count", equalTo(7))
+                .body("liked", equalTo(true));
     }
 
     @DisplayName("찜을 취소하면 204를 응답한다")

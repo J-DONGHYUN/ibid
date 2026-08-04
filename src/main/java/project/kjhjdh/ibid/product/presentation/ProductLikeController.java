@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.product.application.ProductLikeService;
+import project.kjhjdh.ibid.product.presentation.dto.ProductLikeStatusResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
 
 @RestController
@@ -22,6 +23,12 @@ import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
 public class ProductLikeController {
 
     private final ProductLikeService productLikeService;
+
+    @GetMapping("/{productId}/like")
+    public ResponseEntity<ProductLikeStatusResponse> likeStatus(
+            @LoginUser UserInfo loginUser, @PathVariable Long productId) {
+        return ResponseEntity.ok(productLikeService.status(loginUser.userId(), productId));
+    }
 
     @PutMapping("/{productId}/like")
     public ResponseEntity<Void> like(@LoginUser UserInfo loginUser, @PathVariable Long productId) {
