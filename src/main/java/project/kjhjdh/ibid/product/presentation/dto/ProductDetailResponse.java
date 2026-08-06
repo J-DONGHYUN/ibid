@@ -34,7 +34,7 @@ public record ProductDetailResponse(
                 product.getProductCondition(),
                 imageUrls,
                 product.getCreatedAt(),
-                List.copyOf(product.getTags()),
+                product.tagNames(),
                 product.getShippingFee()
         );
     }

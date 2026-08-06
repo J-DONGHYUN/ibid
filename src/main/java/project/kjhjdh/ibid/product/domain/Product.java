@@ -5,9 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,6 +13,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -67,10 +67,13 @@ public class Product {
     @OrderBy("sortOrder")
     private List<ProductImage> images = new ArrayList<>();
 
-    @ElementCollection
-    @CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "tag")
-    private List<String> tags = new ArrayList<>();
+    @ManyToMany
+    @JoinTable(
+            name = "product_tag",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private List<Tag> tags = new ArrayList<>();
 
     @Column(nullable = false)
     private int shippingFee;
@@ -79,7 +82,7 @@ public class Product {
     private LocalDateTime createdAt;
 
     private Product(Long sellerId, String title, String description, int price, int stock,
-                    ProductCondition productCondition, List<String> tags, int shippingFee) {
+                    ProductCondition productCondition, List<Tag> tags, int shippingFee) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
@@ -106,7 +109,7 @@ public class Product {
     }
 
     public static Product create(Long sellerId, String title, String description, int price, int stock,
-                                 ProductCondition productCondition, List<String> tags, int shippingFee) {
+                                 ProductCondition productCondition, List<Tag> tags, int shippingFee) {
         return new Product(sellerId, title, description, price, stock, productCondition, tags, shippingFee);
     }
 
@@ -169,7 +172,7 @@ public class Product {
     }
 
     public void update(String title, String description, int price, int stock,
-                       ProductCondition productCondition, List<String> tags, int shippingFee) {
+                       ProductCondition productCondition, List<Tag> tags, int shippingFee) {
         validateModifiable();
         validateTitle(title);
         validateDescription(description);
@@ -209,6 +212,10 @@ public class Product {
 
     public List<String> imageUrls() {
         return images.stream().map(ProductImage::getUrl).toList();
+    }
+
+    public List<String> tagNames() {
+        return tags.stream().map(Tag::getName).toList();
     }
 
     public boolean isOwnedBy(Long userId) {

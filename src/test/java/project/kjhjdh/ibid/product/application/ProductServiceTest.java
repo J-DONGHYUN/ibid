@@ -21,7 +21,9 @@ import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
+import project.kjhjdh.ibid.product.domain.Tag;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
+import project.kjhjdh.ibid.product.infra.TagRepository;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
@@ -36,6 +38,9 @@ class ProductServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private TagRepository tagRepository;
 
     @Mock
     private ProductImageService productImageService;
@@ -154,6 +159,9 @@ class ProductServiceTest {
         Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, 1);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
+        given(tagRepository.findByName("새태그")).willReturn(Optional.empty());
+        given(tagRepository.save(any(Tag.class))).willAnswer(invocation -> invocation.getArgument(0));
+
         // when
         productService.update(SELLER_ID, PRODUCT_ID,
                 new ProductUpdateRequest("새 제목", "새 설명", 50000, 5, ProductCondition.NEW, List.of("새태그"), 2500));
@@ -163,7 +171,7 @@ class ProductServiceTest {
         assertThat(product.getPrice()).isEqualTo(50000);
         assertThat(product.getStock()).isEqualTo(5);
         assertThat(product.getProductCondition()).isEqualTo(ProductCondition.NEW);
-        assertThat(product.getTags()).containsExactly("새태그");
+        assertThat(product.tagNames()).containsExactly("새태그");
         assertThat(product.getShippingFee()).isEqualTo(2500);
     }
 

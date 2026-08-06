@@ -340,7 +340,7 @@ class ProductTest {
     void create_invalidShippingFee() {
         // when & then
         assertThatThrownBy(() -> Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3,
-                ProductCondition.USED, List.of("태그"), -1))
+                ProductCondition.USED, List.of(Tag.of("태그")), -1))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.INVALID_SHIPPING_FEE.getMessage());
     }
