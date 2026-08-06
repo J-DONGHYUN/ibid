@@ -156,13 +156,15 @@ class ProductServiceTest {
 
         // when
         productService.update(SELLER_ID, PRODUCT_ID,
-                new ProductUpdateRequest("새 제목", "새 설명", 50000, 5, ProductCondition.NEW));
+                new ProductUpdateRequest("새 제목", "새 설명", 50000, 5, ProductCondition.NEW, List.of("새태그"), 2500));
 
         // then
         assertThat(product.getTitle()).isEqualTo("새 제목");
         assertThat(product.getPrice()).isEqualTo(50000);
         assertThat(product.getStock()).isEqualTo(5);
         assertThat(product.getProductCondition()).isEqualTo(ProductCondition.NEW);
+        assertThat(product.getTags()).containsExactly("새태그");
+        assertThat(product.getShippingFee()).isEqualTo(2500);
     }
 
     @DisplayName("본인 상품이 아니면 수정할 수 없다")
@@ -174,7 +176,7 @@ class ProductServiceTest {
 
         // when & then
         assertThatThrownBy(() -> productService.update(OTHER_USER_ID, PRODUCT_ID,
-                new ProductUpdateRequest("새 제목", "새 설명", 50000, 5, ProductCondition.NEW)))
+                new ProductUpdateRequest("새 제목", "새 설명", 50000, 5, ProductCondition.NEW, List.of("새태그"), 2500)))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
     }

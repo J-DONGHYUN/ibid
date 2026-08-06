@@ -45,7 +45,8 @@ public class ProductService {
     @Transactional
     public void update(Long sellerId, Long productId, ProductUpdateRequest request) {
         Product product = findOwnedProduct(sellerId, productId);
-        product.update(request.title(), request.description(), request.price(), request.stock(), request.productCondition());
+        product.update(request.title(), request.description(), request.price(), request.stock(),
+                request.productCondition(), orEmpty(request.tags()), request.shippingFee());
     }
 
     @Transactional
@@ -72,7 +73,9 @@ public class ProductService {
                 request.description(),
                 request.price(),
                 request.stock(),
-                request.productCondition()
+                request.productCondition(),
+                orEmpty(request.tags()),
+                request.shippingFee()
         );
         return productRepository.save(product).getId();
     }
@@ -98,6 +101,10 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         return ProductDetailResponse.from(product, product.imageUrls());
+    }
+
+    private List<String> orEmpty(List<String> tags) {
+        return tags == null ? List.of() : tags;
     }
 
     private Product findOwnedProduct(Long sellerId, Long productId) {

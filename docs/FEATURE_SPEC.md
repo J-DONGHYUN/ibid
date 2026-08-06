@@ -60,10 +60,16 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 | `price` | 1원 이상 |
 | `stock` | 1개 이상 |
 | `status` | `PENDING` → `ON_SALE` → `SOLD_OUT` |
+| `productCondition` | `NEW` / `LIKE_NEW` / `USED` |
+| `images` | `ProductImage` 목록(`sortOrder` 순, S3 URL) |
+| `tags` | 검색·표시용 태그 목록(선택, 프론트 최대 10개) |
+| `shippingFee` | 0원 이상. **0이면 무료배송**. 결제 시 상품 금액과 합산되며 플랫폼이 수취(판매자 정산 미포함) |
+| `createdAt` | 등록시각(수정 불가) — 상세에서 상대시간 표시 |
 
 | 기능 | Method | URL | 인증 | 설명 |
 | --- | --- | --- | --- | --- |
 | 상품 등록 | POST | `/api/products` | O | 로그인 사용자를 판매자로 등록. 생성 시 `PENDING` |
+| 상품 수정 | PATCH | `/api/products/{id}` | 판매자 본인 | 거래 진행 전에만 가능. `tags`는 전체 교체 |
 | 상품 판매 시작 | PATCH | `/api/products/{id}/on-sale` | 판매자 본인 | `PENDING` → `ON_SALE` |
 | 상품 목록 | GET | `/api/products?cursor=` | X | 커서 기반 무한스크롤(16개 단위, id 내림차순) |
 | 상품 상세 | GET | `/api/products/{id}` | X | 단건 조회 |

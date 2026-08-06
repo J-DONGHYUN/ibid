@@ -17,7 +17,9 @@ public record ProductDetailResponse(
         ProductStatus status,
         ProductCondition productCondition,
         List<String> imageUrls,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        List<String> tags,
+        int shippingFee
 ) {
 
     public static ProductDetailResponse from(Product product, List<String> imageUrls) {
@@ -31,7 +33,9 @@ public record ProductDetailResponse(
                 product.getStatus(),
                 product.getProductCondition(),
                 imageUrls,
-                product.getCreatedAt()
+                product.getCreatedAt(),
+                List.copyOf(product.getTags()),
+                product.getShippingFee()
         );
     }
 }

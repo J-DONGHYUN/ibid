@@ -33,13 +33,15 @@
 
 | 기능 | Method | URL | 인증 | 요청 | 응답 |
 | --- | --- | --- | --- | --- | --- |
-| 상품 등록 | POST | `/api/products` | O | `{title, description, price, stock}` | `201 {productId}` (생성 시 `PENDING`) |
+| 상품 등록 | POST | `/api/products` | O | `{title, description, price, stock, productCondition, tags, shippingFee}` | `201 {productId}` (생성 시 `PENDING`) |
+| 상품 수정 | PATCH | `/api/products/{id}` | 판매자 본인 | `{title, description, price, stock, productCondition, tags, shippingFee}` | `200` |
 | 판매 시작 | PATCH | `/api/products/{id}/on-sale` | 판매자 본인 | - | `200` (`PENDING`→`ON_SALE`) |
 | 상품 목록 | GET | `/api/products?cursor=` | X | - | `200 {products:[{productId,title,price,stock,status}], nextCursor, hasNext}` |
-| 상품 상세 | GET | `/api/products/{id}` | X | - | `200 {productId, sellerId, title, description, price, stock, status}` |
+| 상품 상세 | GET | `/api/products/{id}` | X | - | `200 {productId, sellerId, title, description, price, stock, status, productCondition, imageUrls, createdAt, tags, shippingFee}` |
 
-- `title` 1~100자, `description` 1~2000자, `price`≥1, `stock`≥1. 목록은 커서 기반(16개, id 내림차순).
-- 오류: `INVALID_PRODUCT_*`(400), `PRODUCT_NOT_FOUND`(404), `PRODUCT_NOT_PENDING`(409), `ACCESS_DENIED`(403, 판매자 아님).
+- `title` 1~100자, `description` 1~2000자, `price`≥1, `stock`≥1, `shippingFee`≥0(0이면 무료배송). 목록은 커서 기반(16개, id 내림차순).
+- `tags`는 선택(미전송 시 빈 배열), `shippingFee`는 결제 시 상품 금액과 합산되며 **플랫폼이 수취**(판매자 정산 미포함).
+- 오류: `INVALID_PRODUCT_*`·`INVALID_SHIPPING_FEE`(400), `PRODUCT_NOT_FOUND`(404), `PRODUCT_NOT_PENDING`(409), `PRODUCT_NOT_MODIFIABLE`(409), `ACCESS_DENIED`(403, 판매자 아님).
 
 ---
 

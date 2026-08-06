@@ -5,13 +5,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -64,14 +67,24 @@ public class Product {
     @OrderBy("sortOrder")
     private List<ProductImage> images = new ArrayList<>();
 
+    @ElementCollection
+    @CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "tag")
+    private List<String> tags = new ArrayList<>();
+
+    @Column(nullable = false)
+    private int shippingFee;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private Product(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
+    private Product(Long sellerId, String title, String description, int price, int stock,
+                    ProductCondition productCondition, List<String> tags, int shippingFee) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
         validateStock(stock);
+        validateShippingFee(shippingFee);
         this.sellerId = sellerId;
         this.title = title;
         this.description = description;
@@ -79,6 +92,8 @@ public class Product {
         this.stock = stock;
         this.status = ProductStatus.PENDING;
         this.productCondition = productCondition;
+        this.tags = new ArrayList<>(tags);
+        this.shippingFee = shippingFee;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -87,7 +102,12 @@ public class Product {
     }
 
     public static Product create(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
-        return new Product(sellerId, title, description, price, stock, productCondition);
+        return create(sellerId, title, description, price, stock, productCondition, List.of(), 0);
+    }
+
+    public static Product create(Long sellerId, String title, String description, int price, int stock,
+                                 ProductCondition productCondition, List<String> tags, int shippingFee) {
+        return new Product(sellerId, title, description, price, stock, productCondition, tags, shippingFee);
     }
 
     public void openForSale() {
@@ -148,17 +168,22 @@ public class Product {
         return status == ProductStatus.ON_SALE;
     }
 
-    public void update(String title, String description, int price, int stock, ProductCondition productCondition) {
+    public void update(String title, String description, int price, int stock,
+                       ProductCondition productCondition, List<String> tags, int shippingFee) {
         validateModifiable();
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
         validateStock(stock);
+        validateShippingFee(shippingFee);
         this.title = title;
         this.description = description;
         this.price = price;
         this.stock = stock;
         this.productCondition = productCondition;
+        this.tags.clear();
+        this.tags.addAll(tags);
+        this.shippingFee = shippingFee;
     }
 
     public void validateModifiable() {
@@ -211,6 +236,12 @@ public class Product {
     private void validateStock(int stock) {
         if (stock < MIN_STOCK) {
             throw new BusinessException(ErrorCode.INVALID_PRODUCT_STOCK);
+        }
+    }
+
+    private void validateShippingFee(int shippingFee) {
+        if (shippingFee < 0) {
+            throw new BusinessException(ErrorCode.INVALID_SHIPPING_FEE);
         }
     }
 }

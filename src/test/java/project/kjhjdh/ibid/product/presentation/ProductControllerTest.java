@@ -42,7 +42,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW, List.of(), 3000))
                 .when()
                 .post("/api/products")
                 .then()
@@ -56,7 +56,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW, List.of(), 3000))
                 .when()
                 .post("/api/products")
                 .then()
@@ -70,7 +70,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, 3, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, 3, ProductCondition.LIKE_NEW, List.of(), 3000))
                 .when()
                 .post("/api/products")
                 .then()
@@ -84,7 +84,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 0, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 0, ProductCondition.LIKE_NEW, List.of(), 3000))
                 .when()
                 .post("/api/products")
                 .then()
@@ -126,7 +126,8 @@ class ProductControllerTest extends ControllerTestSupport {
         // given
         given(productService.getProduct(1L)).willReturn(
                 new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE,
-                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0)));
+                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
+                        List.of("나이키"), 3000));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -141,7 +142,9 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("stock", equalTo(3))
                 .body("status", equalTo("ON_SALE"))
                 .body("productCondition", equalTo("LIKE_NEW"))
-                .body("imageUrls[0]", equalTo("https://image/a.jpg"));
+                .body("imageUrls[0]", equalTo("https://image/a.jpg"))
+                .body("tags[0]", equalTo("나이키"))
+                .body("shippingFee", equalTo(3000));
     }
 
     @DisplayName("presigned URL 발급에 성공하면 200과 URL 목록을 응답한다")
@@ -206,7 +209,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, 2, ProductCondition.USED))
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, 2, ProductCondition.USED, List.of(), 3000))
                 .when()
                 .patch("/api/products/{productId}", 1L)
                 .then()

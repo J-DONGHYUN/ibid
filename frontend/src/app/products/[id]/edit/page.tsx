@@ -25,6 +25,9 @@ function EditContent({ id }: { id: number }) {
   const [stock, setStock] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState<ProductCondition>("LIKE_NEW");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [shippingFee, setShippingFee] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -45,6 +48,8 @@ function EditContent({ id }: { id: number }) {
         setStock(String(p.stock));
         setDescription(p.description);
         setCondition(p.productCondition);
+        setTags(p.tags);
+        setShippingFee(String(p.shippingFee));
         setImages(p.imageUrls);
         setLoaded(true);
       } catch (e) {
@@ -58,6 +63,15 @@ function EditContent({ id }: { id: number }) {
 
   const numericOnly = (v: string) => v.replace(/[^0-9]/g, "");
 
+  const commitTags = () => {
+    const t = tagInput.trim().replace(/^#+/, "");
+    const next = t && !tags.includes(t) && tags.length < 10 ? [...tags, t] : tags;
+    setTags(next);
+    setTagInput("");
+    return next;
+  };
+  const removeTag = (t: string) => setTags((prev) => prev.filter((x) => x !== t));
+
   const valid = useMemo(() => {
     const p = Number(price);
     const s = Number(stock);
@@ -68,9 +82,10 @@ function EditContent({ id }: { id: number }) {
       Number.isInteger(p) &&
       p > 0 &&
       Number.isInteger(s) &&
-      s > 0
+      s > 0 &&
+      shippingFee.trim().length > 0
     );
-  }, [title, price, stock, description, images]);
+  }, [title, price, stock, description, images, shippingFee]);
 
   const onAddImages = async (e: ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(e.target.files ?? []).filter((f) => ALLOWED_TYPES.includes(f.type));
@@ -110,6 +125,7 @@ function EditContent({ id }: { id: number }) {
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     if (!valid || saving) return;
+    const finalTags = commitTags();
     setSaving(true);
     try {
       await api.updateProduct(id, {
@@ -118,6 +134,8 @@ function EditContent({ id }: { id: number }) {
         price: Number(price),
         stock: Number(stock),
         productCondition: condition,
+        tags: finalTags,
+        shippingFee: Number(shippingFee),
       });
       showToast("수정되었습니다.");
       router.push(`/products/${id}`);
@@ -274,6 +292,76 @@ function EditContent({ id }: { id: number }) {
             inputMode="numeric"
             className={inputClass}
           />
+        </div>
+
+        <div className={rowClass}>
+          <label className={labelClass} htmlFor="shippingFee">
+            배송비 <span className="text-rose-500">*</span>
+          </label>
+          <div>
+            <div className="relative">
+              <input
+                id="shippingFee"
+                value={shippingFee}
+                onChange={(e) => setShippingFee(numericOnly(e.target.value))}
+                inputMode="numeric"
+                placeholder="0 (무료배송)"
+                className={`${inputClass} pr-10`}
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-neutral-400">원</span>
+            </div>
+            <p className="mt-2 text-sm text-neutral-400">결제 시 상품 금액과 합산돼요. 무료배송이면 0을 입력하세요.</p>
+          </div>
+        </div>
+
+        <div className={rowClass}>
+          <label className={labelClass} htmlFor="tags">
+            태그
+          </label>
+          <div>
+            {tags.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {tags.map((t) => (
+                  <span
+                    key={t}
+                    className="flex items-center gap-1 rounded-md bg-neutral-100 px-2.5 py-1 text-xs text-neutral-600"
+                  >
+                    #{t}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(t)}
+                      className="text-neutral-400 hover:text-neutral-700"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                id="tags"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commitTags();
+                  }
+                }}
+                placeholder="예: 나이키, 후드"
+                className={`${inputClass} flex-1`}
+              />
+              <button
+                type="button"
+                onClick={commitTags}
+                className="shrink-0 rounded-lg border border-neutral-300 px-5 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+              >
+                추가
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-neutral-400">입력 후 추가 버튼 또는 Enter · 최대 10개.</p>
+          </div>
         </div>
 
         <div className={rowClass}>
