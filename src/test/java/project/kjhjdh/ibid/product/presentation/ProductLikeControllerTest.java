@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
@@ -51,6 +52,22 @@ class ProductLikeControllerTest extends ControllerTestSupport {
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value())
                 .body("code", equalTo("PRODUCT_NOT_FOUND"));
+    }
+
+    @DisplayName("동시 요청으로 유니크 제약을 위반하면 500이 아닌 409를 응답한다")
+    @Test
+    void like_duplicate() {
+        // given
+        willThrow(new DataIntegrityViolationException("uk_product_like_user_product"))
+                .given(productLikeService).like(anyLong(), eq(1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .post("/api/products/{productId}/like", 1L)
+                .then()
+                .statusCode(HttpStatus.CONFLICT.value())
+                .body("code", equalTo("DATA_INTEGRITY_VIOLATION"));
     }
 
     @DisplayName("찜 상태 조회에 성공하면 200과 찜수·내 찜여부를 응답한다")
