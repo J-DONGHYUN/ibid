@@ -10,7 +10,8 @@
   ```json
   { "code": "PRODUCT_NOT_FOUND", "message": "상품을 찾을 수 없습니다." }
   ```
-- **공통 상태 코드**: `400` 잘못된 입력(`INVALID_INPUT`) / `401` 인증 필요(`UNAUTHORIZED`) / `403` 권한 없음(`ACCESS_DENIED`) / `404` 없음 / `409` 상태 충돌
+- **공통 상태 코드**: `400` 잘못된 입력(`INVALID_INPUT`) / `401` 인증 필요(`UNAUTHORIZED`) / `403` 권한 없음(`ACCESS_DENIED`) / `404` 없음 / `409` 상태 충돌 · DB 제약 위반(`DATA_INTEGRITY_VIOLATION`)
+- **DB 제약 위반**: 유니크 제약 등을 어기면 `GlobalExceptionHandler`가 `DataIntegrityViolationException`을 받아 일괄 `409 DATA_INTEGRITY_VIOLATION`으로 응답한다(서비스는 잡지 않는다). JPA 경로에서는 중복·FK·길이 초과가 한 예외로 올라와 원인을 구분할 수 없어 메시지는 중립적이며, 상세 원인은 서버 `warn` 로그로 남는다.
 
 > 담당: 인증·상품·주문·검수 = 본인 / **결제(payment) = 팀원**([#15](https://github.com/J-DONGHYUN/ibid/issues/15), 하단 §5).
 
@@ -31,17 +32,51 @@
 
 ## 2. 상품 (product)
 
+### 2.1 상품 CRUD
+
 | 기능 | Method | URL | 인증 | 요청 | 응답 |
 | --- | --- | --- | --- | --- | --- |
 | 상품 등록 | POST | `/api/products` | O | `{title, description, price, stock, productCondition, tags, shippingFee}` | `201 {productId}` (생성 시 `PENDING`) |
 | 상품 수정 | PATCH | `/api/products/{id}` | 판매자 본인 | `{title, description, price, stock, productCondition, tags, shippingFee}` | `200` |
+| 상품 삭제 | DELETE | `/api/products/{id}` | 판매자 본인 | - | `204` (S3 이미지 동기 삭제) |
 | 판매 시작 | PATCH | `/api/products/{id}/on-sale` | 판매자 본인 | - | `200` (`PENDING`→`ON_SALE`) |
-| 상품 목록 | GET | `/api/products?cursor=` | X | - | `200 {products:[{productId,title,price,stock,status}], nextCursor, hasNext}` |
+| 상품 목록 | GET | `/api/products?cursor=` | X | - | `200 {products:[{productId,title,price,stock,status,thumbnailUrl}], nextCursor, hasNext}` |
 | 상품 상세 | GET | `/api/products/{id}` | X | - | `200 {productId, sellerId, title, description, price, stock, status, productCondition, imageUrls, createdAt, tags, shippingFee}` |
 
-- `title` 1~100자, `description` 1~2000자, `price`≥1, `stock`≥1, `shippingFee`≥0(0이면 무료배송). 목록은 커서 기반(16개, id 내림차순).
-- `tags`는 선택(미전송 시 빈 배열), `shippingFee`는 결제 시 상품 금액과 합산되며 **플랫폼이 수취**(판매자 정산 미포함).
-- 오류: `INVALID_PRODUCT_*`·`INVALID_SHIPPING_FEE`(400), `PRODUCT_NOT_FOUND`(404), `PRODUCT_NOT_PENDING`(409), `PRODUCT_NOT_MODIFIABLE`(409), `ACCESS_DENIED`(403, 판매자 아님).
+- `title` 1~100자, `description` 1~2000자, `price`≥1, `stock`≥1, `shippingFee`≥0(**0이면 무료배송**). 목록은 커서 기반(16개, id 내림차순).
+- `productCondition` = `NEW` / `LIKE_NEW` / `USED`.
+- `tags`는 선택(미전송 시 빈 배열). **수정 시 전체 교체**되며, 같은 이름의 태그는 `Tag` 엔티티로 재사용된다.
+- `shippingFee`는 플랫폼이 수취한다(판매자 정산 미포함). ⚠️ **결제 총액 합산은 아직 미구현** — BACKLOG `DTL-4+` P0.
+- 수정·삭제는 **거래가 진행되지 않은 상품만** 가능(`PRODUCT_NOT_MODIFIABLE`).
+- 오류: `INVALID_PRODUCT_*`·`INVALID_SHIPPING_FEE`(400), `PRODUCT_NOT_FOUND`(404), `PRODUCT_NOT_PENDING`·`PRODUCT_NOT_MODIFIABLE`(409), `ACCESS_DENIED`(403, 판매자 아님).
+
+### 2.2 상품 이미지 (S3 presigned)
+
+파일은 서버를 거치지 않고 **브라우저가 S3에 직접 업로드**한다. 발급 → 업로드 → 확정 3단계.
+
+| 기능 | Method | URL | 인증 | 요청 | 응답 |
+| --- | --- | --- | --- | --- | --- |
+| ① presigned URL 발급 | POST | `/api/products/{id}/images/presign` | 판매자 본인 | `[{fileName, extension}]` | `200 [{uploadUrl, imageUrl}]` |
+| ② (브라우저 → S3 직접 `PUT`) | - | - | - | 파일 바이너리 | - |
+| ③ 업로드 확정 | POST | `/api/products/{id}/images/confirm` | 판매자 본인 | `{imageUrls:[...]}` | `200` |
+| 이미지 개별 삭제 | DELETE | `/api/products/{id}/images` | 판매자 본인 | `{imageUrls:[...]}` | `200` (S3에서도 삭제) |
+
+- 이미지는 `sortOrder` 순으로 정렬되며, 목록의 `thumbnailUrl`은 첫 번째 이미지다.
+
+### 2.3 찜(좋아요)
+
+| 기능 | Method | URL | 인증 | 요청 | 응답 |
+| --- | --- | --- | --- | --- | --- |
+| 찜하기 | POST | `/api/products/{id}/like` | O | - | `200` |
+| 찜 취소 | DELETE | `/api/products/{id}/like` | O | - | `204` (멱등 — 찜 안 한 상태여도 성공) |
+| 찜 상태 | GET | `/api/products/{id}/like` | O | - | `200 {count, liked}` |
+| 관심 목록 | GET | `/api/products/me/likes` | O | - | `200 [{productId,title,price,stock,status,thumbnailUrl}]` |
+
+- 한 사용자는 같은 상품을 **중복 찜할 수 없다** — `unique(user_id, product_id)`로 DB가 강제.
+- 동시 요청으로 제약을 위반하면 `409 DATA_INTEGRITY_VIOLATION`. 프론트는 이 경우 찜 상태를 재조회해 화면을 맞춘다.
+- 관심 목록은 **찜한 최신순**이며 삭제된 상품은 제외된다.
+- 찜수는 `COUNT` + `idx_product_likes_product` 인덱스로 조회한다(**Redis 캐시 미사용** — 근거는 `FEATURE_SPEC.md` §2.3).
+- 오류: `PRODUCT_NOT_FOUND`(404, 없는 상품 찜), `DATA_INTEGRITY_VIOLATION`(409).
 
 ---
 

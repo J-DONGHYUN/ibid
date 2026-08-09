@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -17,7 +18,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(
         name = "product_likes",
-        uniqueConstraints = @UniqueConstraint(name = "uk_product_like_user_product", columnNames = {"userId", "productId"})
+        uniqueConstraints = @UniqueConstraint(name = "uk_product_like_user_product", columnNames = {"userId", "productId"}),
+        indexes = @Index(name = "idx_product_likes_product", columnList = "product_id")
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProductLike {
