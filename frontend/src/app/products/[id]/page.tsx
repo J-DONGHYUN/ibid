@@ -33,6 +33,7 @@ function DetailContent({ id }: { id: number }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [likePending, setLikePending] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [starting, setStarting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -85,17 +86,34 @@ function DetailContent({ id }: { id: number }) {
     }
   };
 
+  const syncLikeStatus = () =>
+    api
+      .getLikeStatus(id)
+      .then((s) => {
+        setLiked(s.liked);
+        setLikeCount(s.count);
+      })
+      .catch(() => {});
+
   const toggleLike = async () => {
+    if (likePending) return;
     const next = !liked;
+    setLikePending(true);
     setLiked(next);
     setLikeCount((c) => Math.max(0, c + (next ? 1 : -1)));
     try {
       if (next) await api.likeProduct(id);
       else await api.unlikeProduct(id);
     } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        await syncLikeStatus();
+        return;
+      }
       setLiked(!next);
       setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
       showToast(e instanceof ApiError ? e.message : "찜 처리에 실패했어요.", "error");
+    } finally {
+      setLikePending(false);
     }
   };
 
@@ -260,7 +278,7 @@ function DetailContent({ id }: { id: number }) {
             <IconBtn onClick={openShare} label="공유">
               <Share2 size={20} />
             </IconBtn>
-            <IconBtn onClick={toggleLike} label="찜">
+            <IconBtn onClick={toggleLike} label="찜" disabled={likePending}>
               <Heart size={20} className={liked ? "fill-rose-500 text-rose-500" : "text-neutral-500"} />
             </IconBtn>
 
@@ -410,16 +428,19 @@ function IconBtn({
   children,
   onClick,
   label,
+  disabled = false,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       aria-label={label}
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+      disabled={disabled}
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-60"
     >
       {children}
     </button>
