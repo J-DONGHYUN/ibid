@@ -1,4 +1,7 @@
 import type {
+  ImageConfirmRequest,
+  ImagePresignRequest,
+  ImagePresignResponse,
   InspectionQueueResponse,
   LoginResponse,
   MyOrdersResponse,
@@ -6,8 +9,11 @@ import type {
   OrderDetail,
   OrderRole,
   ProductDetail,
+  ProductLikeStatus,
   ProductListResponse,
   ProductRegisterRequest,
+  ProductSummary,
+  ProductUpdateRequest,
   SignupRequest,
 } from "./types";
 
@@ -155,11 +161,55 @@ export const api = {
 
   getProduct: (id: number) => request<ProductDetail>(`/api/products/${id}`),
 
+  getLikeStatus: (productId: number) =>
+    request<ProductLikeStatus>(`/api/products/${productId}/like`),
+
+  likeProduct: (productId: number) =>
+    request<void>(`/api/products/${productId}/like`, { method: "POST" }),
+
+  unlikeProduct: (productId: number) =>
+    request<void>(`/api/products/${productId}/like`, { method: "DELETE" }),
+
+  myLikes: () => request<ProductSummary[]>("/api/products/me/likes"),
+
   registerProduct: (data: ProductRegisterRequest) =>
     request<{ productId: number }>("/api/products", { method: "POST", body: data }),
 
   openForSale: (productId: number) =>
     request<void>(`/api/products/${productId}/on-sale`, { method: "PATCH" }),
+
+  updateProduct: (productId: number, data: ProductUpdateRequest) =>
+    request<void>(`/api/products/${productId}`, { method: "PATCH", body: data }),
+
+  deleteProduct: (productId: number) =>
+    request<void>(`/api/products/${productId}`, { method: "DELETE" }),
+
+  deleteImages: (productId: number, imageUrls: string[]) =>
+    request<void>(`/api/products/${productId}/images`, { method: "DELETE", body: { imageUrls } }),
+
+  // STEP 1: presigned URL 발급
+  presignImages: (productId: number, requests: ImagePresignRequest[]) =>
+    request<ImagePresignResponse[]>(`/api/products/${productId}/images/presign`, {
+      method: "POST",
+      body: requests,
+    }),
+
+  // STEP 2: S3 직접 업로드 (서버 안 거침)
+  uploadToS3: (presignedUrl: string, file: File): Promise<void> =>
+    fetch(presignedUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type },
+    }).then((res) => {
+      if (!res.ok) throw new Error("S3 업로드 실패");
+    }),
+
+  // STEP 3: 완료된 URL 서버에 저장
+  confirmImages: (productId: number, imageUrls: string[]) =>
+    request<void>(`/api/products/${productId}/images/confirm`, {
+      method: "POST",
+      body: { imageUrls },
+    }),
 
   purchase: (productId: number, quantity: number) =>
     request<{ orderId: number }>("/api/orders", {

@@ -1,5 +1,9 @@
 package project.kjhjdh.ibid.product.domain;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -7,6 +11,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -53,6 +59,15 @@ public class Product {
     private long viewCount;
 
     private Product(Long sellerId, String title, String description, int price, int stock) {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProductCondition productCondition;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder")
+    private List<ProductImage> images = new ArrayList<>();
+
+    private Product(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
@@ -63,10 +78,15 @@ public class Product {
         this.price = price;
         this.stock = stock;
         this.status = ProductStatus.PENDING;
+        this.productCondition = productCondition;
     }
 
     public static Product create(Long sellerId, String title, String description, int price, int stock) {
-        return new Product(sellerId, title, description, price, stock);
+        return create(sellerId, title, description, price, stock, ProductCondition.USED);
+    }
+
+    public static Product create(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
+        return new Product(sellerId, title, description, price, stock, productCondition);
     }
 
     public void openForSale() {
@@ -125,6 +145,44 @@ public class Product {
 
     public boolean isOnSale() {
         return status == ProductStatus.ON_SALE;
+    }
+
+    public void update(String title, String description, int price, int stock, ProductCondition productCondition) {
+        validateModifiable();
+        validateTitle(title);
+        validateDescription(description);
+        validatePrice(price);
+        validateStock(stock);
+        this.title = title;
+        this.description = description;
+        this.price = price;
+        this.stock = stock;
+        this.productCondition = productCondition;
+    }
+
+    public void validateModifiable() {
+        if (status == ProductStatus.SOLD_OUT) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_MODIFIABLE);
+        }
+    }
+
+    public void addImages(List<String> urls) {
+        int base = images.size();
+        for (int i = 0; i < urls.size(); i++) {
+            images.add(ProductImage.of(this, urls.get(i), base + i));
+        }
+    }
+
+    public List<String> removeImages(List<String> urls) {
+        List<ProductImage> targets = images.stream()
+                .filter(image -> urls.contains(image.getUrl()))
+                .toList();
+        images.removeAll(targets);
+        return targets.stream().map(ProductImage::getUrl).toList();
+    }
+
+    public List<String> imageUrls() {
+        return images.stream().map(ProductImage::getUrl).toList();
     }
 
     public boolean isOwnedBy(Long userId) {

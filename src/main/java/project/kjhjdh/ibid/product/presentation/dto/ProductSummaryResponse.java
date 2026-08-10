@@ -8,16 +8,18 @@ public record ProductSummaryResponse(
         String title,
         int price,
         int stock,
-        ProductStatus status
+        ProductStatus status,
+        String thumbnailUrl
 ) {
 
-    public static ProductSummaryResponse from(Product product) {
+    public static ProductSummaryResponse from(Product product, String thumbnailUrl) {
         return new ProductSummaryResponse(
                 product.getId(),
                 product.getTitle(),
                 product.getPrice(),
                 product.getStock(),
-                product.getStatus()
+                product.getStatus(),
+                thumbnailUrl
         );
     }
 }

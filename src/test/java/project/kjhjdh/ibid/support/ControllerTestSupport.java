@@ -29,6 +29,7 @@ import project.kjhjdh.ibid.common.config.WebConfig;
 import project.kjhjdh.ibid.inspection.application.InspectionService;
 import project.kjhjdh.ibid.order.application.OrderService;
 import project.kjhjdh.ibid.payment.application.PaymentService;
+import project.kjhjdh.ibid.product.application.ProductLikeService;
 import project.kjhjdh.ibid.product.application.ProductService;
 import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;
 import project.kjhjdh.ibid.user.domain.Role;
@@ -49,6 +50,9 @@ public abstract class ControllerTestSupport {
 
     @MockitoBean
     protected ProductService productService;
+
+    @MockitoBean
+    protected ProductLikeService productLikeService;
 
     @MockitoBean
     protected OrderService orderService;

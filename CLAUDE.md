@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-**중고 전자기기** 거래 + 검수 에스크로 이커머스 애플리케이션. 모든 거래를 플랫폼이 검수해 **정품·정상작동을 보장**하는 것이 핵심 가치입니다(고정가 즉시구매 · 전 거래 강제 검수). Spring Boot 기반 백엔드입니다.
+**일반 중고 거래 + 검수 에스크로** 이커머스 애플리케이션. 모든 거래를 **배송으로 진행**하고 플랫폼이 검수해 안전을 보장합니다(고정가 즉시구매 · 전 거래 강제 검수 · **직거래/채팅 없음**). 배송비는 결제 시 합산되어 플랫폼이 수취·관리합니다. Spring Boot 기반 백엔드입니다.
 
 - **성격**: **포트폴리오 프로젝트** — 동작하는 기능뿐 아니라 **기술적 성장(설계·동시성·이벤트기반·인프라·트러블슈팅)** 을 보여주는 것을 우선합니다. 기술/설계 선택 시 이 관점을 반영하세요.
 - **artifact / root project 이름**: `ibid` (`settings.gradle`, `application.yml`의 `spring.application.name`)
@@ -33,11 +33,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 project.kjhjdh.ibid
 ├── auth       인증 (JWT 발급/검증, 리프레시 토큰 회전 — Redis 저장, 쿠키 전달)
 ├── user       사용자 (email 값객체, BCrypt 비밀번호)
-├── product    상품 (등록/목록[커서 페이지네이션]/상세, 상태 PENDING→ON_SALE→SOLD_OUT, 재고 차감/복원)
+├── product    상품 (등록/수정/삭제·목록[커서 페이지네이션]/상세, 상태 PENDING→ON_SALE→SOLD_OUT, 재고 차감/복원 — 이미지 ProductImage를 자기 도메인이 소유, S3 기술은 common.image 재사용)
 ├── order      주문 (7상태 상태기계, 재고 비관적 락 동시성 제어, 본인 거래 차단 — payment를 모름)
 ├── inspection 검수 (수령/합격/불합격 판정 기록 + 판정 도메인 이벤트 발행)
 ├── payment    결제 (Toss 연동, 결제 승인/취소, order 호출·검수 이벤트 구독 — 팀원 담당)
-└── common     공통 (예외 체계 ErrorCode/BusinessException/GlobalExceptionHandler, CORS/Web 설정)
+├── common     공통 (예외 체계 ErrorCode/BusinessException/GlobalExceptionHandler, CORS/Web 설정)
+└── common.image  이미지 S3 기술만 (presigned 업로드/삭제 S3ImageUploader·확장자 enum) — **도메인 비의존**. 이미지 소유·연관은 각 도메인이 가짐(예: product.ProductImage). 의존 방향: 도메인 → common.image (역방향 금지)
 ```
 
 - 예외는 `ErrorCode` enum + `BusinessException`으로 던지고, 응답 변환은 `GlobalExceptionHandler`가 담당합니다.

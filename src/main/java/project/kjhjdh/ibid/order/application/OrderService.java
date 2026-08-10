@@ -18,6 +18,7 @@ import project.kjhjdh.ibid.order.presentation.dto.MyTransactionsResponse;
 import project.kjhjdh.ibid.order.presentation.dto.OrderDetailResponse;
 import project.kjhjdh.ibid.order.presentation.dto.OrderSummaryResponse;
 import project.kjhjdh.ibid.order.presentation.dto.PurchaseRequest;
+import project.kjhjdh.ibid.product.application.ProductImageService;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
@@ -28,6 +29,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final ProductImageService productImageService;
 
     @Transactional
     public PurchaseResult purchase(Long buyerId, PurchaseRequest request) {
@@ -125,8 +127,12 @@ public class OrderService {
 
         List<OrderSummaryResponse> purchases = toSummaries(purchaseOrders, productsById);
         List<OrderSummaryResponse> sales = toSummaries(saleOrders, productsById);
-        List<ProductSummaryResponse> listings = productRepository.findBySellerIdOrderByIdDesc(userId).stream()
-                .map(ProductSummaryResponse::from)
+        List<Product> sellerProducts = productRepository.findBySellerIdOrderByIdDesc(userId);
+        Map<Long, String> listingThumbnails = productImageService.findThumbnails(
+                sellerProducts.stream().map(Product::getId).toList()
+        );
+        List<ProductSummaryResponse> listings = sellerProducts.stream()
+                .map(product -> ProductSummaryResponse.from(product, listingThumbnails.get(product.getId())))
                 .toList();
 
         return new MyTransactionsResponse(purchases, sales, listings);

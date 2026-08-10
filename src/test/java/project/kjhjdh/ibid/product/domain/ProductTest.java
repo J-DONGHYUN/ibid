@@ -3,6 +3,8 @@ package project.kjhjdh.ibid.product.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -332,5 +334,34 @@ class ProductTest {
         // when & then
         assertThat(product.isOwnedBy(SELLER_ID)).isTrue();
         assertThat(product.isOwnedBy(2L)).isFalse();
+    }
+
+    @DisplayName("이미지를 추가하면 기존 뒤에 순서대로 쌓인다")
+    @Test
+    void addImages() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+
+        // when
+        product.addImages(List.of("u1.jpg", "u2.png"));
+        product.addImages(List.of("u3.gif"));
+
+        // then
+        assertThat(product.imageUrls()).containsExactly("u1.jpg", "u2.png", "u3.gif");
+    }
+
+    @DisplayName("선택한 이미지를 제거하고 제거된 URL을 돌려준다")
+    @Test
+    void removeImages() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        product.addImages(List.of("u1.jpg", "u2.png", "u3.gif"));
+
+        // when
+        List<String> removed = product.removeImages(List.of("u1.jpg", "u3.gif"));
+
+        // then
+        assertThat(removed).containsExactly("u1.jpg", "u3.gif");
+        assertThat(product.imageUrls()).containsExactly("u2.png");
     }
 }

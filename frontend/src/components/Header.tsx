@@ -27,7 +27,9 @@ export default function Header() {
           <Link href="/mypage" className="hover:text-neutral-800">
             마이페이지
           </Link>
-          <button className="hover:text-neutral-800">관심</button>
+          <Link href="/likes" className="hover:text-neutral-800">
+            관심
+          </Link>
           <button className="relative pr-1 hover:text-neutral-800">
             알림
             <span className="absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-[#f0143c]" />

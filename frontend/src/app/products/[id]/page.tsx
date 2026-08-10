@@ -10,14 +10,15 @@ import {
   Heart,
   ImageIcon,
   Info,
-  MessageSquare,
   Share2,
+  X,
 } from "lucide-react";
 import Header from "@/components/Header";
 import PurchaseModal from "@/components/PurchaseModal";
 import { useToast } from "@/components/Toast";
 import { api, ApiError, currentUserId } from "@/lib/api";
 import { formatWon, sellerName } from "@/lib/format";
+import { CONDITION_LABEL } from "@/lib/types";
 import type { ProductDetail } from "@/lib/types";
 
 const TAGS = ["#나이키", "#AirMax90", "#에어맥스", "#운동화", "#270"];
@@ -30,9 +31,15 @@ function DetailContent({ id }: { id: number }) {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likePending, setLikePending] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [starting, setStarting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [imgIdx, setImgIdx] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   const handleStartSale = async () => {
     if (starting) return;
@@ -47,6 +54,83 @@ function DetailContent({ id }: { id: number }) {
       setStarting(false);
     }
   };
+
+  const openShare = () => {
+    setShareUrl(window.location.href);
+    setShareOpen(true);
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast("링크를 복사했어요.");
+      setShareOpen(false);
+    } catch {
+      showToast("복사에 실패했어요. 직접 복사해주세요.", "error");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (deleting) return;
+    if (!window.confirm("이 상품을 삭제할까요? 등록한 이미지도 함께 삭제됩니다.")) return;
+    setDeleting(true);
+    try {
+      await api.deleteProduct(id);
+      showToast("상품을 삭제했습니다.");
+      router.push("/");
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : "삭제에 실패했습니다.", "error");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const syncLikeStatus = () =>
+    api
+      .getLikeStatus(id)
+      .then((s) => {
+        setLiked(s.liked);
+        setLikeCount(s.count);
+      })
+      .catch(() => {});
+
+  const toggleLike = async () => {
+    if (likePending) return;
+    const next = !liked;
+    setLikePending(true);
+    setLiked(next);
+    setLikeCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    try {
+      if (next) await api.likeProduct(id);
+      else await api.unlikeProduct(id);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        await syncLikeStatus();
+        return;
+      }
+      setLiked(!next);
+      setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
+      showToast(e instanceof ApiError ? e.message : "찜 처리에 실패했어요.", "error");
+    } finally {
+      setLikePending(false);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    api
+      .getLikeStatus(id)
+      .then((s) => {
+        if (active) {
+          setLiked(s.liked);
+          setLikeCount(s.count);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [id, reloadKey]);
 
   useEffect(() => {
     let active = true;
@@ -89,16 +173,45 @@ function DetailContent({ id }: { id: number }) {
       <div className="grid gap-10 md:grid-cols-2">
         {/* 이미지 */}
         <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100">
-          <div className="flex h-full items-center justify-center text-neutral-300">
-            <ImageIcon size={48} strokeWidth={1.5} />
-          </div>
+          {product.imageUrls.length > 0 ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={product.imageUrls[imgIdx] ?? product.imageUrls[0]}
+                alt={product.title}
+                className="h-full w-full object-cover"
+              />
+              {product.imageUrls.length > 1 && (
+                <>
+                  <button
+                    onClick={() =>
+                      setImgIdx((i) => (i - 1 + product.imageUrls.length) % product.imageUrls.length)
+                    }
+                    className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 hover:bg-white"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    onClick={() => setImgIdx((i) => (i + 1) % product.imageUrls.length)}
+                    className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 hover:bg-white"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <div className="flex h-full items-center justify-center text-neutral-300">
+              <ImageIcon size={48} strokeWidth={1.5} />
+            </div>
+          )}
           {soldOut && (
             <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/55">
               <span className="text-lg font-semibold tracking-widest text-white">품절</span>
             </div>
           )}
           <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-neutral-800/70 px-3 py-1 text-xs text-white">
-            1/4
+            {product.imageUrls.length > 0 ? imgIdx + 1 : 0}/{product.imageUrls.length}
           </span>
         </div>
 
@@ -114,10 +227,7 @@ function DetailContent({ id }: { id: number }) {
                 <Eye size={15} /> {product.viewCount}
               </span>
               <span className="flex items-center gap-1">
-                <Heart size={15} /> 5
-              </span>
-              <span className="flex items-center gap-1">
-                <MessageSquare size={15} /> 1
+                <Heart size={15} className={liked ? "fill-rose-500 text-rose-500" : ""} /> {likeCount}
               </span>
             </div>
             <button className="hover:text-neutral-600">신고하기</button>
@@ -127,13 +237,11 @@ function DetailContent({ id }: { id: number }) {
             <SpecRow label="판매상태">
               <span className={`font-bold ${statusView.color}`}>{statusView.label}</span>
             </SpecRow>
-            <SpecRow label="상품상태">중고 (거의 새 것)</SpecRow>
-            <SpecRow label="사이즈">270</SpecRow>
+            <SpecRow label="상품상태">{CONDITION_LABEL[product.productCondition]}</SpecRow>
             <SpecRow label="수량">
               <span className="font-semibold">{product.stock}개</span>
             </SpecRow>
             <SpecRow label="배송비">일반 3,000원</SpecRow>
-            <SpecRow label="직거래">서울특별시 강동구 천호제1동</SpecRow>
           </dl>
 
           <div className="mt-6 border-t border-neutral-100 pt-6">
@@ -155,28 +263,22 @@ function DetailContent({ id }: { id: number }) {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-between border-t border-neutral-100 pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
-                <ImageIcon size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-bold">{sellerName(product.sellerId)}</p>
-                <p className="text-xs text-neutral-400">상품 1개 판매 중 · 거래 12회</p>
-              </div>
+          <div className="mt-6 flex items-center gap-3 border-t border-neutral-100 pt-6">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+              <ImageIcon size={18} />
             </div>
-            <button className="text-sm text-neutral-500 hover:text-neutral-800">상점 보기</button>
+            <div>
+              <p className="text-sm font-bold">{sellerName(product.sellerId)}</p>
+              <p className="text-xs text-neutral-400">판매자</p>
+            </div>
           </div>
 
           <div className="mt-6 flex gap-3">
-            <IconBtn onClick={() => {}} label="공유">
+            <IconBtn onClick={openShare} label="공유">
               <Share2 size={20} />
             </IconBtn>
-            <IconBtn onClick={() => setLiked((v) => !v)} label="찜">
+            <IconBtn onClick={toggleLike} label="찜" disabled={likePending}>
               <Heart size={20} className={liked ? "fill-rose-500 text-rose-500" : "text-neutral-500"} />
-            </IconBtn>
-            <IconBtn onClick={() => {}} label="문의">
-              <MessageSquare size={20} />
             </IconBtn>
 
             {onSale && (
@@ -207,6 +309,24 @@ function DetailContent({ id }: { id: number }) {
               </button>
             )}
           </div>
+
+          {isSeller && (
+            <div className="mt-3 flex gap-3">
+              <button
+                onClick={() => router.push(`/products/${id}/edit`)}
+                className="flex-1 rounded-xl border border-neutral-300 py-3 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+              >
+                수정
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 rounded-xl border border-rose-200 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-60"
+              >
+                {deleting ? "삭제 중..." : "삭제"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -252,6 +372,44 @@ function DetailContent({ id }: { id: number }) {
           }}
         />
       )}
+
+      {shareOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShareOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-1 flex items-center justify-between">
+              <h3 className="text-base font-bold">공유하기</h3>
+              <button
+                onClick={() => setShareOpen(false)}
+                className="text-neutral-400 hover:text-neutral-700"
+                aria-label="닫기"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="mb-3 text-sm text-neutral-500">이 링크를 복사해 공유하세요.</p>
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                value={shareUrl}
+                onFocus={(e) => e.target.select()}
+                className="min-w-0 flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600"
+              />
+              <button
+                onClick={copyLink}
+                className="shrink-0 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+              >
+                복사
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -269,16 +427,19 @@ function IconBtn({
   children,
   onClick,
   label,
+  disabled = false,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       aria-label={label}
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+      disabled={disabled}
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-60"
     >
       {children}
     </button>
