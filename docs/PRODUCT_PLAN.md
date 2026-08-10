@@ -1,6 +1,6 @@
 # 제품 기획서 (Product Plan)
 
-> 이 문서는 프로젝트의 **방향·정체성·범위**를 정의한다. "무엇을 만드는 기능인가"는 [`FEATURE_SPEC.md`](./FEATURE_SPEC.md), "언제/어떤 순서로"는 [`MVP.md`](./MVP.md)에서 다룬다.
+> 이 문서는 프로젝트의 **방향·정체성·범위**를 정의한다. "무엇을 만드는 기능인가"는 [`FEATURE_SPEC.md`](./FEATURE_SPEC.md), "언제/어떤 순서로"는 [`BACKLOG.md`](./BACKLOG.md)에서 다룬다.
 
 ## 0. 프로젝트 목표 (가장 중요)
 

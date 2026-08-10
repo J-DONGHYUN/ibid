@@ -1,6 +1,6 @@
 # API 명세서
 
-현재까지 구현된 REST API를 종합한 문서다. 기능 흐름·상태 전이는 [FEATURE_SPEC.md](./FEATURE_SPEC.md), 진행 상태는 [MVP.md](./MVP.md) 참고.
+현재까지 구현된 REST API를 종합한 문서다. 기능 흐름·상태 전이는 [FEATURE_SPEC.md](./FEATURE_SPEC.md), 진행 상태는 [BACKLOG.md](./BACKLOG.md) 참고.
 
 ## 공통
 
