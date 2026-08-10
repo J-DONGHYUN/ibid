@@ -14,6 +14,10 @@ public record ProductDetailResponse(
         int price,
         int stock,
         ProductStatus status,
+        long viewCount
+) {
+
+    public static ProductDetailResponse of(Product product, long viewCount) {
         ProductCondition productCondition,
         List<String> imageUrls
 ) {
@@ -27,6 +31,7 @@ public record ProductDetailResponse(
                 product.getPrice(),
                 product.getStock(),
                 product.getStatus(),
+                viewCount
                 product.getProductCondition(),
                 imageUrls
         );

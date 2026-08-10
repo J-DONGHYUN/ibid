@@ -29,6 +29,7 @@ public class ProductService {
     private static final int PAGE_SIZE = 16;
 
     private final ProductRepository productRepository;
+    private final ProductViewCounter productViewCounter;
     private final ProductImageService productImageService;
 
     public List<ImagePresignResponse> generatePresignedUrls(Long sellerId, Long productId, List<ImagePresignRequest> requests) {
@@ -94,9 +95,11 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductDetailResponse getProduct(Long productId) {
+    public ProductDetailResponse getProduct(Long productId, String visitorId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        productViewCounter.record(productId, visitorId);
+        return ProductDetailResponse.of(product, productViewCounter.readTotal(product));
         return ProductDetailResponse.from(product, product.imageUrls());
     }
 

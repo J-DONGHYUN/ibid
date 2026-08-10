@@ -31,10 +31,12 @@ import project.kjhjdh.ibid.order.application.OrderService;
 import project.kjhjdh.ibid.payment.application.PaymentService;
 import project.kjhjdh.ibid.product.application.ProductLikeService;
 import project.kjhjdh.ibid.product.application.ProductService;
+import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;
 import project.kjhjdh.ibid.user.domain.Role;
 
 @ActiveProfiles("test")
-@Import({RefreshTokenCookieHandler.class, ControllerTestSupport.LoginUserArgumentResolverTest.class})
+@Import({RefreshTokenCookieHandler.class, ProductViewCookieHandler.class,
+        ControllerTestSupport.LoginUserArgumentResolverTest.class})
 @WebMvcTest(excludeFilters = @ComponentScan.Filter(
         type = FilterType.ASSIGNABLE_TYPE,
         classes = {WebConfig.class, AuthenticationInterceptor.class}))

@@ -1,10 +1,14 @@
 package project.kjhjdh.ibid.product.presentation;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 
@@ -12,9 +16,13 @@ import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import io.restassured.http.ContentType;
+import jakarta.servlet.http.Cookie;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
@@ -119,10 +127,12 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("hasNext", equalTo(true));
     }
 
-    @DisplayName("상품 상세 조회에 성공하면 200과 상품 정보를 응답한다")
+    @DisplayName("상품 상세 조회에 성공하면 200과 조회수를 포함한 상품 정보를 응답한다")
     @Test
     void getProduct() {
         // given
+        given(productService.getProduct(eq(1L), anyString())).willReturn(
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 164L));
         given(productService.getProduct(1L)).willReturn(
                 new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE,
                         ProductCondition.LIKE_NEW, List.of("https://image/a.jpg")));
@@ -139,6 +149,48 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("description", equalTo("상태 좋음"))
                 .body("stock", equalTo(3))
                 .body("status", equalTo("ON_SALE"))
+                .body("viewCount", equalTo(164));
+    }
+
+    @DisplayName("방문자 쿠키가 없으면 새 방문자 식별자를 쿠키로 발급한다")
+    @Test
+    void getProduct_issuesVisitorCookie() {
+        // given
+        given(productService.getProduct(eq(1L), anyString())).willReturn(
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .header(HttpHeaders.SET_COOKIE, containsString("visitor_id="))
+                .header(HttpHeaders.SET_COOKIE, containsString("HttpOnly"))
+                .header(HttpHeaders.SET_COOKIE, containsString("Path=/"))
+                .header(HttpHeaders.SET_COOKIE, containsString("SameSite=Strict"));
+    }
+
+    @DisplayName("방문자 쿠키가 있으면 그 값을 그대로 조회자 식별자로 사용한다")
+    @Test
+    void getProduct_reusesVisitorCookie() {
+        // given
+        given(productService.getProduct(eq(1L), anyString())).willReturn(
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L));
+
+        // when
+        RestAssuredMockMvc.given()
+                .postProcessors(visitorIdCookie("fixed-visitor-id"))
+                .when()
+                .get("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .header(HttpHeaders.SET_COOKIE, containsString("visitor_id=fixed-visitor-id"));
+
+        // then
+        ArgumentCaptor<String> visitorIdCaptor = ArgumentCaptor.forClass(String.class);
+        then(productService).should().getProduct(eq(1L), visitorIdCaptor.capture());
+        assertThat(visitorIdCaptor.getValue()).isEqualTo("fixed-visitor-id");
                 .body("productCondition", equalTo("LIKE_NEW"))
                 .body("imageUrls[0]", equalTo("https://image/a.jpg"));
     }
@@ -288,19 +340,31 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("code", equalTo("PRODUCT_NOT_PENDING"));
     }
 
-    @DisplayName("존재하지 않는 상품을 조회하면 404를 응답한다")
+    @DisplayName("존재하지 않는 상품을 조회하면 404를 응답하고 방문자 쿠키를 발급하지 않는다")
     @Test
     void getProduct_notFound() {
         // given
         willThrow(new BusinessException(ErrorCode.PRODUCT_NOT_FOUND))
-                .given(productService).getProduct(eq(999L));
+                .given(productService).getProduct(eq(999L), anyString());
 
-        // when & then
-        RestAssuredMockMvc.given()
+        // when
+        String setCookie = RestAssuredMockMvc.given()
                 .when()
                 .get("/api/products/{productId}", 999L)
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value())
-                .body("code", equalTo("PRODUCT_NOT_FOUND"));
+                .body("code", equalTo("PRODUCT_NOT_FOUND"))
+                .extract()
+                .header(HttpHeaders.SET_COOKIE);
+
+        // then
+        assertThat(setCookie).isNull();
+    }
+
+    private RequestPostProcessor visitorIdCookie(String visitorId) {
+        return request -> {
+            request.setCookies(new Cookie("visitor_id", visitorId));
+            return request;
+        };
     }
 }

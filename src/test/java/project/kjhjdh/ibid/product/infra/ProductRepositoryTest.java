@@ -49,4 +49,28 @@ class ProductRepositoryTest extends RepositoryTestSupport {
         assertThat(slice.getContent()).hasSize(2);
         assertThat(slice.hasNext()).isTrue();
     }
+
+    @DisplayName("조회수를 delta만큼 증가시킨다")
+    @Test
+    void increaseViewCount() {
+        // given
+        Product product = productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3));
+
+        // when
+        int updated = productRepository.increaseViewCount(product.getId(), 5L);
+
+        // then
+        assertThat(updated).isEqualTo(1);
+        assertThat(productRepository.findById(product.getId()).orElseThrow().getViewCount()).isEqualTo(5L);
+    }
+
+    @DisplayName("존재하지 않는 상품의 조회수 증가는 아무 행도 바꾸지 않는다")
+    @Test
+    void increaseViewCount_notFound() {
+        // when
+        int updated = productRepository.increaseViewCount(999L, 5L);
+
+        // then
+        assertThat(updated).isZero();
+    }
 }

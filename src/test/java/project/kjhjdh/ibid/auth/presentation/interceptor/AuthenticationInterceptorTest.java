@@ -134,8 +134,61 @@ class AuthenticationInterceptorTest {
         assertThat(result).isTrue();
     }
 
+    @DisplayName("@PublicApi 엔드포인트는 토큰이 없어도 통과시킨다")
+    @Test
+    void preHandle_publicApi_noToken() throws NoSuchMethodException {
+        // given
+        HandlerMethod publicHandler = new HandlerMethod(new PublicHandler(), PublicHandler.class.getMethod("run"));
+
+        // when
+        boolean result = interceptor.preHandle(request, response, publicHandler);
+
+        // then
+        assertThat(result).isTrue();
+        assertThat(request.getAttribute(AuthenticationInterceptor.USER_INFO_ATTRIBUTE)).isNull();
+    }
+
+    @DisplayName("@PublicApi 엔드포인트에 유효한 토큰이 오면 UserInfo를 담아준다")
+    @Test
+    void preHandle_publicApi_validToken() throws NoSuchMethodException {
+        // given
+        request.addHeader("Authorization", "Bearer valid-token");
+        when(tokenProvider.parseAccessToken("valid-token")).thenReturn(new UserInfo(7L, Role.USER));
+        HandlerMethod publicHandler = new HandlerMethod(new PublicHandler(), PublicHandler.class.getMethod("run"));
+
+        // when
+        boolean result = interceptor.preHandle(request, response, publicHandler);
+
+        // then
+        assertThat(result).isTrue();
+        assertThat(request.getAttribute(AuthenticationInterceptor.USER_INFO_ATTRIBUTE))
+                .isEqualTo(new UserInfo(7L, Role.USER));
+    }
+
+    @DisplayName("@PublicApi 엔드포인트라도 잘못된 토큰을 보내면 인증에 실패한다")
+    @Test
+    void preHandle_publicApi_invalidToken() throws NoSuchMethodException {
+        // given
+        request.addHeader("Authorization", "Bearer bad-token");
+        when(tokenProvider.parseAccessToken("bad-token"))
+                .thenThrow(new GlobalException(ErrorCode.INVALID_TOKEN));
+        HandlerMethod publicHandler = new HandlerMethod(new PublicHandler(), PublicHandler.class.getMethod("run"));
+
+        // when & then
+        assertThatThrownBy(() -> interceptor.preHandle(request, response, publicHandler))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage(ErrorCode.INVALID_TOKEN.getMessage());
+    }
+
     @AdminOnly
     static class AdminHandler {
+        public void run() {
+        }
+    }
+
+    static class PublicHandler {
+
+        @PublicApi
         public void run() {
         }
     }

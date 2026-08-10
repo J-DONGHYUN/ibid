@@ -21,6 +21,15 @@ spring:
       s3:
         bucket: ${AWS_S3_BUCKET:ibid-product-images}
 
+server:
+  shutdown: graceful
+
+product:
+  view:
+    dedup-ttl: ${PRODUCT_VIEW_DEDUP_TTL:PT30M}
+    cookie-max-age: ${PRODUCT_VIEW_COOKIE_MAX_AGE:31536000}
+    flush-interval: ${PRODUCT_VIEW_FLUSH_INTERVAL:60000}
+
 jwt:
   access:
     secret: ${JWT_ACCESS_SECRET:local-access-secret-change-me-0123456789}

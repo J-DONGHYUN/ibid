@@ -25,6 +25,7 @@ export interface ProductDetail {
   price: number;
   stock: number;
   status: ProductStatus;
+  viewCount: number;
   productCondition: ProductCondition;
   imageUrls: string[];
 }

@@ -60,6 +60,7 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 | `price` | 1원 이상 |
 | `stock` | 1개 이상 |
 | `status` | `PENDING` → `ON_SALE` → `SOLD_OUT` |
+| `viewCount` | 누적 조회수. Redis 카운터를 주기적으로 반영한 값(아래 조회수 규칙) |
 | `productCondition` | `NEW` / `LIKE_NEW` / `USED` |
 | `images` | `ProductImage` 목록(`sortOrder` 순, S3 URL). 이미지 소유는 product 도메인이 갖고 S3 기술만 `common.image` 재사용 |
 
@@ -69,6 +70,8 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 | 상품 수정 | PATCH | `/api/products/{id}` | 판매자 본인 | 거래 진행 전에만 가능 |
 | 상품 삭제 | DELETE | `/api/products/{id}` | 판매자 본인 | S3 이미지 동기 삭제 |
 | 상품 판매 시작 | PATCH | `/api/products/{id}/on-sale` | 판매자 본인 | `PENDING` → `ON_SALE` |
+| 상품 목록 | GET | `/api/products?cursor=` | X(`@PublicApi`) | 커서 기반 무한스크롤(16개 단위, id 내림차순) |
+| 상품 상세 | GET | `/api/products/{id}` | X(`@PublicApi`) | 단건 조회 + 조회수 집계 |
 | 상품 목록 | GET | `/api/products?cursor=` | X | 커서 기반 무한스크롤(16개 단위, id 내림차순) |
 | 상품 상세 | GET | `/api/products/{id}` | X | 단건 조회 |
 | 이미지 업로드 | POST | `/api/products/{id}/images/presign` · `/confirm` | 판매자 본인 | presigned URL 발급 → 브라우저가 S3 직접 업로드 → 확정 |
@@ -107,6 +110,18 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 | 찜 등록 메서드 | **POST** (PUT 아님) | 멱등 계약이 필요 없다 — 중복은 unique 제약이 막는다 |
 | 동시 찜 충돌 처리 | **전역 예외 핸들러에서 409** (서비스에서 catch 안 함) | 서비스는 `throw`만 한다는 기존 컨벤션 유지. 앞으로 추가될 다른 유니크 제약도 한 곳에서 커버 |
 | 프론트 중복 요청 | in-flight 가드 + 409 시 상태 재조회 | 낙관적 업데이트가 서버와 어긋난 채 남는 것을 방지 |
+
+**조회수 규칙 (`PROD-7`)**
+
+- **조회자 식별**: `visitor_id` 쿠키(UUID). 없으면 발급하고, 로그인 여부로 분기하지 않는다 — 비로그인 사용자도 그대로 집계된다.
+- **중복 방지 + 증가는 Lua 스크립트로 원자 처리**한다. `SET product-view::{productId}::{visitorId} NX PX 30m` 이 성공할 때만 `INCR product-view-count::{productId}` 와 `SADD product-view-dirty {productId}` 를 함께 실행한다. 애플리케이션에서 세 명령을 나눠 호출하면 `SETNX` 직후 죽었을 때 "집계됨으로 마킹됐지만 카운터는 안 오른" 상태가 30분간 굳어 조회가 조용히 유실된다.
+- **DB 반영(write-back)**: `ProductViewCountScheduler`(기본 60초, `@Profile("!test")`)가 `ProductViewCountFlusher.flush()` 를 호출한다. dirty set의 상품마다 `SREM` → `GETDEL` 순서로 delta를 꺼내(반대 순서면 그 사이 들어온 조회의 delta가 고아가 된다) `update Product set viewCount = viewCount + :delta` 를 실행한다. **상품 1건당 트랜잭션 1개**라 한 상품의 실패가 배치 전체를 날리지 않는다.
+- **정상 종료 시 마지막 flush**: `ThreadPoolTaskScheduler`의 `waitForTasksToCompleteOnShutdown` + 스케줄러의 **`@EventListener(ContextClosedEvent.class)`** 마지막 flush + `server.shutdown: graceful`. **`@PreDestroy`를 쓰면 안 된다** — `LettuceConnectionFactory`는 `SmartLifecycle` 빈이라 destroy 콜백보다 **먼저 stop**되고, 그 시점의 flush는 `LettuceConnectionFactory has been STOPPED`로 실패한다. `ContextClosedEvent`는 라이프사이클 stop과 빈 파괴 **이전에** 발행되므로 Redis·DataSource가 모두 살아 있다. 남는 창은 graceful drain 중(수백 ms) 기록된 조회와 강제 종료(SIGKILL)뿐이다(참여 지표라 수용).
+- **표시값**: 상세 응답 `viewCount` = `DB 누적값 + Redis 미반영 delta`. 목록에는 조회수를 넣지 않는다(16건마다 Redis 왕복이 필요해 제외 — 필요해지면 `MGET`).
+- **Redis 장애 시**: 조회 기록은 생략되고(fail-closed) `viewCount`는 DB 누적값만 노출된다. 상세 응답은 정상 200.
+- **정책상 집계 대상**: 판매자 본인 조회도 집계한다(userId를 보지 않음). 쿠키를 보내지 않는 클라이언트(curl·봇)는 매 요청 새 UUID를 받아 중복 방지가 적용되지 않는다.
+- **설정**: `product.view.dedup-ttl`(기본 `PT30M`) · `product.view.cookie-max-age`(기본 1년, **dedup TTL보다 반드시 길어야** 중복 방지가 유효) · `product.view.flush-interval`(기본 60000ms).
+- **알려진 제약**: Lua 스크립트가 3개 키(dedup·카운터·dirty)를 만지므로 Redis **cluster mode**에서는 `CROSSSLOT` 오류가 난다(`AWS-3` 시점 이슈). dirty set이 전역 단일 키라 해시 태그로 슬롯을 맞출 수 없으므로, 그때는 `SADD`를 스크립트 밖으로 빼고 dedup·카운터 키만 `{productId}` 해시 태그로 묶는다. 또한 `viewCount` 컬럼 추가는 `ddl-auto: update`에 의존하므로 데이터가 있는 환경은 명시적 마이그레이션이 필요하다(Flyway 미도입).
 
 ### 2.4 주문 (order)
 
