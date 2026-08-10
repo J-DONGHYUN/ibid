@@ -42,6 +42,8 @@ class ProductServiceTest {
 
     @Mock
     private ProductViewCounter productViewCounter;
+
+    @Mock
     private ProductImageService productImageService;
 
     @InjectMocks

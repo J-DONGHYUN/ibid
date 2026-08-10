@@ -132,9 +132,7 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct() {
         // given
         given(productService.getProduct(eq(1L), anyString())).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 164L));
-        given(productService.getProduct(1L)).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE,
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 164L,
                         ProductCondition.LIKE_NEW, List.of("https://image/a.jpg")));
 
         // when & then
@@ -149,7 +147,9 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("description", equalTo("상태 좋음"))
                 .body("stock", equalTo(3))
                 .body("status", equalTo("ON_SALE"))
-                .body("viewCount", equalTo(164));
+                .body("viewCount", equalTo(164))
+                .body("productCondition", equalTo("LIKE_NEW"))
+                .body("imageUrls[0]", equalTo("https://image/a.jpg"));
     }
 
     @DisplayName("방문자 쿠키가 없으면 새 방문자 식별자를 쿠키로 발급한다")
@@ -157,7 +157,8 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct_issuesVisitorCookie() {
         // given
         given(productService.getProduct(eq(1L), anyString())).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L));
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L,
+                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg")));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -176,7 +177,8 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct_reusesVisitorCookie() {
         // given
         given(productService.getProduct(eq(1L), anyString())).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L));
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L,
+                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg")));
 
         // when
         RestAssuredMockMvc.given()
@@ -191,8 +193,6 @@ class ProductControllerTest extends ControllerTestSupport {
         ArgumentCaptor<String> visitorIdCaptor = ArgumentCaptor.forClass(String.class);
         then(productService).should().getProduct(eq(1L), visitorIdCaptor.capture());
         assertThat(visitorIdCaptor.getValue()).isEqualTo("fixed-visitor-id");
-                .body("productCondition", equalTo("LIKE_NEW"))
-                .body("imageUrls[0]", equalTo("https://image/a.jpg"));
     }
 
     @DisplayName("presigned URL 발급에 성공하면 200과 URL 목록을 응답한다")

@@ -14,15 +14,12 @@ public record ProductDetailResponse(
         int price,
         int stock,
         ProductStatus status,
-        long viewCount
-) {
-
-    public static ProductDetailResponse of(Product product, long viewCount) {
+        long viewCount,
         ProductCondition productCondition,
         List<String> imageUrls
 ) {
 
-    public static ProductDetailResponse from(Product product, List<String> imageUrls) {
+    public static ProductDetailResponse of(Product product, long viewCount) {
         return new ProductDetailResponse(
                 product.getId(),
                 product.getSellerId(),
@@ -31,9 +28,9 @@ public record ProductDetailResponse(
                 product.getPrice(),
                 product.getStock(),
                 product.getStatus(),
-                viewCount
+                viewCount,
                 product.getProductCondition(),
-                imageUrls
+                product.imageUrls()
         );
     }
 }

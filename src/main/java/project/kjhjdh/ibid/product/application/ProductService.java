@@ -100,7 +100,6 @@ public class ProductService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         productViewCounter.record(productId, visitorId);
         return ProductDetailResponse.of(product, productViewCounter.readTotal(product));
-        return ProductDetailResponse.from(product, product.imageUrls());
     }
 
     private Product findOwnedProduct(Long sellerId, Long productId) {

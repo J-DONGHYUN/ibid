@@ -58,7 +58,6 @@ public class Product {
     @Column(nullable = false)
     private long viewCount;
 
-    private Product(Long sellerId, String title, String description, int price, int stock) {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductCondition productCondition;
