@@ -60,17 +60,53 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 | `price` | 1원 이상 |
 | `stock` | 1개 이상 |
 | `status` | `PENDING` → `ON_SALE` → `SOLD_OUT` |
+| `productCondition` | `NEW` / `LIKE_NEW` / `USED` |
+| `images` | `ProductImage` 목록(`sortOrder` 순, S3 URL). 이미지 소유는 product 도메인이 갖고 S3 기술만 `common.image` 재사용 |
 
 | 기능 | Method | URL | 인증 | 설명 |
 | --- | --- | --- | --- | --- |
 | 상품 등록 | POST | `/api/products` | O | 로그인 사용자를 판매자로 등록. 생성 시 `PENDING` |
+| 상품 수정 | PATCH | `/api/products/{id}` | 판매자 본인 | 거래 진행 전에만 가능 |
+| 상품 삭제 | DELETE | `/api/products/{id}` | 판매자 본인 | S3 이미지 동기 삭제 |
 | 상품 판매 시작 | PATCH | `/api/products/{id}/on-sale` | 판매자 본인 | `PENDING` → `ON_SALE` |
 | 상품 목록 | GET | `/api/products?cursor=` | X | 커서 기반 무한스크롤(16개 단위, id 내림차순) |
 | 상품 상세 | GET | `/api/products/{id}` | X | 단건 조회 |
+| 이미지 업로드 | POST | `/api/products/{id}/images/presign` · `/confirm` | 판매자 본인 | presigned URL 발급 → 브라우저가 S3 직접 업로드 → 확정 |
 
 **규칙**
 - 생성 시 `PENDING`, 판매 시작 시 `ON_SALE`, 재고 0이 되면 `SOLD_OUT`, 구매는 `ON_SALE`만 가능
 - 재고 도메인 메서드: `decreaseStock(quantity)`(구매 시), `restoreStock(quantity)`(주문 취소/환불 시 복원; PENDING 상품은 복원 불가)
+- 수정·삭제는 거래가 진행된 상품에 대해 차단(`PRODUCT_NOT_MODIFIABLE`)
+
+#### 찜(좋아요) — DTL-2
+
+`ProductLike`는 상품과 분리된 **독립 애그리거트**다. `userId`·`productId`를 **id로 참조**하며 연관관계 매핑을 두지 않는다(찜은 상품의 생명주기에 종속되지 않는 별개 관심사).
+
+| 필드 | 설명 |
+| --- | --- |
+| `userId` / `productId` | 찜한 사용자·상품 (id 참조) |
+| `createdAt` | 찜한 시각 |
+
+| 기능 | Method | URL | 인증 | 설명 |
+| --- | --- | --- | --- | --- |
+| 찜하기 | POST | `/api/products/{id}/like` | O | 같은 리소스에 메서드로 동작 구분 |
+| 찜 취소 | DELETE | `/api/products/{id}/like` | O | 멱등 |
+| 찜 상태 | GET | `/api/products/{id}/like` | O | 찜수 + 내 찜여부 |
+| 관심 목록 | GET | `/api/products/me/likes` | O | 찜 최신순 상품 요약(썸네일 포함) |
+
+**규칙**
+- 중복 찜은 `unique(user_id, product_id)`로 **DB가 강제**한다. 애플리케이션의 `exists` 검사는 빠른 경로일 뿐이고, 검사와 저장 사이의 틈 때문에 동시 요청 시 제약 위반이 날 수 있다 → `409`로 응답(아래 설계 결정).
+- 상품 삭제 시 **고아 찜 정리는 미구현**. 관심 목록 조회에서 사라진 상품을 필터링한다.
+
+**설계 결정 (DTL-2)**
+
+| 관심사 | 선택 | 근거 |
+| --- | --- | --- |
+| 찜수 저장 | **DB `COUNT` + 인덱스** (Redis 캐시 미도입) | 현재 트래픽에서 조기 최적화. 부하 발생 시 재검토 |
+| 찜수 조회 인덱스 | `idx_product_likes_product(product_id)` **별도 추가** | 유니크 제약 인덱스는 `(user_id, product_id)` 순이라 leftmost prefix 규칙상 `product_id` 단독 조회에 쓸 수 없다. 없으면 상세 진입마다 풀스캔(10,000건 기준 `EXPLAIN` 9943행 → 20행) |
+| 찜 등록 메서드 | **POST** (PUT 아님) | 멱등 계약이 필요 없다 — 중복은 unique 제약이 막는다 |
+| 동시 찜 충돌 처리 | **전역 예외 핸들러에서 409** (서비스에서 catch 안 함) | 서비스는 `throw`만 한다는 기존 컨벤션 유지. 앞으로 추가될 다른 유니크 제약도 한 곳에서 커버 |
+| 프론트 중복 요청 | in-flight 가드 + 409 시 상태 재조회 | 낙관적 업데이트가 서버와 어긋난 채 남는 것을 방지 |
 
 ### 2.4 주문 (order)
 

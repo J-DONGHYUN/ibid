@@ -32,6 +32,8 @@ function DetailContent({ id }: { id: number }) {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likePending, setLikePending] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [starting, setStarting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -83,6 +85,53 @@ function DetailContent({ id }: { id: number }) {
       setDeleting(false);
     }
   };
+
+  const syncLikeStatus = () =>
+    api
+      .getLikeStatus(id)
+      .then((s) => {
+        setLiked(s.liked);
+        setLikeCount(s.count);
+      })
+      .catch(() => {});
+
+  const toggleLike = async () => {
+    if (likePending) return;
+    const next = !liked;
+    setLikePending(true);
+    setLiked(next);
+    setLikeCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    try {
+      if (next) await api.likeProduct(id);
+      else await api.unlikeProduct(id);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        await syncLikeStatus();
+        return;
+      }
+      setLiked(!next);
+      setLikeCount((c) => Math.max(0, c + (next ? -1 : 1)));
+      showToast(e instanceof ApiError ? e.message : "찜 처리에 실패했어요.", "error");
+    } finally {
+      setLikePending(false);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    api
+      .getLikeStatus(id)
+      .then((s) => {
+        if (active) {
+          setLiked(s.liked);
+          setLikeCount(s.count);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [id, reloadKey]);
 
   useEffect(() => {
     let active = true;
@@ -179,7 +228,7 @@ function DetailContent({ id }: { id: number }) {
                 <Eye size={15} /> 164
               </span>
               <span className="flex items-center gap-1">
-                <Heart size={15} /> 5
+                <Heart size={15} className={liked ? "fill-rose-500 text-rose-500" : ""} /> {likeCount}
               </span>
             </div>
             <button className="hover:text-neutral-600">신고하기</button>
@@ -215,24 +264,21 @@ function DetailContent({ id }: { id: number }) {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-between border-t border-neutral-100 pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
-                <ImageIcon size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-bold">{sellerName(product.sellerId)}</p>
-                <p className="text-xs text-neutral-400">상품 1개 판매 중 · 거래 12회</p>
-              </div>
+          <div className="mt-6 flex items-center gap-3 border-t border-neutral-100 pt-6">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+              <ImageIcon size={18} />
             </div>
-            <button className="text-sm text-neutral-500 hover:text-neutral-800">상점 보기</button>
+            <div>
+              <p className="text-sm font-bold">{sellerName(product.sellerId)}</p>
+              <p className="text-xs text-neutral-400">판매자</p>
+            </div>
           </div>
 
           <div className="mt-6 flex gap-3">
             <IconBtn onClick={openShare} label="공유">
               <Share2 size={20} />
             </IconBtn>
-            <IconBtn onClick={() => setLiked((v) => !v)} label="찜">
+            <IconBtn onClick={toggleLike} label="찜" disabled={likePending}>
               <Heart size={20} className={liked ? "fill-rose-500 text-rose-500" : "text-neutral-500"} />
             </IconBtn>
 
@@ -382,16 +428,19 @@ function IconBtn({
   children,
   onClick,
   label,
+  disabled = false,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       aria-label={label}
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+      disabled={disabled}
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-60"
     >
       {children}
     </button>
