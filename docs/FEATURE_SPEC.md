@@ -63,11 +63,14 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 | `viewCount` | 누적 조회수. Redis 카운터를 주기적으로 반영한 값(아래 조회수 규칙) |
 | `productCondition` | `NEW` / `LIKE_NEW` / `USED` |
 | `images` | `ProductImage` 목록(`sortOrder` 순, S3 URL). 이미지 소유는 product 도메인이 갖고 S3 기술만 `common.image` 재사용 |
+| `tags` | 검색·표시용 태그 목록(선택, 프론트 최대 10개). `Tag` 엔티티를 `@ManyToMany`로 참조(조인 테이블 `product_tag`) — 같은 이름의 태그는 **재사용**(정규화 후 find-or-create) |
+| `shippingFee` | 0원 이상. **0이면 무료배송**. 결제 시 상품 금액과 합산되며 플랫폼이 수취(판매자 정산 미포함) — ⚠️ **합산은 아직 미구현**(BACKLOG `DTL-4+` P0) |
+| `createdAt` | 등록시각(수정 불가) — 상세에서 상대시간 표시 |
 
 | 기능 | Method | URL | 인증 | 설명 |
 | --- | --- | --- | --- | --- |
 | 상품 등록 | POST | `/api/products` | O | 로그인 사용자를 판매자로 등록. 생성 시 `PENDING` |
-| 상품 수정 | PATCH | `/api/products/{id}` | 판매자 본인 | 거래 진행 전에만 가능 |
+| 상품 수정 | PATCH | `/api/products/{id}` | 판매자 본인 | 거래 진행 전에만 가능. `tags`는 전체 교체 |
 | 상품 삭제 | DELETE | `/api/products/{id}` | 판매자 본인 | S3 이미지 동기 삭제 |
 | 상품 판매 시작 | PATCH | `/api/products/{id}/on-sale` | 판매자 본인 | `PENDING` → `ON_SALE` |
 | 상품 목록 | GET | `/api/products?cursor=` | X(`@PublicApi`) | 커서 기반 무한스크롤(16개 단위, id 내림차순) |
@@ -80,6 +83,11 @@ JWT 액세스 토큰 + 리프레시 토큰(Redis 저장, 쿠키 전달) 기반 �
 - 생성 시 `PENDING`, 판매 시작 시 `ON_SALE`, 재고 0이 되면 `SOLD_OUT`, 구매는 `ON_SALE`만 가능
 - 재고 도메인 메서드: `decreaseStock(quantity)`(구매 시), `restoreStock(quantity)`(주문 취소/환불 시 복원; PENDING 상품은 복원 불가)
 - 수정·삭제는 거래가 진행된 상품에 대해 차단(`PRODUCT_NOT_MODIFIABLE`)
+
+**태그 모델 결정 (DTL-4)**
+- **선택**: `Tag` 엔티티 + `@ManyToMany`(값객체 `@ElementCollection` 대신). 태그 문자열은 서비스에서 `trim`·중복 제거 후 `TagRepository.findByName`으로 **기존 태그를 재사용**하고 없으면 생성 → 이름당 `tag` 행 1개로 정규화.
+- **근거**: 향후 태그가 "기존 태그 선택·자동완성", "인기 태그 랭킹", "태그별 상품(DTL-7 유사 추천)" 등 **공유·1급 개념**으로 확장될 것을 대비. 이름 일괄 변경·집계가 id 기준으로 단순해짐.
+- **비용/후속**: 아무 상품도 참조하지 않는 **고아 태그 정리**는 아직 미구현(현재는 누적 허용). 동시 등록 시 같은 이름 태그의 경쟁 삽입은 `uk_tags_name` 유니크 제약으로 방지 — 위반 시 전역 핸들러가 `409`로 응답(찜과 동일 경로).
 
 #### 찜(좋아요) — DTL-2
 

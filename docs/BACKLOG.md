@@ -73,7 +73,7 @@
 - `tags` — `Tag` 엔티티 `@ManyToMany`(조인 테이블 `product_tag`), 같은 이름 태그는 find-or-create로 **재사용**. 모델 선택 근거는 [`FEATURE_SPEC.md`](./FEATURE_SPEC.md#23-상품-product)
 - `createdAt` — 등록시각, 상세에서 상대시간 표시
 - `shippingFee` — 0원=무료배송, 등록/수정 폼·상세 연동
-- ⚠️ `feat/product-like`(#35)에서 갈라져 나온 브랜치라 **#35 머지 완료된 지금 리베이스 필요**
+- `feat/product-like`(#35)에서 갈라져 나온 브랜치 — **main 머지 완료**(#34 조회수 포함). `ProductDetailResponse`·`ProductService` 충돌은 조회수(`viewCount`·`visitorId`)를 살리는 방향으로 해결, 회귀 방지 단언 추가
 - ⚠️ **미해결 리뷰 지적 있음** → 아래 `DTL-4+`. 특히 **`shippingFee`가 결제 총액에 합산되지 않음**
 
 ### 🔧 후속 정리 (리뷰에서 나온 미해결 항목)

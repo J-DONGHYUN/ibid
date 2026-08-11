@@ -13,7 +13,9 @@ import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.Tag;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
+import project.kjhjdh.ibid.product.infra.TagRepository;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
@@ -29,6 +31,7 @@ public class ProductService {
     private static final int PAGE_SIZE = 16;
 
     private final ProductRepository productRepository;
+    private final TagRepository tagRepository;
     private final ProductViewCounter productViewCounter;
     private final ProductImageService productImageService;
 
@@ -46,7 +49,8 @@ public class ProductService {
     @Transactional
     public void update(Long sellerId, Long productId, ProductUpdateRequest request) {
         Product product = findOwnedProduct(sellerId, productId);
-        product.update(request.title(), request.description(), request.price(), request.stock(), request.productCondition());
+        product.update(request.title(), request.description(), request.price(), request.stock(),
+                request.productCondition(), resolveTags(request.tags()), request.shippingFee());
     }
 
     @Transactional
@@ -73,7 +77,9 @@ public class ProductService {
                 request.description(),
                 request.price(),
                 request.stock(),
-                request.productCondition()
+                request.productCondition(),
+                resolveTags(request.tags()),
+                request.shippingFee()
         );
         return productRepository.save(product).getId();
     }
@@ -100,6 +106,19 @@ public class ProductService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         productViewCounter.record(productId, visitorId);
         return ProductDetailResponse.of(product, productViewCounter.readTotal(product));
+    }
+
+    private List<Tag> resolveTags(List<String> names) {
+        if (names == null) {
+            return List.of();
+        }
+        return names.stream()
+                .map(String::trim)
+                .filter(name -> !name.isBlank())
+                .distinct()
+                .map(name -> tagRepository.findByName(name)
+                        .orElseGet(() -> tagRepository.save(Tag.of(name))))
+                .toList();
     }
 
     private Product findOwnedProduct(Long sellerId, Long productId) {

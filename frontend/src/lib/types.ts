@@ -28,6 +28,9 @@ export interface ProductDetail {
   viewCount: number;
   productCondition: ProductCondition;
   imageUrls: string[];
+  createdAt: string;
+  tags: string[];
+  shippingFee: number;
 }
 
 export interface ImagePresignRequest {
@@ -66,6 +69,8 @@ export interface ProductRegisterRequest {
   price: number;
   stock: number;
   productCondition: ProductCondition;
+  tags: string[];
+  shippingFee: number;
 }
 
 export interface ProductUpdateRequest {
@@ -74,6 +79,8 @@ export interface ProductUpdateRequest {
   price: number;
   stock: number;
   productCondition: ProductCondition;
+  tags: string[];
+  shippingFee: number;
 }
 
 export const CONDITION_LABEL: Record<ProductCondition, string> = {

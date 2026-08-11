@@ -336,6 +336,16 @@ class ProductTest {
         assertThat(product.isOwnedBy(2L)).isFalse();
     }
 
+    @DisplayName("배송비가 0원 미만이면 생성에 실패한다")
+    @Test
+    void create_invalidShippingFee() {
+        // when & then
+        assertThatThrownBy(() -> Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3,
+                ProductCondition.USED, List.of(Tag.of("태그")), -1))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_SHIPPING_FEE.getMessage());
+    }
+
     @DisplayName("이미지를 추가하면 기존 뒤에 순서대로 쌓인다")
     @Test
     void addImages() {

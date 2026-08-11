@@ -1,5 +1,6 @@
 package project.kjhjdh.ibid.product.presentation.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import project.kjhjdh.ibid.product.domain.Product;
@@ -16,7 +17,10 @@ public record ProductDetailResponse(
         ProductStatus status,
         long viewCount,
         ProductCondition productCondition,
-        List<String> imageUrls
+        List<String> imageUrls,
+        LocalDateTime createdAt,
+        List<String> tags,
+        int shippingFee
 ) {
 
     public static ProductDetailResponse of(Product product, long viewCount) {
@@ -30,7 +34,10 @@ public record ProductDetailResponse(
                 product.getStatus(),
                 viewCount,
                 product.getProductCondition(),
-                product.imageUrls()
+                product.imageUrls(),
+                product.getCreatedAt(),
+                product.tagNames(),
+                product.getShippingFee()
         );
     }
 }

@@ -17,11 +17,10 @@ import Header from "@/components/Header";
 import PurchaseModal from "@/components/PurchaseModal";
 import { useToast } from "@/components/Toast";
 import { api, ApiError, currentUserId } from "@/lib/api";
-import { formatWon, sellerName } from "@/lib/format";
+import { formatWon, sellerName, timeAgo } from "@/lib/format";
 import { CONDITION_LABEL } from "@/lib/types";
 import type { ProductDetail } from "@/lib/types";
 
-const TAGS = ["#나이키", "#AirMax90", "#에어맥스", "#운동화", "#270"];
 const SIMILAR = [35000, 129000, 78000, 92000, 64000, 155000];
 
 function DetailContent({ id }: { id: number }) {
@@ -222,7 +221,7 @@ function DetailContent({ id }: { id: number }) {
 
           <div className="mt-3 flex items-center justify-between text-sm text-neutral-400">
             <div className="flex items-center gap-3">
-              <span>8시간 전</span>
+              <span>{timeAgo(product.createdAt)}</span>
               <span className="flex items-center gap-1">
                 <Eye size={15} /> {product.viewCount}
               </span>
@@ -241,7 +240,9 @@ function DetailContent({ id }: { id: number }) {
             <SpecRow label="수량">
               <span className="font-semibold">{product.stock}개</span>
             </SpecRow>
-            <SpecRow label="배송비">일반 3,000원</SpecRow>
+            <SpecRow label="배송비">
+              {product.shippingFee === 0 ? "무료배송" : `${formatWon(product.shippingFee)}원`}
+            </SpecRow>
           </dl>
 
           <div className="mt-6 border-t border-neutral-100 pt-6">
@@ -254,13 +255,15 @@ function DetailContent({ id }: { id: number }) {
             >
               {expanded ? "접기" : "더보기"}
             </button>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {TAGS.map((t) => (
-                <span key={t} className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs text-neutral-500">
-                  {t}
-                </span>
-              ))}
-            </div>
+            {product.tags.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {product.tags.map((t) => (
+                  <span key={t} className="rounded-md bg-neutral-100 px-2.5 py-1 text-xs text-neutral-500">
+                    #{t}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mt-6 flex items-center gap-3 border-t border-neutral-100 pt-6">

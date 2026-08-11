@@ -1,5 +1,6 @@
 package project.kjhjdh.ibid.product.domain;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -66,11 +70,27 @@ public class Product {
     @OrderBy("sortOrder")
     private List<ProductImage> images = new ArrayList<>();
 
-    private Product(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
+    @ManyToMany
+    @JoinTable(
+            name = "product_tag",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private List<Tag> tags = new ArrayList<>();
+
+    @Column(nullable = false)
+    private int shippingFee;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    private Product(Long sellerId, String title, String description, int price, int stock,
+                    ProductCondition productCondition, List<Tag> tags, int shippingFee) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
         validateStock(stock);
+        validateShippingFee(shippingFee);
         this.sellerId = sellerId;
         this.title = title;
         this.description = description;
@@ -78,6 +98,9 @@ public class Product {
         this.stock = stock;
         this.status = ProductStatus.PENDING;
         this.productCondition = productCondition;
+        this.tags = new ArrayList<>(tags);
+        this.shippingFee = shippingFee;
+        this.createdAt = LocalDateTime.now();
     }
 
     public static Product create(Long sellerId, String title, String description, int price, int stock) {
@@ -85,7 +108,12 @@ public class Product {
     }
 
     public static Product create(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
-        return new Product(sellerId, title, description, price, stock, productCondition);
+        return create(sellerId, title, description, price, stock, productCondition, List.of(), 0);
+    }
+
+    public static Product create(Long sellerId, String title, String description, int price, int stock,
+                                 ProductCondition productCondition, List<Tag> tags, int shippingFee) {
+        return new Product(sellerId, title, description, price, stock, productCondition, tags, shippingFee);
     }
 
     public void openForSale() {
@@ -146,17 +174,22 @@ public class Product {
         return status == ProductStatus.ON_SALE;
     }
 
-    public void update(String title, String description, int price, int stock, ProductCondition productCondition) {
+    public void update(String title, String description, int price, int stock,
+                       ProductCondition productCondition, List<Tag> tags, int shippingFee) {
         validateModifiable();
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
         validateStock(stock);
+        validateShippingFee(shippingFee);
         this.title = title;
         this.description = description;
         this.price = price;
         this.stock = stock;
         this.productCondition = productCondition;
+        this.tags.clear();
+        this.tags.addAll(tags);
+        this.shippingFee = shippingFee;
     }
 
     public void validateModifiable() {
@@ -184,6 +217,10 @@ public class Product {
         return images.stream().map(ProductImage::getUrl).toList();
     }
 
+    public List<String> tagNames() {
+        return tags.stream().map(Tag::getName).toList();
+    }
+
     public boolean isOwnedBy(Long userId) {
         return sellerId.equals(userId);
     }
@@ -209,6 +246,12 @@ public class Product {
     private void validateStock(int stock) {
         if (stock < MIN_STOCK) {
             throw new BusinessException(ErrorCode.INVALID_PRODUCT_STOCK);
+        }
+    }
+
+    private void validateShippingFee(int shippingFee) {
+        if (shippingFee < 0) {
+            throw new BusinessException(ErrorCode.INVALID_SHIPPING_FEE);
         }
     }
 }

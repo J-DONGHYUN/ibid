@@ -37,24 +37,21 @@
 
 | 기능 | Method | URL | 인증 | 요청 | 응답 |
 | --- | --- | --- | --- | --- | --- |
-| 상품 등록 | POST | `/api/products` | O | `{title, description, price, stock, productCondition}` | `201 {productId}` (생성 시 `PENDING`) |
-| 상품 수정 | PATCH | `/api/products/{id}` | 판매자 본인 | `{title, description, price, stock, productCondition}` | `200` |
+| 상품 등록 | POST | `/api/products` | O | `{title, description, price, stock, productCondition, tags, shippingFee}` | `201 {productId}` (생성 시 `PENDING`) |
+| 상품 수정 | PATCH | `/api/products/{id}` | 판매자 본인 | `{title, description, price, stock, productCondition, tags, shippingFee}` | `200` |
 | 상품 삭제 | DELETE | `/api/products/{id}` | 판매자 본인 | - | `204` (S3 이미지 동기 삭제) |
 | 판매 시작 | PATCH | `/api/products/{id}/on-sale` | 판매자 본인 | - | `200` (`PENDING`→`ON_SALE`) |
-| 상품 목록 | GET | `/api/products?cursor=` | X | - | `200 {products:[{productId,title,price,stock,status}], nextCursor, hasNext}` |
-| 상품 상세 | GET | `/api/products/{id}` | X | - | `200 {productId, sellerId, title, description, price, stock, status, viewCount}` + `Set-Cookie: visitor_id` |
+| 상품 목록 | GET | `/api/products?cursor=` | X | - | `200 {products:[{productId,title,price,stock,status,thumbnailUrl}], nextCursor, hasNext}` |
+| 상품 상세 | GET | `/api/products/{id}` | X | - | `200 {productId, sellerId, title, description, price, stock, status, viewCount, productCondition, imageUrls, createdAt, tags, shippingFee}` + `Set-Cookie: visitor_id` |
 
-- `title` 1~100자, `description` 1~2000자, `price`≥1, `stock`≥1. 목록은 커서 기반(16개, id 내림차순).
+- `title` 1~100자, `description` 1~2000자, `price`≥1, `stock`≥1, `shippingFee`≥0(**0이면 무료배송**). 목록은 커서 기반(16개, id 내림차순).
+- `productCondition` = `NEW` / `LIKE_NEW` / `USED`.
+- `tags`는 선택(미전송 시 빈 배열). **수정 시 전체 교체**되며, 같은 이름의 태그는 `Tag` 엔티티로 재사용된다.
+- `shippingFee`는 플랫폼이 수취한다(판매자 정산 미포함). ⚠️ **결제 총액 합산은 아직 미구현** — BACKLOG `DTL-4+` P0.
 - **조회수(`viewCount`)**: 상세 조회 시 증가한다. 조회자는 `visitor_id` 쿠키(UUID, `HttpOnly`·`Secure`·`Path=/`·`SameSite=Strict`·1년)로 식별하며 쿠키가 없으면 발급한다. 같은 방문자·같은 상품은 **30분간 1회만** 집계된다(로그인 여부와 무관 — 판매자 본인 조회도 집계). 응답값은 `DB 누적값 + Redis 미반영 delta`라 내 조회가 즉시 반영된다.
 - 존재하지 않는 상품(`404`)은 조회수를 기록하지 않고 `Set-Cookie`도 내려주지 않는다.
-- 오류: `INVALID_PRODUCT_*`(400), `PRODUCT_NOT_FOUND`(404), `PRODUCT_NOT_PENDING`(409), `ACCESS_DENIED`(403, 판매자 아님).
-| 상품 목록 | GET | `/api/products?cursor=` | X | - | `200 {products:[{productId,title,price,stock,status,thumbnailUrl}], nextCursor, hasNext}` |
-| 상품 상세 | GET | `/api/products/{id}` | X | - | `200 {productId, sellerId, title, description, price, stock, status, productCondition, imageUrls}` |
-
-- `title` 1~100자, `description` 1~2000자, `price`≥1, `stock`≥1. 목록은 커서 기반(16개, id 내림차순).
-- `productCondition` = `NEW` / `LIKE_NEW` / `USED`.
 - 수정·삭제는 **거래가 진행되지 않은 상품만** 가능(`PRODUCT_NOT_MODIFIABLE`).
-- 오류: `INVALID_PRODUCT_*`(400), `PRODUCT_NOT_FOUND`(404), `PRODUCT_NOT_PENDING`·`PRODUCT_NOT_MODIFIABLE`(409), `ACCESS_DENIED`(403, 판매자 아님).
+- 오류: `INVALID_PRODUCT_*`·`INVALID_SHIPPING_FEE`(400), `PRODUCT_NOT_FOUND`(404), `PRODUCT_NOT_PENDING`·`PRODUCT_NOT_MODIFIABLE`(409), `ACCESS_DENIED`(403, 판매자 아님).
 
 ### 2.2 상품 이미지 (S3 presigned)
 

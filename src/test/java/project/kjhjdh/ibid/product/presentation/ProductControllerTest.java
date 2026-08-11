@@ -12,6 +12,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -49,7 +50,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW, List.of(), 3000))
                 .when()
                 .post("/api/products")
                 .then()
@@ -63,7 +64,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW, List.of(), 3000))
                 .when()
                 .post("/api/products")
                 .then()
@@ -77,7 +78,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, 3, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, 3, ProductCondition.LIKE_NEW, List.of(), 3000))
                 .when()
                 .post("/api/products")
                 .then()
@@ -91,7 +92,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 0, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 0, ProductCondition.LIKE_NEW, List.of(), 3000))
                 .when()
                 .post("/api/products")
                 .then()
@@ -133,7 +134,8 @@ class ProductControllerTest extends ControllerTestSupport {
         // given
         given(productService.getProduct(eq(1L), anyString())).willReturn(
                 new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 164L,
-                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg")));
+                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
+                        List.of("나이키"), 3000));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -149,7 +151,9 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("status", equalTo("ON_SALE"))
                 .body("viewCount", equalTo(164))
                 .body("productCondition", equalTo("LIKE_NEW"))
-                .body("imageUrls[0]", equalTo("https://image/a.jpg"));
+                .body("imageUrls[0]", equalTo("https://image/a.jpg"))
+                .body("tags[0]", equalTo("나이키"))
+                .body("shippingFee", equalTo(3000));
     }
 
     @DisplayName("방문자 쿠키가 없으면 새 방문자 식별자를 쿠키로 발급한다")
@@ -158,7 +162,8 @@ class ProductControllerTest extends ControllerTestSupport {
         // given
         given(productService.getProduct(eq(1L), anyString())).willReturn(
                 new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L,
-                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg")));
+                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
+                        List.of("나이키"), 3000));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -178,7 +183,8 @@ class ProductControllerTest extends ControllerTestSupport {
         // given
         given(productService.getProduct(eq(1L), anyString())).willReturn(
                 new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L,
-                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg")));
+                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
+                        List.of("나이키"), 3000));
 
         // when
         RestAssuredMockMvc.given()
@@ -257,7 +263,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, 2, ProductCondition.USED))
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, 2, ProductCondition.USED, List.of(), 3000))
                 .when()
                 .patch("/api/products/{productId}", 1L)
                 .then()

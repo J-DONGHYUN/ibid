@@ -1,8 +1,11 @@
 package project.kjhjdh.ibid.product.presentation.dto;
 
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 
@@ -24,6 +27,12 @@ public record ProductRegisterRequest(
         Integer stock,
 
         @NotNull(message = "상품 상태를 선택해주세요.")
-        ProductCondition productCondition
+        ProductCondition productCondition,
+
+        List<String> tags,
+
+        @NotNull(message = "배송비를 입력해주세요.")
+        @PositiveOrZero(message = "배송비는 0원 이상이어야 합니다.")
+        Integer shippingFee
 ) {
 }
