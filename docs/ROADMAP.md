@@ -44,11 +44,28 @@
 
 | ID | 작업 | 우선 | 왜 필요한가 |
 | --- | --- | --- | --- |
-| PERF-1 | **대량 더미데이터 시딩** — 상품 수백만 행, 주문/찜/조회 이력 포함 | **P0** | 축 3 전체의 전제. 카디널리티·분포가 현실적이어야 실행계획이 의미를 가짐 |
+| PERF-1 | ~~**대량 더미데이터 시딩**~~ → ✅ **완료** ([`PERF_SEEDING.md`](./PERF_SEEDING.md)) — 상품 200만 행 포함 총 1,030만 행 | **P0** | 축 3 전체의 전제. 카디널리티·분포가 현실적이어야 실행계획이 의미를 가짐 |
 | OPS-2a | **k6 부하 시나리오** — 목록/상세/구매 3종, p95·p99·TPS 수집 | **P0** | 축 1·3의 before/after 숫자 |
 | OPS-2b | **관측성** — 메트릭·구조화 로그·슬로우 쿼리 로그 | P1 | "개선했다"보다 **"병목을 찾아냈다"** 가 더 인정받는다 |
 
 > 시딩은 단순 반복 INSERT가 아니라 **배치 INSERT · `rewriteBatchedStatements` · 인덱스 생성 시점**까지 다루면 그 자체가 소재가 된다.
+
+### PERF-1 결과 요약 (상세 → [`PERF_SEEDING.md`](./PERF_SEEDING.md))
+
+| 발견 | 숫자 |
+| --- | --- |
+| JPA `saveAll`은 `IDENTITY` 전략 때문에 INSERT 배치가 걸리지 않는다 | 5,022 → 40,163 rows/sec (**8배**) |
+| 처리량을 실제로 결정한 건 `batchUpdate`가 아니라 **드라이버가 SQL을 합쳐주는 것** | `rewriteBatchedStatements` off 7,640 → on 40,163 (**5.26배**). off일 때는 배치 크기를 5배 늘려도 2%만 변함 |
+| 보조 인덱스에 **순차로 넣는지 무작위로 넣는지**가 12배를 만든다 | `product_tag`(순차) 97,964 vs `product_likes`(무작위+인덱스 2개) 8,302 rows/sec |
+
+**확보된 before 숫자** — 이 위에서 축 3을 측정한다.
+
+| 쿼리 | `EXPLAIN` | 실측(오버헤드 차감) |
+| --- | --- | --- |
+| `WHERE status='ON_SALE' ORDER BY created_at DESC LIMIT 16` | **`ALL` 풀스캔 + `filesort`** (798,124행) | **약 670ms** ← PERF-3 1순위 |
+| `ORDER BY id DESC LIMIT 500000, 16` | `index` (500,016행 스캔) | 약 100ms ← PERF-6 |
+| `WHERE id < ? ORDER BY id DESC LIMIT 16` (커서) | `range` + Backward index scan | 약 1ms |
+| `COUNT(*) FROM product_likes WHERE product_id = ?` | `ref` + **`Using index`**(커버링) | 약 0ms |
 
 ---
 

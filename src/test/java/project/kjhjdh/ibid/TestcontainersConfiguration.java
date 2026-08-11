@@ -10,10 +10,14 @@ import org.testcontainers.utility.DockerImageName;
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
+	private static final String REWRITE_BATCHED_STATEMENTS =
+			System.getenv().getOrDefault("SEED_REWRITE_BATCHED_STATEMENTS", "false");
+
 	@Bean
 	@ServiceConnection
 	MySQLContainer<?> mysqlContainer() {
-		return new MySQLContainer<>(DockerImageName.parse("mysql:8.4"));
+		return new MySQLContainer<>(DockerImageName.parse("mysql:8.4"))
+				.withUrlParam("rewriteBatchedStatements", REWRITE_BATCHED_STATEMENTS);
 	}
 
 	@Bean
