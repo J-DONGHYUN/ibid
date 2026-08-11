@@ -1,5 +1,7 @@
 package project.kjhjdh.ibid.auth.presentation.interceptor;
 
+import java.util.Optional;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
@@ -32,6 +34,13 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        if (isPublic(handlerMethod)) {
+            findToken(request)
+                    .map(tokenProvider::parseAccessToken)
+                    .ifPresent(userInfo -> request.setAttribute(USER_INFO_ATTRIBUTE, userInfo));
+            return true;
+        }
+
         UserInfo userInfo = authenticate(request);
         request.setAttribute(USER_INFO_ATTRIBUTE, userInfo);
 
@@ -42,21 +51,27 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         return true;
     }
 
+    private boolean isPublic(HandlerMethod handlerMethod) {
+        return handlerMethod.getMethodAnnotation(PublicApi.class) != null
+                || handlerMethod.getBeanType().isAnnotationPresent(PublicApi.class);
+    }
+
     private boolean requiresAdmin(HandlerMethod handlerMethod) {
         return handlerMethod.getMethodAnnotation(AdminOnly.class) != null
                 || handlerMethod.getBeanType().isAnnotationPresent(AdminOnly.class);
     }
 
     private UserInfo authenticate(HttpServletRequest request) {
-        String token = extractToken(request);
+        String token = findToken(request)
+                .orElseThrow(() -> new GlobalException(ErrorCode.UNAUTHORIZED));
         return tokenProvider.parseAccessToken(token);
     }
 
-    private String extractToken(HttpServletRequest request) {
+    private Optional<String> findToken(HttpServletRequest request) {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header != null && header.startsWith(BEARER_PREFIX)) {
-            return header.substring(BEARER_PREFIX.length());
+            return Optional.of(header.substring(BEARER_PREFIX.length()));
         }
-		throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        return Optional.empty();
     }
 }

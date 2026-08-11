@@ -1,5 +1,11 @@
 package project.kjhjdh.ibid.product.presentation;
 
+import static project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler.VISITOR_ID_COOKIE_NAME;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -17,8 +23,10 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
+import project.kjhjdh.ibid.auth.presentation.interceptor.PublicApi;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.product.application.ProductService;
+import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImageDeleteRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
@@ -35,6 +43,7 @@ import project.kjhjdh.ibid.product.presentation.dto.ProductUpdateRequest;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductViewCookieHandler productViewCookieHandler;
 
     // STEP 1: presigned URL 발급 (파일은 서버 안 거침)
     @PostMapping("/{productId}/images/presign")
@@ -67,6 +76,7 @@ public class ProductController {
                 .body(new ProductRegisterResponse(productId));
     }
 
+    @PublicApi
     @GetMapping
     public ResponseEntity<ProductListResponse> getProducts(
             @RequestParam(required = false) Long cursor
@@ -74,9 +84,17 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProducts(cursor));
     }
 
+    @PublicApi
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductDetailResponse> getProduct(@PathVariable Long productId) {
-        return ResponseEntity.ok(productService.getProduct(productId));
+    public ResponseEntity<ProductDetailResponse> getProduct(
+            @PathVariable Long productId,
+            @CookieValue(name = VISITOR_ID_COOKIE_NAME, required = false) String visitorId
+    ) {
+        String resolvedVisitorId = productViewCookieHandler.resolveVisitorId(visitorId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE,
+                        productViewCookieHandler.createVisitorIdCookie(resolvedVisitorId).toString())
+                .body(productService.getProduct(productId, resolvedVisitorId));
     }
 
     @PatchMapping("/{productId}/on-sale")

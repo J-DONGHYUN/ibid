@@ -14,7 +14,6 @@ import {
   X,
 } from "lucide-react";
 import Header from "@/components/Header";
-import AuthGuard from "@/components/AuthGuard";
 import PurchaseModal from "@/components/PurchaseModal";
 import { useToast } from "@/components/Toast";
 import { api, ApiError, currentUserId } from "@/lib/api";
@@ -224,7 +223,7 @@ function DetailContent({ id }: { id: number }) {
             <div className="flex items-center gap-3">
               <span>{timeAgo(product.createdAt)}</span>
               <span className="flex items-center gap-1">
-                <Eye size={15} /> 164
+                <Eye size={15} /> {product.viewCount}
               </span>
               <span className="flex items-center gap-1">
                 <Heart size={15} className={liked ? "fill-rose-500 text-rose-500" : ""} /> {likeCount}
@@ -455,13 +454,13 @@ export default function ProductDetailPage() {
   const id = Number(params.id);
 
   return (
-    <AuthGuard>
+    <>
       <Header />
       {Number.isNaN(id) ? (
         <p className="py-24 text-center text-sm text-rose-500">잘못된 상품입니다.</p>
       ) : (
         <DetailContent id={id} />
       )}
-    </AuthGuard>
+    </>
   );
 }

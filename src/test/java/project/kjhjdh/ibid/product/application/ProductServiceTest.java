@@ -27,6 +27,7 @@ import project.kjhjdh.ibid.product.infra.TagRepository;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
+import project.kjhjdh.ibid.product.presentation.dto.ProductDetailResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductUpdateRequest;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,11 +37,16 @@ class ProductServiceTest {
     private static final Long SELLER_ID = 10L;
     private static final Long OTHER_USER_ID = 20L;
 
+    private static final String VISITOR_ID = "visitor-a";
+
     @Mock
     private ProductRepository productRepository;
 
     @Mock
     private TagRepository tagRepository;
+
+    @Mock
+    private ProductViewCounter productViewCounter;
 
     @Mock
     private ProductImageService productImageService;
@@ -233,5 +239,34 @@ class ProductServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
         then(productImageService).shouldHaveNoInteractions();
+    }
+
+    @DisplayName("상품을 상세 조회하면 조회가 기록되고 집계된 조회수가 응답된다")
+    @Test
+    void getProduct() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productViewCounter.readTotal(product)).willReturn(164L);
+
+        // when
+        ProductDetailResponse response = productService.getProduct(PRODUCT_ID, VISITOR_ID);
+
+        // then
+        assertThat(response.viewCount()).isEqualTo(164L);
+        then(productViewCounter).should().record(PRODUCT_ID, VISITOR_ID);
+    }
+
+    @DisplayName("존재하지 않는 상품을 상세 조회하면 조회가 기록되지 않는다")
+    @Test
+    void getProduct_notFound() {
+        // given
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> productService.getProduct(PRODUCT_ID, VISITOR_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+        then(productViewCounter).shouldHaveNoInteractions();
     }
 }

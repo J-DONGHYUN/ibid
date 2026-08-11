@@ -59,6 +59,9 @@ public class Product {
     @Column(nullable = false)
     private ProductStatus status;
 
+    @Column(nullable = false)
+    private long viewCount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductCondition productCondition;

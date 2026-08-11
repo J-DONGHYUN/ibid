@@ -30,10 +30,15 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
         HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
         Object userInfo = request.getAttribute(AuthenticationInterceptor.USER_INFO_ATTRIBUTE);
 
-        if (userInfo == null) {
+        if (userInfo == null && isRequired(parameter)) {
             throw new GlobalException(ErrorCode.UNAUTHORIZED);
         }
 
         return userInfo;
+    }
+
+    private boolean isRequired(MethodParameter parameter) {
+        LoginUser loginUser = parameter.getParameterAnnotation(LoginUser.class);
+        return loginUser == null || loginUser.required();
     }
 }
