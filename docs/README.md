@@ -17,6 +17,7 @@
 | **어떻게** | [TEST.md](./TEST.md) | 테스트를 어떻게 쓰는가 | 테스트 작성 전 — 계층·네이밍·Fixture 규칙 |
 | | [PAYMENT_PROCESS.md](./PAYMENT_PROCESS.md) | 결제가 실제로 어떻게 도는가 | 결제 흐름을 건드릴 때 · 알려진 결함 확인 |
 | | [PRODUCT_VIEW_PROCESS.md](./PRODUCT_VIEW_PROCESS.md) | 조회수가 실제로 어떻게 도는가 | Redis 카운터·Lua·write-back 설계 근거 |
+| | [PERF_SEEDING.md](./PERF_SEEDING.md) | 대량 더미데이터를 어떻게 넣는가 | 성능 측정 전 데이터 준비 · 시딩 방식 비교 근거 |
 
 프로젝트 구조·명령어·도메인 계층 규칙은 저장소 루트의 [`CLAUDE.md`](../CLAUDE.md)에 있다.
 

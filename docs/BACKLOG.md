@@ -21,6 +21,8 @@
 - **결제**(토스 연동, 종료 — 팀원 담당)
 - **상품상태 `condition` enum**(NEW/LIKE_NEW/USED) — 등록폼·상세 연동
 - **직거래 · 채팅 · 사이즈 삭제** (상세/등록 화면)
+- **DTL-4 상품 필드 확장**(`tags`·`createdAt`·`shippingFee`) ([#37](https://github.com/J-DONGHYUN/ibid/pull/37)) — `Tag` 엔티티 재사용, main 병합 시 조회수(#34) 유지 + 상세 응답 회귀 테스트 추가
+- **PERF-1 대량 시딩** — 상품 200만 행 포함 총 1,030만 행. 시딩 방식 비교(JPA `saveAll` vs JDBC 배치 × `rewriteBatchedStatements`)와 축 3 before 숫자 확보 → [`PERF_SEEDING.md`](./PERF_SEEDING.md)
 
 > ⚠️ **재검토 중**: 그동안 「결제 정합성(멱등성·보상)」을 범위 밖으로 뒀으나, [`PAYMENT_PROCESS.md §6`](./PAYMENT_PROCESS.md#6-알려진-이슈)에 **"결제는 승인됐는데 주문이 롤백되는"** 결함이 문서화돼 있다. 정합성을 포트폴리오 축으로 삼는다면 이 결정을 뒤집어야 한다 — **결론 나기 전까지 보류**.
 > 여전히 범위 밖: 정산 원장 · 환불 자금 이동(실제 돈 흐름).
@@ -152,7 +154,7 @@
 
 | 축 | 내용 | 문서 |
 | --- | --- | --- |
-| Phase 0 | 측정 기반 — 대량 시딩 · k6 · 관측성 | [ROADMAP.md](./ROADMAP.md#phase-0-측정-기반-선행-필수) |
+| Phase 0 | 측정 기반 — ~~대량 시딩~~ ✅ · **k6(다음)** · 관측성 | [ROADMAP.md](./ROADMAP.md#phase-0-측정-기반-선행-필수) · [PERF_SEEDING.md](./PERF_SEEDING.md) |
 | 축 1 | 동시성 — 비관적/낙관적 락 · 원자연산 · 유니크 제약 비교 | [ROADMAP.md](./ROADMAP.md#축-1-동시성) |
 | 축 2 | 정합성 — 멱등성 · 보상 트랜잭션 · 이벤트 유실 · Outbox | [ROADMAP.md](./ROADMAP.md#축-2-정합성) |
 | 축 3 | 조회 성능 — 인덱스 · N+1 · 캐시 무효화 | [ROADMAP.md](./ROADMAP.md#축-3-조회-성능) |
