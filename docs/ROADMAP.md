@@ -54,9 +54,9 @@
 
 | 발견 | 숫자 |
 | --- | --- |
-| JPA `saveAll`은 `IDENTITY` 전략 때문에 INSERT 배치가 걸리지 않는다 | 5,022 → 40,163 rows/sec (**8배**) |
+| JPA `saveAll`은 `IDENTITY` 전략 때문에 INSERT 배치가 걸리지 않는다 | 5,022 → 40,163 rows/sec (**8배**). MySQL `Com_insert`로 확증 — 같은 20,000행에 **문장 20,006개 vs 26개** |
 | 처리량을 실제로 결정한 건 `batchUpdate`가 아니라 **드라이버가 SQL을 합쳐주는 것** | `rewriteBatchedStatements` off 7,640 → on 40,163 (**5.26배**). off일 때는 배치 크기를 5배 늘려도 2%만 변함 |
-| 보조 인덱스에 **순차로 넣는지 무작위로 넣는지**가 12배를 만든다 | `product_tag`(순차) 97,964 vs `product_likes`(무작위+인덱스 2개) 8,302 rows/sec |
+| 같은 배치 방식인데 **삽입 순서·행 크기·유니크 인덱스** 조합으로 12배가 갈린다 | `product_tag`(순차·좁은 행) 97,964 vs `product_likes`(무작위·유니크 인덱스) 8,302 rows/sec |
 
 **확보된 before 숫자** — 이 위에서 축 3을 측정한다.
 
