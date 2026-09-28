@@ -21,6 +21,7 @@ docs/
 │   └── test.md                테스트 작성 규칙
 ├── 04-harness/
 │   ├── harness.md             하네스 설계도. 무엇을 왜 강제하는가
+│   ├── loop.md                루프 설계서. 작업 하나가 어떻게 시작해 어떻게 끝나는가
 │   └── incidents.md           에이전트 사고와 처방 기록 (INC)
 └── 05-records/
     └── experiments/           측정·실험 기록 (EXP-01-*.md)
