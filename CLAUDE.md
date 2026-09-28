@@ -59,7 +59,6 @@
 
 | 코드 | 상태 | 할 것 |
 |---|---|---|
-| `order` · `payment` · `inspection` | 삭제 예정 | **확장하지 않는다. 새 코드가 import 하지 않는다** |
 | `product` 의 재고(`stock`) · 배송비(`shippingFee`) · `PENDING` · 비관적 락 | 삭제 예정 | 새 코드에서 쓰지 않는다 |
 | `product` 의 조회수(`viewCount` · Redis) · 태그(`Tag`) | 요구사항 없음, 결정 대기 | 확장하지 않는다 |
 | `frontend/` | 이전 흐름 화면 | 백엔드 작업 중에는 건드리지 않는다 |
