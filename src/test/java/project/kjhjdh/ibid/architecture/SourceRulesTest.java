@@ -24,13 +24,10 @@ class SourceRulesTest {
             "project/kjhjdh/ibid/auth/application/AuthService.java",
             "project/kjhjdh/ibid/auth/infra/RefreshTokenRedisRepository.java",
             "project/kjhjdh/ibid/common/exception/ErrorCode.java",
-            "project/kjhjdh/ibid/payment/application/PaymentService.java",
             "project/kjhjdh/ibid/product/presentation/ProductController.java"
     );
 
-    private static final Set<String> FROZEN_MUTABLE_LOMBOK_FILES = Set.of(
-            "project/kjhjdh/ibid/payment/infra/dto/PaymentTossDtoImpl.java"
-    );
+    private static final Set<String> FROZEN_MUTABLE_LOMBOK_FILES = Set.of();
 
     @DisplayName("프로덕션 코드에 새 주석이 생기지 않는다.")
     @Test

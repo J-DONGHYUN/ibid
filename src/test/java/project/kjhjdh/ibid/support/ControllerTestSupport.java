@@ -26,9 +26,6 @@ import project.kjhjdh.ibid.auth.presentation.cookie.RefreshTokenCookieHandler;
 import project.kjhjdh.ibid.auth.presentation.interceptor.AuthenticationInterceptor;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.common.config.WebConfig;
-import project.kjhjdh.ibid.inspection.application.InspectionService;
-import project.kjhjdh.ibid.order.application.OrderService;
-import project.kjhjdh.ibid.payment.application.PaymentService;
 import project.kjhjdh.ibid.product.application.ProductLikeService;
 import project.kjhjdh.ibid.product.application.ProductService;
 import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;
@@ -53,15 +50,6 @@ public abstract class ControllerTestSupport {
 
     @MockitoBean
     protected ProductLikeService productLikeService;
-
-    @MockitoBean
-    protected OrderService orderService;
-
-    @MockitoBean
-    protected PaymentService paymentService;
-
-    @MockitoBean
-    protected InspectionService inspectionService;
 
     @BeforeEach
     void setUpMockMvc() {
