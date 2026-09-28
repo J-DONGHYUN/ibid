@@ -78,6 +78,8 @@
   만들면 여기도 고쳐야 컨트롤러 테스트가 뜬다
 - **`TestcontainersConfiguration` 에 시딩용 설정(`SEED_REWRITE_BATCHED_STATEMENTS`)이 남아 있다.**
   시딩 도구는 지웠다. 쓰지 않는다
+- **셸은 zsh 다.** `${PIPESTATUS[0]}` 는 비어 있다 (zsh 는 `${pipestatus[1]}`). 파이프 뒤 종료 코드를 보려면 파이프를 쓰지 말고
+  `명령; echo EXIT=$?` 로 본다. `grep --include=*.java` 처럼 따옴표 없는 `*` 는 zsh 가 먼저 펼쳐 "no matches found" 로 명령이 통째로 실패한다
 - **게이트 초록불이 규칙이 살아 있다는 뜻은 아니다.** 아직 없는 도메인(`chat` · `trade` · `notification`)의 규칙은
   대상이 없어 빈 채로 통과한다. 그 도메인을 처음 만들면 일부러 어긴 코드로 게이트가 막는지 확인하고 지운다
   (`04-harness/harness.md` 「생존 확인」)

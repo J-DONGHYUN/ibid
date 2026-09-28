@@ -45,7 +45,7 @@ description: ibid 에서 백로그(docs/01-product/backlog.md)의 티켓 하나�
 ```bash
 draft="$(git rev-parse --git-dir)/ibid-loop/issue-draft.md"
 mkdir -p "$(dirname "$draft")"   # 본문을 이 파일에 쓴 뒤
-gh issue create --title "<이슈 제목>" --body-file "$draft"    # 출력된 URL 에서 이슈 번호를 얻는다
+gh issue create --title "<이슈 제목>" --body-file "$draft" --label <type>    # type: 제목 접두사 (feat · refactor · chore · test · docs), 결정 티켓은 decision. 출력된 URL 에서 이슈 번호를 얻는다
 ```
 
 반려되면 무엇을 고칠지 묻고, 백로그의 상세를 고친 뒤 다시 만든다.
@@ -71,6 +71,7 @@ git switch -c <type>/<번호>-<짧은-영문-이름>      # type: 이슈 제목�
 2. `docs/01-product/requirements.md` 에서 그 ID 의 **검증 기준**을 옮긴다 → 테스트 목록
 3. `docs/02-design/domain-model.md` 에서 그 ID 를 인용하는 **불변식**을 찾는다 → 금지된 전이 · 동시성 테스트를 목록에 더한다
 4. 걸린 **ADR** 의 상태를 본다
+5. **지우거나 옮기는 작업이면 양방향으로 조사한다** — 누가 대상을 참조하나(바깥 → 안) + 대상이 쓰던 공용 코드 · 에러 코드 · 설정이 남나(안 → 바깥). 한쪽만 보면 잔재가 남는다 (`INC-04`)
 
 그리고 **멈출 곳**을 확인한다. 하나라도 걸리면 [2] 로 가지 않고 사람에게 묻는다.
 
@@ -104,7 +105,9 @@ git switch -c <type>/<번호>-<짧은-영문-이름>      # type: 이슈 제목�
 2. …
 
 ### 새로 내려야 하는 결정
-- 없음   (있으면 여기서 멈추고 [1] 의 멈출 곳으로 돌아간다)
+- 없음
+  - 되돌리기 **비싼** 결정이 있으면 여기서 멈추고 [1] 의 멈출 곳으로 돌아간다 (제안 ADR 초안 → 사람이 정한다)
+  - 되돌리기 **쉬운** 결정은 선택과 근거를 여기에 적는다. 계획 승인이 곧 그 결정의 승인이다
 
 ### 동결 기록
 - 줄어들 것: …   /  늘어날 것: 없음
@@ -155,6 +158,8 @@ gh pr create --base develop --title "<이슈 제목>" --body-file <본문>
 ```
 
 PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md` 를 따르고, **🔁 루프 기록** 절을 `.git/ibid-loop/<브랜치>.log` 로 채운다.
+**로그 파일이 없으면 "0회" 가 아니라 "기록 없음" 이라고 적는다** — 근거 없는 0 은 기록을 믿을 수 없게 만든다.
+예정에 없던 승인 요청(훅 오탐 등)도 사람 개입으로 센다.
 
 ```bash
 cat "$(git rev-parse --git-dir)/ibid-loop/$(git branch --show-current | tr / _).log"
