@@ -26,6 +26,7 @@
 ## 명령
 
 ```bash
+./gradlew architectureTest  # 게이트만. 약 4초, Docker 불필요. 코드를 바꿀 때마다 돌린다
 ./gradlew build             # 컴파일 + 테스트 + jar. Docker 필요
 ./gradlew test --tests '*.ProductServiceTest'
 ./gradlew compileJava compileTestJava   # 테스트 없이 컴파일만. Docker 불필요
@@ -58,12 +59,17 @@
   만들면 여기도 고쳐야 컨트롤러 테스트가 뜬다
 - **`TestcontainersConfiguration` 에 시딩용 설정(`SEED_REWRITE_BATCHED_STATEMENTS`)이 남아 있다.**
   시딩 도구는 지웠다. 쓰지 않는다
+- **게이트 초록불이 규칙이 살아 있다는 뜻은 아니다.** 아직 없는 도메인(`chat` · `trade` · `notification`)의 규칙은
+  대상이 없어 빈 채로 통과한다. 그 도메인을 처음 만들면 일부러 어긴 코드로 게이트가 막는지 확인하고 지운다
+  (`04-harness/harness.md` 「생존 확인」)
 
 ## 하면 안 되는 것
 
 - 프로덕션 코드에 주석을 달지 않는다 (`03-convention/code.md`)
 - 게이트(테스트 · 아키텍처 검사)가 막으면 **코드를 고친다. 규칙이나 테스트를 고쳐 통과시키지 않는다.**
   규칙이 틀렸다고 판단되면 근거를 적어 사람에게 묻는다
+- **동결 기록에 위반을 더하지 않는다.** `src/test/resources/archunit-store/` 와 `SourceRulesTest` 의 `FROZEN_*` 목록은
+  남은 기술 부채다. 줄이는 것만 한다. 동결된 코드를 고치다 위반이 없어지면 목록에서도 지운다 (`ADR-0010`)
 - `PRD.md` 의 `NG` 에 있는 것을 만들지 않는다. 필요해 보이면 묻는다
 - ADR 없이 새 라이브러리 · 인프라를 추가하지 않는다
 

@@ -3,7 +3,7 @@
 ## 주석
 
 - [G] **프로덕션 코드에 주석을 달지 않는다.** 의도는 메서드 · 변수 이름으로 드러낸다.
-  테스트의 `// given` · `// when` · `// then` 만 예외다 — **현재 위반 5개 파일**
+  테스트의 `// given` · `// when` · `// then` 만 예외다 (`SourceRulesTest`, 기존 파일은 동결)
 - 왜 그렇게 했는지는 커밋 메시지와 ADR 에 남긴다. 코드 옆에 두면 코드가 바뀔 때 같이 낡는다
 
 ## 예외
@@ -25,7 +25,7 @@
 - 생성은 정적 팩토리 `create(...)` 로 하고, 생성 시 불변식을 검증한다
 - `@NoArgsConstructor(access = PROTECTED)` · `@Getter` 를 쓴다
 - [G] `@Setter` · `@Data` 를 쓰지 않는다. 상태는 의미 있는 이름의 메서드로만 바꾼다
-  (`reserve` · `complete`) — 현재 위반 1곳
+  (`reserve` · `complete`) (`SourceRulesTest`, 기존 파일은 동결)
 - 다른 애그리게이트는 id 로만 참조한다 (`domain-model.md` 애그리게이트)
 
 ## 의존성 추가
