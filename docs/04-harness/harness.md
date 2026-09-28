@@ -15,6 +15,7 @@ ibid 의 하네스가 **무엇으로 이루어져 있고, 왜 그렇게 만들�
 | ① 알려주기 | 텍스트를 모델의 컨텍스트에 넣는다 | 있다 |
 | ② 막기 | 행동을 실행 전에 차단하거나 사람에게 묻게 한다 | 없다 |
 | ③ 판정 | 결과를 기계가 채점한다. 실패 메시지는 다시 ①이 된다 | 없다 |
+| ④ 검토 | 만들지 않은 모델이 결과를 읽고 의견을 낸다 | 있다 — 그래서 조치를 PR 에 적게 한다 |
 
 ## 지금 구성
 
@@ -24,14 +25,16 @@ ibid 의 하네스가 **무엇으로 이루어져 있고, 왜 그렇게 만들�
 | ① | `.claude/rules/*.md` | 해당 경로를 수정할 때 | 계층별 규칙과 자주 틀리는 것 |
 | ① | `docs/` | 필요할 때 | 요구사항 · 불변식 · ADR · 컨벤션 (정본) |
 | ① | `.claude/skills/ticket/` | 이슈 작업을 시작할 때 | 루프 순서와 명령 (`loop.md`) |
-| ② | `.claude/settings.json` `ask` | 도구 호출 전 | 게이트 · 동결 기록 · 빌드 · CI · 권한 · 훅 파일 수정, 계획 게시 · 이슈 생성 · PR 생성 · `git push` |
+| ② | `.claude/settings.json` `ask` | 도구 호출 전 | 게이트 · 동결 기록 · 빌드 · CI · 권한 · 훅 · 리뷰어 파일 수정, 계획 게시 · 이슈 생성 · PR 생성 · `git push` |
 | ② | `.claude/settings.json` `deny` | 도구 호출 전 | 강제 push |
-| ② | `hooks/guard-protected.sh` | Bash 실행 전 | 셸 명령으로 게이트 · 동결 기록 · 빌드 설정을 고치면 `ask` |
+| ② | `hooks/guard-protected.sh` | Bash 실행 전 | 셸 명령으로 게이트 · 동결 기록 · 빌드 설정 · 훅 · 리뷰어를 고치면 `ask` |
+| ② | `hooks/reviewer-readonly.sh` | 리뷰어의 Bash 실행 전 | 읽기 명령(`git diff` · `gh issue view` …)만 통과, 나머지 `deny`. 리뷰어 frontmatter 에만 걸린다 |
 | ② | `hooks/guard-plan.sh` | 파일 수정 · Bash 실행 전 | 이슈 브랜치에서 계획을 게시하기 전에는 `src/` 수정 금지 |
 | ③ | `hooks/gate-on-stop.sh` | 에이전트가 끝내려 할 때 | `src/` 가 바뀌었으면 `architectureTest`. 실패하면 못 끝냄, 3회 연속이면 멈추고 사람을 부름 |
 | ③ | `./gradlew architectureTest` | 에이전트가 자주 | 아키텍처 · 소스 · 테스트 컨벤션 · 공개 경로. **약 4초**, 스프링 · Docker 없음 |
 | ③ | `./gradlew test` | 구현을 마칠 때 | 전체 테스트. **약 1분 20초**, Docker 필요 |
 | ③ | `.github/workflows/ci.yml` | PR · push | 위 둘을 순서대로. 로컬과 **같은 게이트** |
+| ④ | `.claude/agents/reviewer.md` | PR 전, 전체 빌드 뒤 | 이슈 번호 · 브랜치만 받아 리뷰. 🔴 · 🟡 · ⚪ 로 돌려준다 (`loop.md`) |
 
 ## 게이트
 
@@ -113,6 +116,8 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 - **주석 검사는 줄 시작만 본다.** 코드 뒤에 붙은 주석(`x = 1; // …`)은 못 잡는다
 - **`@DisplayName` 의 요구사항 ID 규칙(`[TR-01] …`)은 아직 게이트가 없다.** 기존 테스트 전부가 어기고 있어,
   요구사항 커버리지 측정과 함께 만든다
+- **리뷰어의 Bash 화이트리스트는 따옴표를 모른다.** `;` · `|` · `&` 로 조각을 나눠서 `grep -E 'a|b'` 는 막힌다.
+  오탐이지만 새지는 않는다 — 리뷰어는 Grep 도구를 쓰면 된다
 - 루프 자체의 한계는 `loop.md` 「알려진 한계」
 
 ## 훅 생존 확인
@@ -148,6 +153,22 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 | 같은 상태로 다시 끝내기 | 게이트 생략. 로그 `SKIP` (126ms) |
 | 문서만 고치고 끝내기 | 게이트 생략. 코드 지문이 그대로다 |
 | 주석 한 줄(위반)을 커밋하고 끝내기 | `block`. 이유·위반 파일(`probe/Probe.java`) 포함, 로그 `FAIL 1~2` |
+
+**T-31 (#77, 2026-09-28) — 리뷰어 읽기 전용 훅**
+
+`reviewer-readonly.sh` 에 만든 입력을 넣어 확인했다.
+
+| 탐침 | 결과 |
+|---|---|
+| `git diff main...<브랜치>` · `git log` · `gh issue view` · `gh pr view` · `git -C … --no-pager log` · `cd … && git status` | 통과 |
+| `git diff … \| grep` · `git show … 2>/dev/null \| head` | 통과 (`2>/dev/null` 은 쓰기로 보지 않는다, `INC-03`) |
+| 리다이렉션(`>` · `>>` · heredoc) · `$( )` · 백틱 | `deny` |
+| `git commit` · `gh issue edit` · `gh api -X DELETE` · `sed -i` · `python3 -c` | `deny` |
+| `git diff --output=…` · `git grep -O` · `git -c core.pager=…` | `deny` (git 이 파일을 쓰거나 프로그램을 부른다) |
+| `git diff; rm x` · `git diff && git checkout .` | `deny` (조각마다 본다) |
+| `git log --grep="a\|b"` | `deny` — 오탐 (알려진 구멍) |
+
+`guard-protected.sh` 는 `sed -i` · `rm` 으로 `.claude/agents/` 를 고치면 `ask`, `cat` 은 통과했다.
 
 ## 다음
 
