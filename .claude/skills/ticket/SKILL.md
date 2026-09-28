@@ -159,6 +159,9 @@ AWS_ACCESS_KEY=test AWS_SECRET_KEY=test ./gradlew build    # Docker 필요. 전�
 Agent(subagent_type: "reviewer", prompt: "#77 chore/77-independent-review")
 ```
 
+- **`reviewer` 가 없다고 나오면 다른 에이전트로 대신하지 않는다.** 에이전트 정의는 세션을 시작할 때 읽혀서,
+  이 세션에서 리뷰어를 만들거나 고쳤으면 아직 없다. 다른 에이전트는 읽기 전용 훅이 없다. 멈추고 새 세션에서 [5] 를 이어 하자고 한다 (`INC-06`)
+
 돌려받은 결과는 **원문 그대로** `.git/ibid-loop/review-<번호>.md` 에 저장한다. PR 과 최종 보고가 이것을 옮긴다.
 그리고 발견마다 조치를 정한다.
 
