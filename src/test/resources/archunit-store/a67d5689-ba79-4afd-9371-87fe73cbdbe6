@@ -1,0 +1,1 @@
+Method <project.kjhjdh.ibid.product.infra.ProductRepository.increaseViewCount(java.lang.Long, long)> is annotated with @Transactional in (ProductRepository.java:0)

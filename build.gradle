@@ -40,6 +40,7 @@ dependencies {
     testImplementation 'io.rest-assured:spring-mock-mvc'
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:mysql'
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
@@ -47,4 +48,15 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.register('architectureTest', Test) {
+    description = '아키텍처 · 소스 · 테스트 컨벤션 게이트만 돌린다. 스프링과 Docker 없이 수 초 안에 끝난다 (ADR-0010)'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching 'project.kjhjdh.ibid.architecture.*'
+    }
 }

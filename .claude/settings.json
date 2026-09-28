@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "ask": [
+      "Edit(src/test/java/project/kjhjdh/ibid/architecture/**)",
+      "Edit(src/test/resources/archunit-store/**)",
+      "Edit(src/test/resources/archunit.properties)",
+      "Edit(build.gradle)",
+      "Edit(gradle/wrapper/**)",
+      "Edit(.github/workflows/**)",
+      "Edit(.claude/settings.json)",
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push --force-with-lease *)"
+    ]
+  }
+}
