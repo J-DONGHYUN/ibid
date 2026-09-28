@@ -23,8 +23,12 @@ ibid 의 하네스가 **무엇으로 이루어져 있고, 왜 그렇게 만들�
 | ① | `CLAUDE.md` + `@docs/README.md` | 매 세션 | 명령, 이행기 코드 상태, 겪은 함정, 문서 지도 |
 | ① | `.claude/rules/*.md` | 해당 경로를 수정할 때 | 계층별 규칙과 자주 틀리는 것 |
 | ① | `docs/` | 필요할 때 | 요구사항 · 불변식 · ADR · 컨벤션 (정본) |
-| ② | `.claude/settings.json` `ask` | 도구 호출 전 | 게이트 · 동결 기록 · 빌드 · CI · 권한 파일 수정, `git push` |
+| ① | `.claude/skills/ticket/` | 이슈 작업을 시작할 때 | 루프 순서와 명령 (`loop.md`) |
+| ② | `.claude/settings.json` `ask` | 도구 호출 전 | 게이트 · 동결 기록 · 빌드 · CI · 권한 · 훅 파일 수정, 계획 게시 · 이슈 생성 · PR 생성 · `git push` |
 | ② | `.claude/settings.json` `deny` | 도구 호출 전 | 강제 push |
+| ② | `hooks/guard-protected.sh` | Bash 실행 전 | 셸 명령으로 게이트 · 동결 기록 · 빌드 설정을 고치면 `ask` |
+| ② | `hooks/guard-plan.sh` | 파일 수정 · Bash 실행 전 | 이슈 브랜치에서 계획을 게시하기 전에는 `src/` 수정 금지 |
+| ③ | `hooks/gate-on-stop.sh` | 에이전트가 끝내려 할 때 | `src/` 가 바뀌었으면 `architectureTest`. 실패하면 못 끝냄, 3회 연속이면 멈추고 사람을 부름 |
 | ③ | `./gradlew architectureTest` | 에이전트가 자주 | 아키텍처 · 소스 · 테스트 컨벤션 · 공개 경로. **약 4초**, 스프링 · Docker 없음 |
 | ③ | `./gradlew test` | 구현을 마칠 때 | 전체 테스트. **약 1분 20초**, Docker 필요 |
 | ③ | `.github/workflows/ci.yml` | PR · push | 위 둘을 순서대로. 로컬과 **같은 게이트** |
@@ -101,18 +105,34 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 
 ## 알려진 구멍
 
-- **Bash 로 파일을 고치면 `Edit` 권한을 거치지 않는다.** `sed -i` 로 동결 기록을 고치면 `ask` 가 뜨지 않는다.
-  Bash 명령을 검사하는 훅이 필요하다
+- **Bash 우회는 일부만 막는다.** `guard-protected.sh` 가 리다이렉션 · `sed -i` · `mv` · `cp` · `rm` · `git checkout` 같은
+  쓰기 명령을 잡아 `ask` 로 돌린다. 하지만 `python -c` 처럼 인터프리터 안에서 쓰는 경우는 명령 문자열만 봐서는 알 수 없다
+- **훅은 이 저장소에서 Claude Code 를 열 때만 걸린다.** 상위 폴더에서 세션을 열면 `.claude/settings.json` 이 적용되지 않는다
 - **아직 없는 도메인(`chat` · `trade` · `notification`)의 규칙은 빈 채로 통과한다.** 도메인을 처음 만드는 티켓에서
   탐침으로 생존을 확인한다
 - **주석 검사는 줄 시작만 본다.** 코드 뒤에 붙은 주석(`x = 1; // …`)은 못 잡는다
 - **`@DisplayName` 의 요구사항 ID 규칙(`[TR-01] …`)은 아직 게이트가 없다.** 기존 테스트 전부가 어기고 있어,
   요구사항 커버리지 측정과 함께 만든다
-- **CI 는 아직 실제로 돌려 보지 않았다.** 첫 PR 에서 확인한다
+- 루프 자체의 한계는 `loop.md` 「알려진 한계」
+
+## 훅 생존 확인
+
+2026-09-28, 훅에 만든 입력을 넣어 확인했다.
+
+| 탐침 | 결과 |
+|---|---|
+| `sed -i` 로 동결 기록 · 리다이렉션으로 `build.gradle` · `git checkout` 으로 게이트 테스트 | `guard-protected` 가 `ask` |
+| `wc` 로 동결 기록 읽기 · 보호 안 된 파일 `sed -i` | 통과 |
+| `develop` 에서 `src/` 수정 · Bash 로 `src/` 에 쓰기 | `guard-plan` 이 `deny` (이슈 브랜치가 아님) |
+| 이슈 브랜치인데 없는 이슈(#999) · 계획 없는 이슈(#36) | `deny`. 막힌 결과는 캐시하지 않음 |
+| `develop` 에서 `docs/` 수정 · Bash 로 `src/` 읽기 | 통과 |
+| src/ 변경 없이 끝내기 | 게이트 생략 |
+| `order` 를 import 하는 탐침을 두고 끝내기 3번 | 1 · 2번째 `block` (이유 · 위반 위치 포함), 3번째 멈춤 알림. 로그에 `FAIL 1~3` · `STOP_FOR_HUMAN` |
+
+**계획이 게시된 이슈에서 통과하는 경로는 아직 확인하지 못했다.** 첫 루프 티켓에서 확인한다.
 
 ## 다음
 
-1. **루프를 정의한다** — 이슈 → 컨텍스트 수집 → 계획 게시 → 구현 → 게이트 → PR. 사람이 보는 자리와 종료 조건
-2. **훅** — 계획 게시 전 `src/` 쓰기 차단, Bash 우회 차단, 작업 종료 시 `architectureTest`
-3. **첫 루프 티켓** — 삭제 예정 도메인(`order` · `payment` · `inspection`) 제거, 동결 목록 줄이기.
-   위험이 낮고 판정이 분명해서 루프를 처음 돌리기에 좋다
+1. **첫 루프 티켓** — 삭제 예정 도메인(`order` · `payment` · `inspection`) 제거, 동결 목록 줄이기.
+   위험이 낮고 판정이 분명해서 루프를 처음 돌리기에 좋다. 계획 게시 후 통과 경로도 여기서 확인한다
+2. 루프 기록이 쌓이면 티켓당 게이트 실패 · 사람 개입을 보고 하네스를 고친다
