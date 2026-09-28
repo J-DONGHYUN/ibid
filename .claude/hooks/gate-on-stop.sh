@@ -4,28 +4,49 @@
 # "코드를 바꿨으면 게이트를 돌린다" 를 부탁에서 설정으로 바꾼다. 실패 메시지는 그대로 에이전트에게
 # 돌려준다 — 그 메시지가 다음 수정의 컨텍스트다.
 #
+# - "무엇이 바뀌었나" 는 main 과 비교한 이 브랜치의 커밋 + 커밋 안 된 변경으로 본다. git status 만 보면
+#   계획 한 줄마다 커밋하는 루프에서 작업 트리가 늘 깨끗해 게이트를 한 번도 못 돈다 (INC-02)
 # - src/ · build.gradle 이 바뀌지 않았으면 돌리지 않는다. 문서만 고친 작업을 기다리게 하지 않는다
+# - 같은 코드 상태(src/ · build.gradle 트리 해시)로 이미 통과했으면 다시 돌리지 않는다
 # - 빠른 게이트(architectureTest)만 돈다. 전체 테스트는 Docker 가 필요하고 1분이 넘어서 PR 전에 한 번 돈다
 # - 3번 연속 실패하면 더 막지 않고 사람을 부른다. 끝없이 고치는 루프를 막는다
 # - 결과를 .git/ibid-loop/<브랜치>.log 에 남긴다. PR 의 루프 기록이 이걸 읽는다
 
 MAX_CONSECUTIVE_FAILURES=3
+BASE_BRANCH=main
 
 cat > /dev/null
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
-git status --porcelain | cut -c4- | grep -qE '^(src/|build\.gradle)' || exit 0
+{ git diff --name-only "$BASE_BRANCH...HEAD" 2>/dev/null; git status --porcelain | cut -c4-; } \
+    | grep -qE '^(src/|build\.gradle)' || exit 0
 
 state_dir="$(git rev-parse --git-dir)/ibid-loop"
 mkdir -p "$state_dir"
 branch=$(git branch --show-current | tr '/' '_')
 fails_file="$state_dir/${branch:-detached}.fails"
+passed_file="$state_dir/${branch:-detached}.passed"
 log_file="$state_dir/${branch:-detached}.log"
 now=$(date '+%Y-%m-%dT%H:%M:%S')
 
+code_hash=$(
+    tmp_index="$state_dir/gate.index.$$"
+    empty_tree=$(git hash-object -t tree /dev/null)
+    GIT_INDEX_FILE="$tmp_index" git read-tree "$empty_tree" 2>/dev/null
+    GIT_INDEX_FILE="$tmp_index" git add -A -- src build.gradle 2>/dev/null
+    GIT_INDEX_FILE="$tmp_index" git write-tree 2>/dev/null
+    rm -f "$tmp_index"
+)
+
+if [ -n "$code_hash" ] && [ "$code_hash" = "$(cat "$passed_file" 2>/dev/null)" ]; then
+    echo "$now SKIP $code_hash" >> "$log_file"
+    exit 0
+fi
+
 if ./gradlew architectureTest -q > "$state_dir/last-gate.out" 2>&1; then
     rm -f "$fails_file"
-    echo "$now PASS" >> "$log_file"
+    [ -n "$code_hash" ] && printf '%s\n' "$code_hash" > "$passed_file"
+    echo "$now PASS $code_hash" >> "$log_file"
     exit 0
 fi
 
