@@ -14,7 +14,7 @@ payload=$(cat)
 cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty')
 [ -n "$cmd" ] || exit 0
 
-allowed="git diff · log · show · status · rev-parse · merge-base · ls-files · grep · blame, gh issue view, gh pr view · diff, 파이프 뒤 grep · head · tail · wc"
+allowed="git diff · log · show · status · rev-parse · merge-base · ls-files · grep · blame, gh issue view, gh pr view · diff, 파이프 뒤 grep · head · tail · wc · sort · uniq"
 hint="리뷰어는 읽기만 한다. 허용: $allowed. 파일 읽기 · 검색은 Read · Grep · Glob 을 쓴다. 고칠 것은 고치지 말고 발견으로 돌려준다."
 
 deny() {
@@ -32,7 +32,7 @@ esac
 # git 이 파일을 쓰거나 외부 프로그램을 부르는 옵션
 printf '%s' "$stripped" | grep -qE -- '--output|--open-files-in-pager|(^|[[:space:]])-O|--ext-diff' && deny "파일을 쓰거나 외부 프로그램을 부르는 옵션이다."
 
-ok='^(cd([[:space:]]|$)|git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?(--no-pager[[:space:]]+)?(diff|log|show|status|rev-parse|merge-base|ls-files|grep|blame)([[:space:]]|$)|gh[[:space:]]+(issue[[:space:]]+view|pr[[:space:]]+(view|diff))([[:space:]]|$)|(grep|head|tail|wc)([[:space:]]|$))'
+ok='^(cd([[:space:]]|$)|git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?(--no-pager[[:space:]]+)?(diff|log|show|status|rev-parse|merge-base|ls-files|grep|blame)([[:space:]]|$)|gh[[:space:]]+(issue[[:space:]]+view|pr[[:space:]]+(view|diff))([[:space:]]|$)|(grep|head|tail|wc|sort|uniq)([[:space:]]|$))'
 
 bad=$(printf '%s\n' "$stripped" | tr ';&|' '\n\n\n' | sed -E 's/^[[:space:]]+//' | grep -v '^$' | grep -vE "$ok" | head -1)
 [ -z "$bad" ] || deny "허용되지 않은 명령: '$bad'."
