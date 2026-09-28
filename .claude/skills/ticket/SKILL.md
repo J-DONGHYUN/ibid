@@ -53,12 +53,12 @@ gh issue create --title "<이슈 제목>" --body-file "$draft" --label <type>   
 ### 4. 브랜치를 만들고 백로그에 시작을 적는다
 
 ```bash
-git switch develop && git pull --ff-only
+git switch main && git pull --ff-only
 git switch -c <type>/<번호>-<짧은-영문-이름>      # type: 이슈 제목의 접두사
 ```
 
 백로그의 그 티켓 행에 **상태 `🔄`, 이슈 `#번호`** 를 적고 첫 커밋으로 남긴다 (`docs: T-nn 을 시작한다`).
-이 커밋이 PR 에 함께 실려 머지되면 `develop` 의 백로그가 갱신된다.
+이 커밋이 PR 에 함께 실려 `main` 에 머지되면 백로그가 갱신되고, `Closes #번호` 로 이슈도 함께 닫힌다.
 
 - 제목에 접두사가 없으면 묻는다. 추측하지 않는다
 - 이미 그 브랜치에 있으면 이어서 한다. `.git/ibid-loop/` 의 기록과 이슈의 계획을 먼저 읽는다
@@ -154,7 +154,7 @@ AWS_ACCESS_KEY=test AWS_SECRET_KEY=test ./gradlew build    # Docker 필요. 전�
 
 ```bash
 git push -u origin <브랜치>
-gh pr create --base develop --title "<이슈 제목>" --body-file <본문>
+gh pr create --base main --title "<이슈 제목>" --body-file <본문>    # 본문에 Closes #<번호>
 ```
 
 PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md` 를 따르고, **🔁 루프 기록** 절을 `.git/ibid-loop/<브랜치>.log` 로 채운다.
