@@ -37,7 +37,7 @@
 
 | ID | 제목 | 종류 | 요구사항 | 선행 | 상태 | 이슈 |
 |---|---|---|---|---|---|---|
-| `T-04` | 삭제 예정 도메인(order · payment · inspection)을 지운다 | chore | — | — | ⬜ | |
+| `T-04` | 삭제 예정 도메인(order · payment · inspection)을 지운다 | chore | — | — | 🔄 | #71 |
 | `T-05` | 상품에서 재고 · 배송비 · PENDING 을 지운다 | refactor | `PD-01` 일부 | T-04 | ⬜ | |
 | `T-06` | 서비스가 요청 DTO 대신 커맨드를 받는다 | refactor | — | T-04 | ⬜ | |
 | `T-07` | common 이 도메인을 보지 않게 한다 | refactor | — | — | ⬜ | |
