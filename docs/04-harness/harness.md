@@ -163,6 +163,7 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 | 탐침 | 결과 |
 |---|---|
 | `git diff main...<브랜치>` · `git log` · `gh issue view` · `gh pr view` · `git -C … --no-pager log` · `cd … && git status` | 통과 |
+| `… \| sort` · `… \| uniq -c` (파이프 뒤 정렬 · 중복제거, 계획대로) | 통과 |
 | `git diff … \| grep` · `git show … 2>/dev/null \| head` | 통과 (`2>/dev/null` 은 쓰기로 보지 않는다, `INC-03`) |
 | 리다이렉션(`>` · `>>` · heredoc) · `$( )` · 백틱 | `deny` |
 | `git commit` · `gh issue edit` · `gh api -X DELETE` · `sed -i` · `python3 -c` | `deny` |
@@ -171,6 +172,10 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 | `git log --grep="a\|b"` | `deny` — 오탐 (알려진 구멍) |
 
 `guard-protected.sh` 는 `sed -i` · `rm` 으로 `.claude/agents/` 를 고치면 `ask`, `cat` 은 통과했다.
+
+2026-09-29, 실제 경로로도 확인했다 — 새 세션에서 `reviewer` 를 불러 이 브랜치를 리뷰시켰고(INC-06 처방),
+그 리뷰어의 Bash 탐침에 쓴 `$( )` 명령 치환이 훅에 막혀 스스로 훅을 재실행하지 못했다. 만든 입력이 아니라
+실제 서브에이전트 경로에서 명령 치환 차단이 살아 있다는 방증이다.
 
 ## 다음
 
