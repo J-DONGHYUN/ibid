@@ -54,7 +54,7 @@ printf '%s\n' "$stripped" \
         rm|tee|truncate|patch|ln|install)
           for a in "$@"; do case "$a" in -*) ;; *) emit "$a" ;; esac; done ;;
         sed)
-          echo " $* " | grep -qE ' -i' || continue
+          echo " $* " | grep -qE ' (-i|--in-place)' || continue
           for a in "$@"; do case "$a" in -*) ;; *) emit "$a" ;; esac; done ;;
         dd)
           for a in "$@"; do case "$a" in of=*) emit "${a#of=}" ;; esac; done ;;
