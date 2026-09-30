@@ -33,8 +33,6 @@ public class Product {
     private static final int TITLE_MAX_LENGTH = 100;
     private static final int DESCRIPTION_MAX_LENGTH = 2000;
     private static final int MIN_PRICE = 1;
-    private static final int MIN_STOCK = 1;
-    private static final int MIN_QUANTITY = 1;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,9 +49,6 @@ public class Product {
 
     @Column(nullable = false)
     private int price;
-
-    @Column(nullable = false)
-    private int stock;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -78,124 +73,48 @@ public class Product {
     )
     private List<Tag> tags = new ArrayList<>();
 
-    @Column(nullable = false)
-    private int shippingFee;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private Product(Long sellerId, String title, String description, int price, int stock,
-                    ProductCondition productCondition, List<Tag> tags, int shippingFee) {
+    private Product(Long sellerId, String title, String description, int price,
+                    ProductCondition productCondition, List<Tag> tags) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
-        validateStock(stock);
-        validateShippingFee(shippingFee);
         this.sellerId = sellerId;
         this.title = title;
         this.description = description;
         this.price = price;
-        this.stock = stock;
-        this.status = ProductStatus.PENDING;
+        this.status = ProductStatus.ON_SALE;
         this.productCondition = productCondition;
         this.tags = new ArrayList<>(tags);
-        this.shippingFee = shippingFee;
         this.createdAt = LocalDateTime.now();
     }
 
-    public static Product create(Long sellerId, String title, String description, int price, int stock) {
-        return create(sellerId, title, description, price, stock, ProductCondition.USED);
+    public static Product create(Long sellerId, String title, String description, int price) {
+        return create(sellerId, title, description, price, ProductCondition.USED);
     }
 
-    public static Product create(Long sellerId, String title, String description, int price, int stock, ProductCondition productCondition) {
-        return create(sellerId, title, description, price, stock, productCondition, List.of(), 0);
+    public static Product create(Long sellerId, String title, String description, int price, ProductCondition productCondition) {
+        return create(sellerId, title, description, price, productCondition, List.of());
     }
 
-    public static Product create(Long sellerId, String title, String description, int price, int stock,
-                                 ProductCondition productCondition, List<Tag> tags, int shippingFee) {
-        return new Product(sellerId, title, description, price, stock, productCondition, tags, shippingFee);
+    public static Product create(Long sellerId, String title, String description, int price,
+                                 ProductCondition productCondition, List<Tag> tags) {
+        return new Product(sellerId, title, description, price, productCondition, tags);
     }
 
-    public void openForSale() {
-        if (status != ProductStatus.PENDING) {
-            throw new BusinessException(ErrorCode.PRODUCT_NOT_PENDING);
-        }
-        this.status = ProductStatus.ON_SALE;
-    }
-
-    public void decreaseStock(int quantity) {
-        validateAvailableStock(quantity);
-        this.stock -= quantity;
-        if (this.stock == 0) {
-            this.status = ProductStatus.SOLD_OUT;
-        }
-    }
-
-    public void validatePurchasable(Long buyerId, int quantity) {
-        if (isOwnedBy(buyerId)) {
-            throw new BusinessException(ErrorCode.SELF_TRADE_NOT_ALLOWED);
-        }
-        validateAvailableStock(quantity);
-    }
-
-    private void validateAvailableStock(int quantity) {
-        if (quantity < MIN_QUANTITY) {
-            throw new BusinessException(ErrorCode.INVALID_PURCHASE_QUANTITY);
-        }
-        if (isSoldOut()) {
-            throw new BusinessException(ErrorCode.SOLD_OUT);
-        }
-        if (status != ProductStatus.ON_SALE) {
-            throw new BusinessException(ErrorCode.PRODUCT_NOT_ON_SALE);
-        }
-        if (quantity > stock) {
-            throw new BusinessException(ErrorCode.INSUFFICIENT_STOCK);
-        }
-    }
-
-    public void restoreStock(int quantity) {
-        if (quantity < MIN_QUANTITY) {
-            throw new BusinessException(ErrorCode.INVALID_PURCHASE_QUANTITY);
-        }
-        if (status == ProductStatus.PENDING) {
-            throw new BusinessException(ErrorCode.CANNOT_RESTORE_STOCK);
-        }
-        this.stock += quantity;
-        if (status == ProductStatus.SOLD_OUT) {
-            this.status = ProductStatus.ON_SALE;
-        }
-    }
-
-    public boolean isSoldOut() {
-        return status == ProductStatus.SOLD_OUT;
-    }
-
-    public boolean isOnSale() {
-        return status == ProductStatus.ON_SALE;
-    }
-
-    public void update(String title, String description, int price, int stock,
-                       ProductCondition productCondition, List<Tag> tags, int shippingFee) {
-        validateModifiable();
+    public void update(String title, String description, int price,
+                       ProductCondition productCondition, List<Tag> tags) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
-        validateStock(stock);
-        validateShippingFee(shippingFee);
         this.title = title;
         this.description = description;
         this.price = price;
-        this.stock = stock;
         this.productCondition = productCondition;
         this.tags.clear();
         this.tags.addAll(tags);
-        this.shippingFee = shippingFee;
-    }
-
-    public void validateModifiable() {
-        if (status == ProductStatus.SOLD_OUT) {
-            throw new BusinessException(ErrorCode.PRODUCT_NOT_MODIFIABLE);
-        }
     }
 
     public void addImages(List<String> urls) {
@@ -240,18 +159,6 @@ public class Product {
     private void validatePrice(int price) {
         if (price < MIN_PRICE) {
             throw new BusinessException(ErrorCode.INVALID_PRODUCT_PRICE);
-        }
-    }
-
-    private void validateStock(int stock) {
-        if (stock < MIN_STOCK) {
-            throw new BusinessException(ErrorCode.INVALID_PRODUCT_STOCK);
-        }
-    }
-
-    private void validateShippingFee(int shippingFee) {
-        if (shippingFee < 0) {
-            throw new BusinessException(ErrorCode.INVALID_SHIPPING_FEE);
         }
     }
 }
