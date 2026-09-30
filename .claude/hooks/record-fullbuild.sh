@@ -13,10 +13,12 @@ cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty')
 printf '%s' "$cmd" | grep -q gradlew || exit 0
 case " $cmd " in *" build "*) ;; *) exit 0 ;; esac
 
-# 성공했는가 — gradle 은 성공 시 BUILD SUCCESSFUL 을 찍는다. 페이로드 모양(문자열·객체)에 견디게 뽑는다
+# 성공했는가 — gradle 은 성공 시 BUILD SUCCESSFUL 을 찍는다. 페이로드 모양(문자열·객체)에 견디게 뽑는다.
+# type 을 먼저 본다 — 문자열에 .stdout 을 접근하면 jq 가 에러를 내고 // 가 못 잡아 폴백이 무너진다.
 out=$(printf '%s' "$payload" | jq -r '
-    ((.tool_response.stdout // "") + "\n" + (.tool_response.stderr // "")
-     + "\n" + (if (.tool_response|type)=="string" then .tool_response else "" end))' 2>/dev/null)
+    (.tool_response
+     | if type=="string" then .
+       else ((.stdout // "") + "\n" + (.stderr // "")) end)' 2>/dev/null)
 printf '%s' "$out" | grep -q 'BUILD SUCCESSFUL' || exit 0
 
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0

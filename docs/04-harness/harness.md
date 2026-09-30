@@ -245,6 +245,7 @@ ID 로 시작하는지 본다. architecture 패키지에 임시 테스트를 넣
 | 기록 뒤 `src/` 를 고치고 `gh pr create` | `ask` (지문 불일치) |
 | `gradlew build` 출력에 `BUILD FAILED` | 기록 안 남긴다 |
 | `gradlew buildHealth` 가 `BUILD SUCCESSFUL` | 기록 안 남긴다 (`build` 태스크 아님) |
+| `tool_response` 가 객체(`stdout`·`stderr`)든 문자열이든 `BUILD SUCCESSFUL` | 기록 남긴다 (페이로드 모양에 견딘다 — 리뷰에서 문자열 폴백이 무너져 있던 걸 고쳤다) |
 
 `ask` 이지 `deny` 가 아니다 — Docker 를 못 켜면 로컬 전체 빌드가 불가능한데(이 훅이 도는 환경도 그렇다),
 CI(`ci.yml`)가 PR 에서 전체 빌드를 최종적으로 돌린다. 실수로 빠뜨리는 건 막고, 의식적 우회는 사람이 승인한다.
