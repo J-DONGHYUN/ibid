@@ -74,5 +74,5 @@
 | `TR-05` | `GET /api/products/me/purchases` | 로그인 | 신규 |
 | `NT-03` | `GET /api/notifications` · `POST /api/notifications/{id}/read` | 로그인 | 신규 |
 
-**사라질 엔드포인트** — `PATCH /api/products/{id}/on-sale` (등록 즉시 판매중, `PD-01`).
-`/api/orders/**` · `/api/payments/**` · `/api/inspections/**` 는 지웠다 (`T-04` · `NG-01` · `NG-02` · `NG-04`)
+**사라진 엔드포인트** — `PATCH /api/products/{id}/on-sale` 은 지웠다 (등록 즉시 판매중, `T-05` · `PD-01`).
+`/api/orders/**` · `/api/payments/**` · `/api/inspections/**` 도 지웠다 (`T-04` · `NG-01` · `NG-02` · `NG-04`)

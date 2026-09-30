@@ -22,9 +22,9 @@ class ProductRepositoryTest extends RepositoryTestSupport {
     @Test
     void findByIdLessThanOrderByIdDesc() {
         // given
-        Product first = productRepository.save(Product.create(SELLER_ID, "첫번째", "상태 좋음", 10000, 1));
-        Product second = productRepository.save(Product.create(SELLER_ID, "두번째", "상태 좋음", 20000, 2));
-        Product third = productRepository.save(Product.create(SELLER_ID, "세번째", "상태 좋음", 30000, 3));
+        Product first = productRepository.save(Product.create(SELLER_ID, "첫번째", "상태 좋음", 10000));
+        Product second = productRepository.save(Product.create(SELLER_ID, "두번째", "상태 좋음", 20000));
+        Product third = productRepository.save(Product.create(SELLER_ID, "세번째", "상태 좋음", 30000));
 
         // when
         Slice<Product> slice = productRepository.findByIdLessThanOrderByIdDesc(third.getId(), PageRequest.of(0, 10));
@@ -39,7 +39,7 @@ class ProductRepositoryTest extends RepositoryTestSupport {
     void findByIdLessThanOrderByIdDesc_hasNext() {
         // given
         for (int i = 0; i < 3; i++) {
-            productRepository.save(Product.create(SELLER_ID, "상품" + i, "상태 좋음", 10000, 1));
+            productRepository.save(Product.create(SELLER_ID, "상품" + i, "상태 좋음", 10000));
         }
 
         // when
@@ -54,7 +54,7 @@ class ProductRepositoryTest extends RepositoryTestSupport {
     @Test
     void increaseViewCount() {
         // given
-        Product product = productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3));
+        Product product = productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000));
 
         // when
         int updated = productRepository.increaseViewCount(product.getId(), 5L);

@@ -41,7 +41,7 @@ class ProductImageServiceTest {
     private ProductImageService productImageService;
 
     private ProductImage productImage(Long productId, String url, int sortOrder) {
-        Product product = Product.create(10L, "상품", "설명", 1000, 1);
+        Product product = Product.create(10L, "상품", "설명", 1000);
         ReflectionTestUtils.setField(product, "id", productId);
         return ProductImage.of(product, url, sortOrder);
     }

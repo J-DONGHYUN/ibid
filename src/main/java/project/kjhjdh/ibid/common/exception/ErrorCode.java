@@ -36,38 +36,12 @@ public enum ErrorCode {
     INVALID_PRODUCT_TITLE(HttpStatus.BAD_REQUEST, "상품 제목은 1자 이상 100자 이하여야 합니다."),
     INVALID_PRODUCT_DESCRIPTION(HttpStatus.BAD_REQUEST, "상품 설명은 1자 이상 2000자 이하여야 합니다."),
     INVALID_PRODUCT_PRICE(HttpStatus.BAD_REQUEST, "판매가는 1원 이상이어야 합니다."),
-    INVALID_PRODUCT_STOCK(HttpStatus.BAD_REQUEST, "재고 수량은 1개 이상이어야 합니다."),
-    INVALID_SHIPPING_FEE(HttpStatus.BAD_REQUEST, "배송비는 0원 이상이어야 합니다."),
-    PRODUCT_NOT_PENDING(HttpStatus.CONFLICT, "판매 대기 상태의 상품만 판매를 시작할 수 있습니다."),
-    PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다."),
-    PRODUCT_NOT_MODIFIABLE(HttpStatus.CONFLICT, "거래가 진행된 상품은 수정하거나 삭제할 수 없습니다."),
-    CANNOT_RESTORE_STOCK(HttpStatus.CONFLICT, "판매 시작 전 상품은 재고를 복원할 수 없습니다."),
-
-    // Trade
-    INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다."),
-    SOLD_OUT(HttpStatus.CONFLICT, "품절된 상품입니다."),
-    INVALID_PURCHASE_QUANTITY(HttpStatus.BAD_REQUEST, "구매 수량은 1개 이상이어야 합니다."),
-    SELF_TRADE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 등록한 상품은 구매할 수 없습니다."),
-
-    // Order
-    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
-    ORDER_NOT_CANCELABLE(HttpStatus.CONFLICT, "취소할 수 없는 주문 상태입니다."),
-    ORDER_NOT_PAYABLE(HttpStatus.CONFLICT, "결제 확정할 수 없는 주문 상태입니다."),
-    ORDER_NOT_SHIPPABLE(HttpStatus.CONFLICT, "발송할 수 없는 주문 상태입니다."),
-    ORDER_NOT_INSPECTABLE(HttpStatus.CONFLICT, "검수를 시작할 수 없는 주문 상태입니다."),
-    ORDER_NOT_JUDGEABLE(HttpStatus.CONFLICT, "검수 판정할 수 없는 주문 상태입니다."),
 
     // File
     FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),
     FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일 크기는 10MB 이하여야 합니다."),
     FILE_INVALID_EXTENSION(HttpStatus.BAD_REQUEST, "jpg, jpeg, png, gif 형식만 업로드 가능합니다."),
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
-
-    // Payment
-    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제 내역을 찾을 수 없습니다."),
-    INVALID_PAYMENT_CONFIRM(HttpStatus.BAD_REQUEST, "올바르지 않은 결제 승인입니다."),
-    PAYMENT_CONFIRM_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "결제 승인에 실패했습니다."),
-    PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "결제 금액이 일치하지 않습니다."),
 
     ;
 

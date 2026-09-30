@@ -54,51 +54,11 @@ class ProductServiceTest {
     @InjectMocks
     private ProductService productService;
 
-    @DisplayName("판매자가 판매를 시작하면 상품이 판매중 상태가 된다")
-    @Test
-    void openForSale() {
-        // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
-
-        // when
-        productService.openForSale(SELLER_ID, PRODUCT_ID);
-
-        // then
-        assertThat(product.isOnSale()).isTrue();
-    }
-
-    @DisplayName("존재하지 않는 상품의 판매를 시작하면 실패한다")
-    @Test
-    void openForSale_notFound() {
-        // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> productService.openForSale(SELLER_ID, PRODUCT_ID))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
-    }
-
-    @DisplayName("등록한 판매자가 아니면 판매를 시작할 수 없다")
-    @Test
-    void openForSale_notOwner() {
-        // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
-
-        // when & then
-        assertThatThrownBy(() -> productService.openForSale(OTHER_USER_ID, PRODUCT_ID))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
-        assertThat(product.isOnSale()).isFalse();
-    }
-
     @DisplayName("본인 상품이면 이미지 서비스가 발급한 presigned URL을 그대로 응답한다")
     @Test
     void generatePresignedUrls() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
         List<ImagePresignResponse> presigned = List.of(
                 new ImagePresignResponse("https://presigned1", "products/1/a.jpg", "https://image1"),
@@ -119,7 +79,7 @@ class ProductServiceTest {
     @Test
     void generatePresignedUrls_notOwner() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
@@ -132,7 +92,7 @@ class ProductServiceTest {
     @Test
     void confirmImages() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
@@ -147,7 +107,7 @@ class ProductServiceTest {
     @Test
     void confirmImages_notOwner() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
@@ -162,7 +122,7 @@ class ProductServiceTest {
     @Test
     void update() {
         // given
-        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, 1);
+        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         given(tagRepository.findByName("새태그")).willReturn(Optional.empty());
@@ -170,27 +130,25 @@ class ProductServiceTest {
 
         // when
         productService.update(SELLER_ID, PRODUCT_ID,
-                new ProductUpdateRequest("새 제목", "새 설명", 50000, 5, ProductCondition.NEW, List.of("새태그"), 2500));
+                new ProductUpdateRequest("새 제목", "새 설명", 50000, ProductCondition.NEW, List.of("새태그")));
 
         // then
         assertThat(product.getTitle()).isEqualTo("새 제목");
         assertThat(product.getPrice()).isEqualTo(50000);
-        assertThat(product.getStock()).isEqualTo(5);
         assertThat(product.getProductCondition()).isEqualTo(ProductCondition.NEW);
         assertThat(product.tagNames()).containsExactly("새태그");
-        assertThat(product.getShippingFee()).isEqualTo(2500);
     }
 
     @DisplayName("본인 상품이 아니면 수정할 수 없다")
     @Test
     void update_notOwner() {
         // given
-        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, 1);
+        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
         assertThatThrownBy(() -> productService.update(OTHER_USER_ID, PRODUCT_ID,
-                new ProductUpdateRequest("새 제목", "새 설명", 50000, 5, ProductCondition.NEW, List.of("새태그"), 2500)))
+                new ProductUpdateRequest("새 제목", "새 설명", 50000, ProductCondition.NEW, List.of("새태그"))))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
     }
@@ -199,7 +157,7 @@ class ProductServiceTest {
     @Test
     void deleteImages() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, 1);
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000);
         product.addImages(List.of("https://img1.jpg", "https://img2.png", "https://img3.gif"));
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
@@ -215,7 +173,7 @@ class ProductServiceTest {
     @Test
     void delete() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, 1);
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000);
         product.addImages(List.of("https://img1.jpg", "https://img2.png"));
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
@@ -231,7 +189,7 @@ class ProductServiceTest {
     @Test
     void delete_notOwner() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, 1);
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
@@ -245,7 +203,7 @@ class ProductServiceTest {
     @Test
     void getProduct() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
         given(productViewCounter.readTotal(product)).willReturn(164L);
 

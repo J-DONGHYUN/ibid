@@ -46,7 +46,7 @@ class ProductLikeServiceTest {
     private ProductLikeService productLikeService;
 
     private Product product(Long id, String title) {
-        Product product = Product.create(1L, title, "설명", 1000, 1);
+        Product product = Product.create(1L, title, "설명", 1000);
         ReflectionTestUtils.setField(product, "id", id);
         return product;
     }

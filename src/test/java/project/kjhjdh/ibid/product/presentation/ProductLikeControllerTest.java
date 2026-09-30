@@ -106,7 +106,7 @@ class ProductLikeControllerTest extends ControllerTestSupport {
     void myLikes() {
         // given
         given(productLikeService.myLikedProducts(anyLong())).willReturn(List.of(
-                new ProductSummaryResponse(10L, "나이키 후드", 89000, 3, ProductStatus.ON_SALE, "https://image/a.jpg")
+                new ProductSummaryResponse(10L, "나이키 후드", 89000, ProductStatus.ON_SALE, "https://image/a.jpg")
         ));
 
         // when & then
