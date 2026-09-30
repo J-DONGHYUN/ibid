@@ -18,8 +18,7 @@ case "$tool" in
         ;;
     Bash)
         cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty')
-        printf '%s' "$cmd" | grep -qE '(^|[[:space:]"'"'"'=])src/' || exit 0
-        printf '%s' "$cmd" | grep -qE '(>|(^|[[:space:];&|])(tee|mv|cp|rm|ln|truncate|patch)[[:space:]]|sed[^|;&]*-i)' || exit 0
+        printf '%s' "$cmd" | sh "$(dirname "$0")/write-target.sh" | grep -qE '(^|/)src/' || exit 0
         ;;
     *)
         exit 0
