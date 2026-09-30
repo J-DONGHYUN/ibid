@@ -16,6 +16,26 @@ description: ibid 에서 백로그(docs/01-product/backlog.md)의 티켓 하나�
 
 **작업 목록의 정본은 `docs/01-product/backlog.md` 다.** 이슈는 미리 만들어 두지 않고, 티켓을 시작할 때 만든다.
 
+### 0. 직전 머지를 확인한다 — 이슈가 정말 닫혔나
+
+새 티켓을 시작하기 전에(사람이 "머지했어" 라고 하면 그 자리에서) `main` 을 당기고, 마지막으로 머지한 PR 의
+이슈가 정말 `CLOSED` 인지 본다. `Closes #번호` 자동 닫힘은 GitHub 의 **비동기 링크 등록**에 기대서, 머지 전에
+안 끝나면 이슈가 열린 채 남는다 — 백로그 `✅` 와 이슈 상태가 갈라진다 (`INC-05`. PR #83 이 그렇게 샜다).
+
+```bash
+git switch main && git pull --ff-only
+pr=$(gh pr list --base main --state merged --limit 1 --json number -q '.[0].number')
+gh pr view "$pr" --json closingIssuesReferences,body -q '{closes: [.closingIssuesReferences[].number], body}'
+```
+
+`Closes #번호` 가 본문에 있는데 그 이슈가 `OPEN` 이면 (또는 `closingIssuesReferences` 가 비어 있으면) 직접 닫는다:
+
+```bash
+gh issue close <번호> --comment "PR #$pr 에서 완료됐다. Closes 자동 닫힘이 안 걸려 수동으로 닫는다 (INC-05)."
+```
+
+자동 닫힘(`Closes`)은 그대로 둔다 — 대부분 동작한다. 이건 샜을 때 잡는 안전망이다.
+
 ### 1. 티켓을 찾는다
 
 - **"T-04 시작"** → 백로그에서 `T-04` 를 찾는다
