@@ -14,12 +14,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 
+import org.springframework.test.util.ReflectionTestUtils;
+
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
-import project.kjhjdh.ibid.product.domain.ProductStatus;
-import project.kjhjdh.ibid.product.presentation.dto.ProductLikeStatusResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
+import project.kjhjdh.ibid.product.application.ProductWithThumbnail;
+import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.support.ControllerTestSupport;
 
 class ProductLikeControllerTest extends ControllerTestSupport {
@@ -74,8 +76,8 @@ class ProductLikeControllerTest extends ControllerTestSupport {
     @Test
     void likeStatus() {
         // given
-        given(productLikeService.status(anyLong(), eq(1L)))
-                .willReturn(new ProductLikeStatusResponse(7L, true));
+        given(productLikeService.countLikes(1L)).willReturn(7L);
+        given(productLikeService.isLiked(anyLong(), eq(1L))).willReturn(true);
 
         // when & then
         RestAssuredMockMvc.given()
@@ -105,8 +107,10 @@ class ProductLikeControllerTest extends ControllerTestSupport {
     @Test
     void myLikes() {
         // given
+        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, List.of());
+        ReflectionTestUtils.setField(product, "id", 10L);
         given(productLikeService.myLikedProducts(anyLong())).willReturn(List.of(
-                new ProductSummaryResponse(10L, "나이키 후드", 89000, ProductStatus.ON_SALE, "https://image/a.jpg")
+                new ProductWithThumbnail(product, "https://image/a.jpg")
         ));
 
         // when & then

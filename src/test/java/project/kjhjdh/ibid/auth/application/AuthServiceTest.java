@@ -11,8 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import project.kjhjdh.ibid.auth.domain.TokenPair;
 import project.kjhjdh.ibid.auth.infra.RefreshTokenRedisRepository;
-import project.kjhjdh.ibid.auth.presentation.dto.LoginRequest;
-import project.kjhjdh.ibid.auth.presentation.dto.SignupRequest;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.support.IntegrationTestSupport;
@@ -35,7 +33,7 @@ class AuthServiceTest extends IntegrationTestSupport {
     @Test
     void signup() {
         // given
-        SignupRequest request = new SignupRequest("new@example.com", "password", "tester");
+        SignupCommand request = new SignupCommand("new@example.com", "password", "tester");
 
         // when
         Long userId = authService.signup(request);
@@ -51,8 +49,8 @@ class AuthServiceTest extends IntegrationTestSupport {
     @Test
     void signup_duplicateEmail() {
         // given
-        authService.signup(new SignupRequest("dup@example.com", "password", "tester"));
-        SignupRequest duplicate = new SignupRequest("dup@example.com", "password", "other");
+        authService.signup(new SignupCommand("dup@example.com", "password", "tester"));
+        SignupCommand duplicate = new SignupCommand("dup@example.com", "password", "other");
 
         // when & then
         assertThatThrownBy(() -> authService.signup(duplicate))
@@ -64,7 +62,7 @@ class AuthServiceTest extends IntegrationTestSupport {
     @Test
     void signup_invalidPassword() {
         // given
-        SignupRequest request = new SignupRequest("bad@example.com", "1", "tester");
+        SignupCommand request = new SignupCommand("bad@example.com", "1", "tester");
 
         // when & then
         assertThatThrownBy(() -> authService.signup(request))
@@ -76,8 +74,8 @@ class AuthServiceTest extends IntegrationTestSupport {
     @Test
     void login() {
         // given
-        authService.signup(new SignupRequest("login@example.com", "password", "tester"));
-        LoginRequest request = new LoginRequest("login@example.com", "password");
+        authService.signup(new SignupCommand("login@example.com", "password", "tester"));
+        LoginCommand request = new LoginCommand("login@example.com", "password");
 
         // when
         TokenPair tokenPair = authService.login(request);
@@ -91,8 +89,8 @@ class AuthServiceTest extends IntegrationTestSupport {
     @Test
     void login_wrongPassword() {
         // given
-        authService.signup(new SignupRequest("login@example.com", "password", "tester"));
-        LoginRequest request = new LoginRequest("login@example.com", "wrong-password");
+        authService.signup(new SignupCommand("login@example.com", "password", "tester"));
+        LoginCommand request = new LoginCommand("login@example.com", "wrong-password");
 
         // when & then
         assertThatThrownBy(() -> authService.login(request))
@@ -104,7 +102,7 @@ class AuthServiceTest extends IntegrationTestSupport {
     @Test
     void login_notFound() {
         // given
-        LoginRequest request = new LoginRequest("nobody@example.com", "password");
+        LoginCommand request = new LoginCommand("nobody@example.com", "password");
 
         // when & then
         assertThatThrownBy(() -> authService.login(request))
@@ -116,8 +114,8 @@ class AuthServiceTest extends IntegrationTestSupport {
     @Test
     void logout() {
         // given
-        Long userId = authService.signup(new SignupRequest("logout@example.com", "password", "tester"));
-        TokenPair tokenPair = authService.login(new LoginRequest("logout@example.com", "password"));
+        Long userId = authService.signup(new SignupCommand("logout@example.com", "password", "tester"));
+        TokenPair tokenPair = authService.login(new LoginCommand("logout@example.com", "password"));
 
         // when
         authService.logout(tokenPair.refreshToken());

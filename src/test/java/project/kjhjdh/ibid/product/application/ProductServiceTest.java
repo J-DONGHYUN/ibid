@@ -19,16 +19,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.domain.Tag;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 import project.kjhjdh.ibid.product.infra.TagRepository;
-import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductDetailResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductUpdateRequest;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
@@ -60,16 +56,16 @@ class ProductServiceTest {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
-        List<ImagePresignResponse> presigned = List.of(
-                new ImagePresignResponse("https://presigned1", "products/1/a.jpg", "https://image1"),
-                new ImagePresignResponse("https://presigned2", "products/1/b.png", "https://image2"));
+        List<PresignedUploadResult> presigned = List.of(
+                new PresignedUploadResult("https://presigned1", "products/1/a.jpg", "https://image1"),
+                new PresignedUploadResult("https://presigned2", "products/1/b.png", "https://image2"));
         given(productImageService.presign(eq(PRODUCT_ID), any())).willReturn(presigned);
-        List<ImagePresignRequest> requests = List.of(
-                new ImagePresignRequest("a.jpg", "image/jpeg"),
-                new ImagePresignRequest("b.png", "image/png"));
+        List<ImagePresignCommand> commands = List.of(
+                new ImagePresignCommand("a.jpg", "image/jpeg"),
+                new ImagePresignCommand("b.png", "image/png"));
 
         // when
-        List<ImagePresignResponse> result = productService.generatePresignedUrls(SELLER_ID, PRODUCT_ID, requests);
+        List<PresignedUploadResult> result = productService.generatePresignedUrls(SELLER_ID, PRODUCT_ID, commands);
 
         // then
         assertThat(result).isEqualTo(presigned);
@@ -97,7 +93,7 @@ class ProductServiceTest {
 
         // when
         productService.confirmImages(SELLER_ID, PRODUCT_ID,
-                new ImageConfirmRequest(List.of("https://image1.jpg", "https://image2.png")));
+                List.of("https://image1.jpg", "https://image2.png"));
 
         // then
         assertThat(product.imageUrls()).containsExactly("https://image1.jpg", "https://image2.png");
@@ -112,7 +108,7 @@ class ProductServiceTest {
 
         // when & then
         assertThatThrownBy(() -> productService.confirmImages(OTHER_USER_ID, PRODUCT_ID,
-                new ImageConfirmRequest(List.of("https://image1"))))
+                List.of("https://image1")))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
         then(productImageService).shouldHaveNoInteractions();
@@ -130,7 +126,7 @@ class ProductServiceTest {
 
         // when
         productService.update(SELLER_ID, PRODUCT_ID,
-                new ProductUpdateRequest("새 제목", "새 설명", 50000, ProductCondition.NEW, List.of("새태그")));
+                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW, List.of("새태그")));
 
         // then
         assertThat(product.getTitle()).isEqualTo("새 제목");
@@ -148,7 +144,7 @@ class ProductServiceTest {
 
         // when & then
         assertThatThrownBy(() -> productService.update(OTHER_USER_ID, PRODUCT_ID,
-                new ProductUpdateRequest("새 제목", "새 설명", 50000, ProductCondition.NEW, List.of("새태그"))))
+                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW, List.of("새태그"))))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
     }
@@ -208,10 +204,10 @@ class ProductServiceTest {
         given(productViewCounter.readTotal(product)).willReturn(164L);
 
         // when
-        ProductDetailResponse response = productService.getProduct(PRODUCT_ID, VISITOR_ID);
+        ProductDetailResult result = productService.getProduct(PRODUCT_ID, VISITOR_ID);
 
         // then
-        assertThat(response.viewCount()).isEqualTo(164L);
+        assertThat(result.viewCount()).isEqualTo(164L);
         then(productViewCounter).should().record(PRODUCT_ID, VISITOR_ID);
     }
 

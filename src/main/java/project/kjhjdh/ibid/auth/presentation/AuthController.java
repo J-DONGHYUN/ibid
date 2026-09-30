@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.application.AuthService;
+import project.kjhjdh.ibid.auth.application.LoginCommand;
+import project.kjhjdh.ibid.auth.application.SignupCommand;
 import project.kjhjdh.ibid.auth.domain.TokenPair;
 import project.kjhjdh.ibid.auth.presentation.cookie.RefreshTokenCookieHandler;
 import project.kjhjdh.ibid.auth.presentation.dto.LoginRequest;
@@ -34,14 +36,14 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<SignupResponse> signup(@Valid @RequestBody SignupRequest request) {
-        Long userId = authService.signup(request);
+        Long userId = authService.signup(new SignupCommand(request.email(), request.password(), request.username()));
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new SignupResponse(userId));
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        TokenPair result = authService.login(request);
+        TokenPair result = authService.login(new LoginCommand(request.email(), request.password()));
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookieHandler.createRefreshTokenCookie(result.refreshToken()).toString())
                 .body(new LoginResponse(result.accessToken()));

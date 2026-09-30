@@ -6,8 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.domain.TokenPair;
-import project.kjhjdh.ibid.auth.presentation.dto.LoginRequest;
-import project.kjhjdh.ibid.auth.presentation.dto.SignupRequest;
 import project.kjhjdh.ibid.auth.infra.RefreshTokenRedisRepository;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
@@ -28,26 +26,26 @@ public class AuthService {
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
 
     @Transactional
-    public Long signup(SignupRequest request) {
-        User.validateRawPassword(request.password());
+    public Long signup(SignupCommand command) {
+        User.validateRawPassword(command.password());
 
-        Email email = new Email(request.email());
+        Email email = new Email(command.email());
         if (userRepository.existsByEmail(email)) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
-        String encodedPassword = passwordEncoder.encode(request.password());
-        User user = User.create(request.email(), encodedPassword, request.username());
+        String encodedPassword = passwordEncoder.encode(command.password());
+        User user = User.create(command.email(), encodedPassword, command.username());
 
         return userRepository.save(user).getId();
     }
 
     @Transactional(readOnly = true)
-    public TokenPair login(LoginRequest request) {
-        User user = userRepository.findByEmail(new Email(request.email()))
+    public TokenPair login(LoginCommand command) {
+        User user = userRepository.findByEmail(new Email(command.email()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (!passwordEncoder.matches(command.password(), user.getPassword())) {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 

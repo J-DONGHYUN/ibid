@@ -24,8 +24,6 @@ import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductLike;
 import project.kjhjdh.ibid.product.infra.ProductLikeRepository;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
-import project.kjhjdh.ibid.product.presentation.dto.ProductLikeStatusResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
 
 @ExtendWith(MockitoExtension.class)
 class ProductLikeServiceTest {
@@ -122,22 +120,7 @@ class ProductLikeServiceTest {
         assertThat(productLikeService.countLikes(PRODUCT_ID)).isEqualTo(5L);
     }
 
-    @DisplayName("찜 상태(찜수·내 찜여부)를 조회한다")
-    @Test
-    void status() {
-        // given
-        given(productLikeRepository.countByProductId(PRODUCT_ID)).willReturn(3L);
-        given(productLikeRepository.existsByUserIdAndProductId(USER_ID, PRODUCT_ID)).willReturn(true);
-
-        // when
-        ProductLikeStatusResponse result = productLikeService.status(USER_ID, PRODUCT_ID);
-
-        // then
-        assertThat(result.count()).isEqualTo(3L);
-        assertThat(result.liked()).isTrue();
-    }
-
-    @DisplayName("관심목록을 찜한 최신순으로 상품 요약(썸네일 포함)으로 반환한다")
+    @DisplayName("관심목록을 찜한 최신순으로 상품·썸네일 쌍으로 반환한다")
     @Test
     void myLikedProducts() {
         // given: 찜 최신순 = 상품10, 상품20
@@ -149,10 +132,10 @@ class ProductLikeServiceTest {
                 .willReturn(Map.of(10L, "https://t10.jpg"));                  // 20은 썸네일 없음
 
         // when
-        List<ProductSummaryResponse> result = productLikeService.myLikedProducts(USER_ID);
+        List<ProductWithThumbnail> result = productLikeService.myLikedProducts(USER_ID);
 
         // then: 찜 순서(10, 20) 유지 + 썸네일 매핑
-        assertThat(result).extracting(ProductSummaryResponse::productId).containsExactly(10L, 20L);
+        assertThat(result).extracting(item -> item.product().getId()).containsExactly(10L, 20L);
         assertThat(result.get(0).thumbnailUrl()).isEqualTo("https://t10.jpg");
         assertThat(result.get(1).thumbnailUrl()).isNull();
     }

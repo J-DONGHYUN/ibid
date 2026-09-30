@@ -2,14 +2,12 @@ package project.kjhjdh.ibid.product.presentation;
 
 import static project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler.VISITOR_ID_COOKIE_NAME;
 
+import java.util.List;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
-import java.util.List;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,7 +23,12 @@ import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.interceptor.PublicApi;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
+import project.kjhjdh.ibid.product.application.ImagePresignCommand;
+import project.kjhjdh.ibid.product.application.ProductDetailResult;
+import project.kjhjdh.ibid.product.application.ProductListResult;
+import project.kjhjdh.ibid.product.application.ProductRegisterCommand;
 import project.kjhjdh.ibid.product.application.ProductService;
+import project.kjhjdh.ibid.product.application.ProductUpdateCommand;
 import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImageDeleteRequest;
@@ -52,7 +55,13 @@ public class ProductController {
             @PathVariable Long productId,
             @Valid @RequestBody List<ImagePresignRequest> requests
     ) {
-        return ResponseEntity.ok(productService.generatePresignedUrls(loginUser.userId(), productId, requests));
+        List<ImagePresignCommand> commands = requests.stream()
+                .map(request -> new ImagePresignCommand(request.filename(), request.contentType()))
+                .toList();
+        List<ImagePresignResponse> responses = productService.generatePresignedUrls(loginUser.userId(), productId, commands).stream()
+                .map(result -> new ImagePresignResponse(result.presignedUrl(), result.key(), result.imageUrl()))
+                .toList();
+        return ResponseEntity.ok(responses);
     }
 
     // STEP 2: 브라우저가 S3에 직접 업로드 완료 후 URL 확정 저장
@@ -62,7 +71,7 @@ public class ProductController {
             @PathVariable Long productId,
             @RequestBody ImageConfirmRequest request
     ) {
-        productService.confirmImages(loginUser.userId(), productId, request);
+        productService.confirmImages(loginUser.userId(), productId, request.imageUrls());
         return ResponseEntity.ok().build();
     }
 
@@ -71,7 +80,10 @@ public class ProductController {
             @LoginUser UserInfo loginUser,
             @Valid @RequestBody ProductRegisterRequest request
     ) {
-        Long productId = productService.register(loginUser.userId(), request);
+        ProductRegisterCommand command = new ProductRegisterCommand(
+                request.title(), request.description(), request.price(),
+                request.productCondition(), request.tags());
+        Long productId = productService.register(loginUser.userId(), command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ProductRegisterResponse(productId));
     }
@@ -81,7 +93,8 @@ public class ProductController {
     public ResponseEntity<ProductListResponse> getProducts(
             @RequestParam(required = false) Long cursor
     ) {
-        return ResponseEntity.ok(productService.getProducts(cursor));
+        ProductListResult result = productService.getProducts(cursor);
+        return ResponseEntity.ok(ProductListResponse.of(result.slice(), result.thumbnails()));
     }
 
     @PublicApi
@@ -91,10 +104,11 @@ public class ProductController {
             @CookieValue(name = VISITOR_ID_COOKIE_NAME, required = false) String visitorId
     ) {
         String resolvedVisitorId = productViewCookieHandler.resolveVisitorId(visitorId);
+        ProductDetailResult result = productService.getProduct(productId, resolvedVisitorId);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE,
                         productViewCookieHandler.createVisitorIdCookie(resolvedVisitorId).toString())
-                .body(productService.getProduct(productId, resolvedVisitorId));
+                .body(ProductDetailResponse.from(result));
     }
 
     @PatchMapping("/{productId}")
@@ -103,7 +117,10 @@ public class ProductController {
             @PathVariable Long productId,
             @Valid @RequestBody ProductUpdateRequest request
     ) {
-        productService.update(loginUser.userId(), productId, request);
+        ProductUpdateCommand command = new ProductUpdateCommand(
+                request.title(), request.description(), request.price(),
+                request.productCondition(), request.tags());
+        productService.update(loginUser.userId(), productId, command);
         return ResponseEntity.ok().build();
     }
 
