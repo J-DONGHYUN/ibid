@@ -170,6 +170,10 @@ AWS_ACCESS_KEY=test AWS_SECRET_KEY=test ./gradlew build    # Docker 필요. 전�
 
 게이트가 판정하는 것은 여기서 끝낸다. 리뷰어는 그것을 다시 보지 않는다.
 
+이건 부탁이 아니라 훅이 받친다 (`T-27`). `record-fullbuild.sh` 가 이 빌드의 `BUILD SUCCESSFUL` 을 보고 지문을 남기고,
+`require-fullbuild.sh` 가 `gh pr create` 직전에 그 기록을 확인한다. 빌드를 빠뜨렸거나 빌드 뒤 `src/` 를 고쳤으면 `ask` 로 막는다.
+Docker 를 못 켜 로컬 빌드가 불가능하면, CI 가 PR 에서 전체 빌드를 돌리는 걸 알고 승인해도 된다.
+
 ### 2. 독립 리뷰
 
 리뷰어 서브에이전트(`.claude/agents/reviewer.md`)를 부른다. **넘기는 것은 이슈 번호와 브랜치뿐이다.**
