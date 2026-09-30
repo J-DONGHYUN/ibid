@@ -1,0 +1,61 @@
+name: close-linked-issues
+
+# PR 이 main 에 머지되면 본문의 닫기 키워드(Closes #N 등)가 가리키는 이슈가 열려 있을 때 닫는다.
+# GitHub 의 Closes 자동 닫힘은 비동기 링크 등록에 기대 비결정적으로 샌다 (INC-05, ADR-0012).
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  close:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: 닫기 키워드가 가리키는 열린 이슈를 닫는다
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -uo pipefail
+          numbers=$(printf '%s' "$PR_BODY" \
+            | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?)[[:space:]]+#[0-9]+' \
+            | grep -oE '[0-9]+' | sort -u || true)
+
+          if [ -z "$numbers" ]; then
+            echo "본문에 닫기 키워드가 없다. 할 일 없음."
+            exit 0
+          fi
+
+          # gh 실패를 삼키지 않는다 — 이슈가 정말 없을 때(404)만 건너뛰고, 조회·닫기 오류는
+          # job 을 세운다. 안 그러면 닫힘 실패가 초록불에 묻혀 이 Action 이 메우려던 사각지대가 재현된다.
+          fail=0
+          for n in $numbers; do
+            if ! state=$(gh issue view "$n" --repo "$REPO" --json state -q .state 2>err.txt); then
+              if grep -qiE 'not found|Could not resolve|no issue' err.txt; then
+                echo "#$n 이슈 없음 — 건너뜀"
+                continue
+              fi
+              echo "::error::#$n 상태 조회 실패"; cat err.txt; fail=1; continue
+            fi
+            case "$state" in
+              OPEN)
+                if gh issue close "$n" --repo "$REPO" \
+                    --comment "PR #${PR_NUMBER} 머지로 닫는다 (close-linked-issues, ADR-0012). GitHub 자동 닫힘이 안 걸린 경우의 게이트."; then
+                  echo "#$n 닫음"
+                else
+                  echo "::error::#$n 닫기 실패"; fail=1
+                fi
+                ;;
+              CLOSED) echo "#$n 이미 닫힘 — 건너뜀" ;;
+              *) echo "::error::#$n 상태 예상 밖($state)"; fail=1 ;;
+            esac
+          done
+          exit "$fail"
