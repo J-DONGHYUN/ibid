@@ -119,8 +119,12 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 - **아직 없는 도메인(`chat` · `trade` · `notification`)의 규칙은 빈 채로 통과한다.** 도메인을 처음 만드는 티켓에서
   탐침으로 생존을 확인한다
 - **주석 검사는 줄 시작만 본다.** 코드 뒤에 붙은 주석(`x = 1; // …`)은 못 잡는다
-- **`@DisplayName` 의 요구사항 ID 규칙(`[TR-01] …`)은 아직 게이트가 없다.** 기존 테스트 전부가 어기고 있어,
-  요구사항 커버리지 측정과 함께 만든다
+- **`@DisplayName` ID 게이트는 형식 · 접두어만 본다.** `[TR-01]` 처럼 요구사항 · 불변식 접두어(`AU|PD|CH|TR|NT|I`)로
+  시작하는지 검사할 뿐, 그 ID 가 requirements.md 에 실제로 있는지는 막지 않는다 — 커버리지 리포트
+  (`RequirementCoverageTest`, `build/requirement-coverage.txt`)가 보여줄 뿐이다. 기존 기능 테스트 156개는 ID 없이 동결됐다 (T-28)
+- **`FreezingArchRule` 의 규칙 문자열을 바꾸면 옛 baseline 이 고아로 남는다.** ArchUnit 은 규칙 문자열을 키로 store 에
+  기록해서, 규칙 서술 · 조건을 고치면 새 항목이 생기고 옛 항목은 `stored.rules` 에 남되 아무 `@ArchTest` 도 읽지 않는다.
+  게이트는 정상이지만 동결 목록이 죽은 부채로 부푼다. 규칙을 고쳤으면 옛 UUID 줄 · 파일을 지운다 (T-28 에서 겪음)
 - **에이전트 정의는 세션을 시작할 때 읽힌다.** 리뷰어를 만들거나 고친 세션에서는 새 리뷰어를 부를 수 없다.
   그런 티켓은 새 세션에서 [5] 를 이어 한다 (`INC-06`)
 - **리뷰어의 Bash 화이트리스트는 따옴표를 모른다.** `;` · `|` · `&` 로 조각을 나눠서 `grep -E 'a|b'` 는 막힌다.
@@ -198,6 +202,19 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 | `sed -i …/archunit-store/…` · `git checkout .claude/settings.json` (기존 막는 경로) | `ask` |
 
 승인 메시지에 **걸린 파일 · 걸린 명령 · 승인/거절 기준**을 사람이 읽는 문장으로 담는다.
+
+**T-28 (#82, 2026-09-30) — @DisplayName ID 게이트**
+
+`TestConventionRulesTest` 에 `FreezingArchRule` 규칙을 더해, 기능 테스트의 `@DisplayName` 이 요구사항 · 불변식
+ID 로 시작하는지 본다. architecture 패키지에 임시 테스트를 넣어 실경로로 확인했다.
+
+| 탐침 | 결과 |
+|---|---|
+| ID 없는 새 @Test (`@DisplayName("게이트 탐침 …")`) | `architectureTest` 실패 (`TEST_DISPLAY_NAMES_START_WITH_REQUIREMENT_ID`) |
+| `[TR-01]` 로 시작하는 새 @Test | 통과 |
+| 기존 기능 테스트 156개 (ID 없음) | 통과 (baseline 동결) |
+
+커버리지 리포트(`RequirementCoverageTest`)는 요구사항 27개 · 테스트 있는 것 0 (0%) 로, `build/requirement-coverage.txt` 에 쓴다.
 
 ## 다음
 
