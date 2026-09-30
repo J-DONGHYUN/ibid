@@ -31,6 +31,8 @@ ibid 의 하네스가 **무엇으로 이루어져 있고, 왜 그렇게 만들�
 | ② | `hooks/reviewer-readonly.sh` | 리뷰어의 Bash 실행 전 | 읽기 명령(`git diff` · `gh issue view` …)만 통과, 나머지 `deny`. 리뷰어 frontmatter 에만 걸린다 |
 | ② | `hooks/guard-plan.sh` | 파일 수정 · Bash 실행 전 | 이슈 브랜치에서 계획을 게시하기 전에는 `src/` 수정 금지 |
 | ③ | `hooks/gate-on-stop.sh` | 에이전트가 끝내려 할 때 | `src/` 가 바뀌었으면 `architectureTest`. 실패하면 못 끝냄, 3회 연속이면 멈추고 사람을 부름 |
+| ③ | `hooks/record-fullbuild.sh` | Bash 실행 후 | `gradlew build` 가 `BUILD SUCCESSFUL` 이면 빌드 영향 경로의 지문을 `.git/ibid-loop/<브랜치>.fullbuild-passed` 에 남긴다 |
+| ③ | `hooks/require-fullbuild.sh` | `gh pr create` 실행 전 | 지금 코드로 전체 빌드가 통과한 기록이 없으면 `ask`. 실수로 빠뜨리는 걸 막고, 의식적 우회(Docker 없음 등)는 사람이 승인한다 (`T-27`) |
 | ③ | `./gradlew architectureTest` | 에이전트가 자주 | 아키텍처 · 소스 · 테스트 컨벤션 · 공개 경로. **약 4초**, 스프링 · Docker 없음 |
 | ③ | `./gradlew test` | 구현을 마칠 때 | 전체 테스트. **약 1분 20초**, Docker 필요 |
 | ③ | `.github/workflows/ci.yml` | PR · push | 위 둘을 순서대로. 로컬과 **같은 게이트** |
@@ -228,6 +230,24 @@ ID 로 시작하는지 본다. architecture 패키지에 임시 테스트를 넣
 | 기존 기능 테스트 156개 (ID 없음) | 통과 (baseline 동결) |
 
 커버리지 리포트(`RequirementCoverageTest`)는 요구사항 27개 · 테스트 있는 것 0 (0%) 로, `build/requirement-coverage.txt` 에 쓴다.
+
+**T-27 (#91, 2026-09-30) — PR 전 전체 빌드 강제**
+
+`record-fullbuild.sh`(PostToolUse) · `require-fullbuild.sh`(PreToolUse, `gh pr create`) 에 만든 입력을 넣어 확인했다.
+빌드 지문은 빌드 영향 경로(`src build.gradle settings.gradle gradle gradlew gradlew.bat`)의 tree hash 다 —
+문서 · 백로그만 바뀌면 지문이 그대로라, 빌드 뒤 리뷰 반영 · ✅ 커밋이 PR 을 막지 않는다.
+
+| 탐침 | 결과 |
+|---|---|
+| 빌드 통과 기록 없이 `gh pr create` | `ask` (근거 · 빌드 명령 안내) |
+| `gradlew build` 출력에 `BUILD SUCCESSFUL` | 기록 남는다 (지문 저장) |
+| 기록 뒤 `gh pr create`, 코드 안 바뀜 | 통과 |
+| 기록 뒤 `src/` 를 고치고 `gh pr create` | `ask` (지문 불일치) |
+| `gradlew build` 출력에 `BUILD FAILED` | 기록 안 남긴다 |
+| `gradlew buildHealth` 가 `BUILD SUCCESSFUL` | 기록 안 남긴다 (`build` 태스크 아님) |
+
+`ask` 이지 `deny` 가 아니다 — Docker 를 못 켜면 로컬 전체 빌드가 불가능한데(이 훅이 도는 환경도 그렇다),
+CI(`ci.yml`)가 PR 에서 전체 빌드를 최종적으로 돌린다. 실수로 빠뜨리는 건 막고, 의식적 우회는 사람이 승인한다.
 
 ## 다음
 
