@@ -109,6 +109,50 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("code", equalTo("INVALID_INPUT"));
     }
 
+    @DisplayName("[PD-01] 배터리 성능이 0~100 밖이면 400을 응답한다")
+    @Test
+    void register_invalidBattery() {
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW,
+                        new DeviceSpecRequest(DeviceCategory.SMARTPHONE, "iPhone 13", 101, "본체", null)))
+                .when()
+                .post("/api/products")
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("code", equalTo("INVALID_INPUT"));
+    }
+
+    @DisplayName("[PD-01] 전자기기 정보가 없으면 400을 응답한다")
+    @Test
+    void register_missingDeviceSpec() {
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, null))
+                .when()
+                .post("/api/products")
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("code", equalTo("INVALID_INPUT"));
+    }
+
+    @DisplayName("[PD-01] 카테고리가 없으면 400을 응답한다")
+    @Test
+    void register_missingCategory() {
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW,
+                        new DeviceSpecRequest(null, "iPhone 13", 90, "본체", null)))
+                .when()
+                .post("/api/products")
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value())
+                .body("code", equalTo("INVALID_INPUT"));
+    }
+
     @DisplayName("상품 목록 조회에 성공하면 200과 상품 목록을 응답한다")
     @Test
     void getProducts() {
