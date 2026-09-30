@@ -12,17 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.Tag;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 import project.kjhjdh.ibid.product.infra.TagRepository;
-import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductDetailResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductListResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ProductUpdateRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -35,22 +29,22 @@ public class ProductService {
     private final ProductViewCounter productViewCounter;
     private final ProductImageService productImageService;
 
-    public List<ImagePresignResponse> generatePresignedUrls(Long sellerId, Long productId, List<ImagePresignRequest> requests) {
+    public List<PresignedUploadResult> generatePresignedUrls(Long sellerId, Long productId, List<ImagePresignCommand> commands) {
         findOwnedProduct(sellerId, productId);
-        return productImageService.presign(productId, requests);
+        return productImageService.presign(productId, commands);
     }
 
     @Transactional
-    public void confirmImages(Long sellerId, Long productId, ImageConfirmRequest request) {
+    public void confirmImages(Long sellerId, Long productId, List<String> imageUrls) {
         Product product = findOwnedProduct(sellerId, productId);
-        product.addImages(request.imageUrls());
+        product.addImages(imageUrls);
     }
 
     @Transactional
-    public void update(Long sellerId, Long productId, ProductUpdateRequest request) {
+    public void update(Long sellerId, Long productId, ProductUpdateCommand command) {
         Product product = findOwnedProduct(sellerId, productId);
-        product.update(request.title(), request.description(), request.price(),
-                request.productCondition(), resolveTags(request.tags()));
+        product.update(command.title(), command.description(), command.price(),
+                command.productCondition(), resolveTags(command.tags()));
     }
 
     @Transactional
@@ -69,34 +63,34 @@ public class ProductService {
     }
 
     @Transactional
-    public Long register(Long sellerId, ProductRegisterRequest request) {
+    public Long register(Long sellerId, ProductRegisterCommand command) {
         Product product = Product.create(
                 sellerId,
-                request.title(),
-                request.description(),
-                request.price(),
-                request.productCondition(),
-                resolveTags(request.tags())
+                command.title(),
+                command.description(),
+                command.price(),
+                command.productCondition(),
+                resolveTags(command.tags())
         );
         return productRepository.save(product).getId();
     }
 
     @Transactional(readOnly = true)
-    public ProductListResponse getProducts(Long cursor) {
+    public ProductListResult getProducts(Long cursor) {
         Pageable pageable = PageRequest.of(0, PAGE_SIZE);
         Long effectiveCursor = (cursor == null) ? Long.MAX_VALUE : cursor;
         Slice<Product> slice = productRepository.findByIdLessThanOrderByIdDesc(effectiveCursor, pageable);
         List<Long> productIds = slice.getContent().stream().map(Product::getId).toList();
         Map<Long, String> thumbnails = productImageService.findThumbnails(productIds);
-        return ProductListResponse.of(slice, thumbnails);
+        return new ProductListResult(slice, thumbnails);
     }
 
     @Transactional(readOnly = true)
-    public ProductDetailResponse getProduct(Long productId, String visitorId) {
+    public ProductDetailResult getProduct(Long productId, String visitorId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         productViewCounter.record(productId, visitorId);
-        return ProductDetailResponse.of(product, productViewCounter.readTotal(product));
+        return new ProductDetailResult(product, productViewCounter.readTotal(product));
     }
 
     private List<Tag> resolveTags(List<String> names) {

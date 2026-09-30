@@ -15,8 +15,6 @@ import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductLike;
 import project.kjhjdh.ibid.product.infra.ProductLikeRepository;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
-import project.kjhjdh.ibid.product.presentation.dto.ProductLikeStatusResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -53,15 +51,7 @@ public class ProductLikeService {
     }
 
     @Transactional(readOnly = true)
-    public ProductLikeStatusResponse status(Long userId, Long productId) {
-        return new ProductLikeStatusResponse(
-                productLikeRepository.countByProductId(productId),
-                productLikeRepository.existsByUserIdAndProductId(userId, productId)
-        );
-    }
-
-    @Transactional(readOnly = true)
-    public List<ProductSummaryResponse> myLikedProducts(Long userId) {
+    public List<ProductWithThumbnail> myLikedProducts(Long userId) {
         List<Long> productIds = productLikeRepository.findByUserIdOrderByIdDesc(userId).stream()
                 .map(ProductLike::getProductId)
                 .toList();
@@ -74,7 +64,7 @@ public class ProductLikeService {
         return productIds.stream()
                 .map(productsById::get)
                 .filter(Objects::nonNull)
-                .map(product -> ProductSummaryResponse.from(product, thumbnails.get(product.getId())))
+                .map(product -> new ProductWithThumbnail(product, thumbnails.get(product.getId())))
                 .toList();
     }
 }

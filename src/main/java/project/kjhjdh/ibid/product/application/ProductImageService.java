@@ -12,8 +12,6 @@ import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.common.image.infra.S3ImageUploader;
 import project.kjhjdh.ibid.product.domain.ProductImage;
 import project.kjhjdh.ibid.product.infra.ProductImageRepository;
-import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -24,13 +22,10 @@ public class ProductImageService {
     private final ProductImageRepository productImageRepository;
     private final S3ImageUploader s3ImageUploader;
 
-    public List<ImagePresignResponse> presign(Long productId, List<ImagePresignRequest> requests) {
+    public List<PresignedUploadResult> presign(Long productId, List<ImagePresignCommand> commands) {
         String directory = DIRECTORY_PREFIX + productId;
-        return requests.stream()
-                .map(req -> {
-                    PresignedUploadResult result = s3ImageUploader.generatePresignedUrl(directory, req.filename());
-                    return new ImagePresignResponse(result.presignedUrl(), result.key(), result.imageUrl());
-                })
+        return commands.stream()
+                .map(command -> s3ImageUploader.generatePresignedUrl(directory, command.filename()))
                 .toList();
     }
 

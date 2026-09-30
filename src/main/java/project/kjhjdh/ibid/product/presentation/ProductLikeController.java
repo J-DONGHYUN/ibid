@@ -16,6 +16,7 @@ import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.product.application.ProductLikeService;
 import project.kjhjdh.ibid.product.presentation.dto.ProductLikeStatusResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
+import project.kjhjdh.ibid.product.application.ProductWithThumbnail;
 
 @RestController
 @RequestMapping("/api/products")
@@ -27,7 +28,10 @@ public class ProductLikeController {
     @GetMapping("/{productId}/like")
     public ResponseEntity<ProductLikeStatusResponse> likeStatus(
             @LoginUser UserInfo loginUser, @PathVariable Long productId) {
-        return ResponseEntity.ok(productLikeService.status(loginUser.userId(), productId));
+        return ResponseEntity.ok(new ProductLikeStatusResponse(
+                productLikeService.countLikes(productId),
+                productLikeService.isLiked(loginUser.userId(), productId)
+        ));
     }
 
     @PostMapping("/{productId}/like")
@@ -44,6 +48,9 @@ public class ProductLikeController {
 
     @GetMapping("/me/likes")
     public ResponseEntity<List<ProductSummaryResponse>> myLikes(@LoginUser UserInfo loginUser) {
-        return ResponseEntity.ok(productLikeService.myLikedProducts(loginUser.userId()));
+        List<ProductSummaryResponse> responses = productLikeService.myLikedProducts(loginUser.userId()).stream()
+                .map(item -> ProductSummaryResponse.from(item.product(), item.thumbnailUrl()))
+                .toList();
+        return ResponseEntity.ok(responses);
     }
 }
