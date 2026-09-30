@@ -108,8 +108,11 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 
 ## 알려진 구멍
 
-- **Bash 우회는 일부만 막는다.** `guard-protected.sh` 가 리다이렉션 · `sed -i` · `mv` · `cp` · `rm` · `git checkout` 같은
-  쓰기 명령을 잡아 `ask` 로 돌린다. 하지만 `python -c` 처럼 인터프리터 안에서 쓰는 경우는 명령 문자열만 봐서는 알 수 없다
+- **Bash 우회는 일부만 막는다.** `guard-protected.sh` · `guard-plan.sh` 는 `write-target.sh` 로 명령의 **쓰기 대상**을
+  뽑아(리다이렉션의 파일 · cp/mv 도착지 · `sed -i`·`rm`·`tee`·`git checkout` 등의 경로 인자) 그 대상이 보호 경로 · `src/`
+  일 때만 막는다 (`INC-03`, T-30). 하지만 `python -c` 처럼 인터프리터 안에서 쓰는 경우는 명령 문자열만 봐서는 알 수 없다
+- **`write-target.sh` 는 리다이렉션을 따옴표 없이 grep 한다.** 따옴표로 감싼 문자열 속 `>`(예: `echo 'a > b'`)도
+  리다이렉션으로 봐서 대상을 뽑는다. `sed -i` 는 스크립트 인자까지 대상으로 본다 — 넘겨짚어 `ask` 하는 쪽이라 막는 경로는 줄지 않는다
 - **훅은 이 저장소에서 Claude Code 를 열 때만 걸린다.** 상위 폴더에서 세션을 열면 `.claude/settings.json` 이 적용되지 않는다
 - **아직 없는 도메인(`chat` · `trade` · `notification`)의 규칙은 빈 채로 통과한다.** 도메인을 처음 만드는 티켓에서
   탐침으로 생존을 확인한다
@@ -176,6 +179,23 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 2026-09-29, 실제 경로로도 확인했다 — 새 세션에서 `reviewer` 를 불러 이 브랜치를 리뷰시켰고(INC-06 처방),
 그 리뷰어의 Bash 탐침에 쓴 `$( )` 명령 치환이 훅에 막혀 스스로 훅을 재실행하지 못했다. 만든 입력이 아니라
 실제 서브에이전트 경로에서 명령 치환 차단이 살아 있다는 방증이다.
+
+**T-30 (#80, 2026-09-29) — 쓰기 대상 판정(`write-target.sh`) 로 오탐 제거**
+
+`guard-protected` · `guard-plan` 을 `write-target.sh` 기반으로 바꾼 뒤, 탐침을 파일에 담아
+훅에 넣어 확인했다(명령 문자열에 보호 리터럴을 두면 훅 자신이 걸려서다). 실제로 이 티켓의 이슈 생성도
+옛 오탐(`gh issue create` 본문에 `src/` · `>`)에 한 번 막혀, 초안을 Write 도구로 만들어 우회했다.
+
+| 탐침 | 결과 |
+|---|---|
+| `… 2>&1 \| tail \| wc -l …/archunit-store/…` · `cat > pr-71.md <<'EOF' … archunit-store …` (INC-03 두 명령) | 통과 (오탐 사라짐) |
+| `./gradlew test 2>&1 \| grep src/` (guard-plan) | 통과 (`src/` 는 grep 인자, 쓰기 아님) |
+| `cp build.gradle /tmp/x` (원본만 보호) · `sed`(−i 없음) · `git checkout main`(브랜치 전환) | 통과 |
+| `cat > build.gradle` · `2> build.gradle` · `>> .github/workflows/ci.yml` · `… \| tee build.gradle` | `ask` |
+| `cp foo build.gradle` · `mv foo .claude/settings.json`(도착지) · `ls && sed -i … build.gradle`(둘째 조각) · `> "build.gradle"`(따옴표) | `ask` |
+| `sed -i …/archunit-store/…` · `git checkout .claude/settings.json` (기존 막는 경로) | `ask` |
+
+승인 메시지에 **걸린 파일 · 걸린 명령 · 승인/거절 기준**을 사람이 읽는 문장으로 담는다.
 
 ## 다음
 
