@@ -282,6 +282,17 @@ class ProductControllerTest extends ControllerTestSupport {
                 .statusCode(HttpStatus.NO_CONTENT.value());
     }
 
+    @DisplayName("[PD-01] 판매 시작 엔드포인트는 사라졌다 (등록 즉시 판매중)")
+    @Test
+    void openForSale_endpointGone() {
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .patch("/api/products/{productId}/on-sale", 1L)
+                .then()
+                .statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
     @DisplayName("존재하지 않는 상품을 조회하면 404를 응답하고 방문자 쿠키를 발급하지 않는다")
     @Test
     void getProduct_notFound() {
