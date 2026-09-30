@@ -1,5 +1,9 @@
 package project.kjhjdh.ibid.product.application;
 
+import project.kjhjdh.ibid.product.domain.ProductCondition;
+
+import project.kjhjdh.ibid.product.DeviceSpecFixture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,7 +48,7 @@ class ProductLikeServiceTest {
     private ProductLikeService productLikeService;
 
     private Product product(Long id, String title) {
-        Product product = Product.create(1L, title, "설명", 1000);
+        Product product = Product.create(1L, title, "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         ReflectionTestUtils.setField(product, "id", id);
         return product;
     }

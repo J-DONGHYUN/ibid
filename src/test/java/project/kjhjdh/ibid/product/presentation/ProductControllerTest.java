@@ -1,5 +1,7 @@
 package project.kjhjdh.ibid.product.presentation;
 
+import project.kjhjdh.ibid.product.DeviceSpecFixture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -35,7 +37,9 @@ import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.product.application.ProductDetailResult;
 import project.kjhjdh.ibid.product.application.ProductListResult;
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.DeviceCategory;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
+import project.kjhjdh.ibid.product.presentation.dto.DeviceSpecRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterRequest;
@@ -53,7 +57,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, new DeviceSpecRequest(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null)))
                 .when()
                 .post("/api/products")
                 .then()
@@ -70,7 +74,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, new DeviceSpecRequest(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null)))
                 .when()
                 .post("/api/products")
                 .then()
@@ -83,7 +87,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("", "상태 좋음", 89000, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("", "상태 좋음", 89000, ProductCondition.LIKE_NEW, new DeviceSpecRequest(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null)))
                 .when()
                 .post("/api/products")
                 .then()
@@ -97,7 +101,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, ProductCondition.LIKE_NEW))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, ProductCondition.LIKE_NEW, new DeviceSpecRequest(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null)))
                 .when()
                 .post("/api/products")
                 .then()
@@ -316,13 +320,13 @@ class ProductControllerTest extends ControllerTestSupport {
     }
 
     private Product product(Long id, String title, int price) {
-        Product product = Product.create(5L, title, "상태 좋음", price, ProductCondition.LIKE_NEW);
+        Product product = Product.create(5L, title, "상태 좋음", price, ProductCondition.LIKE_NEW, DeviceSpecFixture.sample());
         ReflectionTestUtils.setField(product, "id", id);
         return product;
     }
 
     private Product detailProduct() {
-        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW);
+        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, DeviceSpecFixture.sample());
         ReflectionTestUtils.setField(product, "id", 1L);
         product.addImages(List.of("https://image/a.jpg"));
         return product;

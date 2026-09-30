@@ -1,5 +1,9 @@
 package project.kjhjdh.ibid.product.application;
 
+import project.kjhjdh.ibid.product.domain.ProductCondition;
+
+import project.kjhjdh.ibid.product.DeviceSpecFixture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -39,7 +43,7 @@ class ProductImageServiceTest {
     private ProductImageService productImageService;
 
     private ProductImage productImage(Long productId, String url, int sortOrder) {
-        Product product = Product.create(10L, "상품", "설명", 1000);
+        Product product = Product.create(10L, "상품", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         ReflectionTestUtils.setField(product, "id", productId);
         return ProductImage.of(product, url, sortOrder);
     }

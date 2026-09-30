@@ -1,5 +1,7 @@
 package project.kjhjdh.ibid.product.application;
 
+import project.kjhjdh.ibid.product.DeviceSpecFixture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,7 +51,7 @@ class ProductServiceTest {
     @Test
     void generatePresignedUrls() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
         List<PresignedUploadResult> presigned = List.of(
                 new PresignedUploadResult("https://presigned1", "products/1/a.jpg", "https://image1"),
@@ -70,7 +72,7 @@ class ProductServiceTest {
     @Test
     void generatePresignedUrls_notOwner() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
@@ -83,7 +85,7 @@ class ProductServiceTest {
     @Test
     void confirmImages() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
@@ -98,7 +100,7 @@ class ProductServiceTest {
     @Test
     void confirmImages_notOwner() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
@@ -113,7 +115,7 @@ class ProductServiceTest {
     @Test
     void update() {
         // given
-        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000);
+        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
@@ -130,7 +132,7 @@ class ProductServiceTest {
     @Test
     void update_notOwner() {
         // given
-        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000);
+        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
@@ -144,7 +146,7 @@ class ProductServiceTest {
     @Test
     void deleteImages() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000);
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         product.addImages(List.of("https://img1.jpg", "https://img2.png", "https://img3.gif"));
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
@@ -160,7 +162,7 @@ class ProductServiceTest {
     @Test
     void delete() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000);
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         product.addImages(List.of("https://img1.jpg", "https://img2.png"));
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
@@ -176,7 +178,7 @@ class ProductServiceTest {
     @Test
     void delete_notOwner() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000);
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
@@ -190,7 +192,7 @@ class ProductServiceTest {
     @Test
     void getProduct() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
         given(productViewCounter.readTotal(product)).willReturn(164L);
 

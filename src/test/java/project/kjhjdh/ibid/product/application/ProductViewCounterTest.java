@@ -1,5 +1,9 @@
 package project.kjhjdh.ibid.product.application;
 
+import project.kjhjdh.ibid.product.domain.ProductCondition;
+
+import project.kjhjdh.ibid.product.DeviceSpecFixture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -78,7 +82,7 @@ class ProductViewCounterTest {
     }
 
     private Product persistedProduct(long viewCount) {
-        Product product = Product.create(10L, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(10L, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
         ReflectionTestUtils.setField(product, "id", PRODUCT_ID);
         ReflectionTestUtils.setField(product, "viewCount", viewCount);
         return product;

@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.product.DeviceSpecFixture;
 
 class ProductTest {
 
@@ -22,7 +23,7 @@ class ProductTest {
     @Test
     void create() {
         // when
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
 
         // then
         assertThat(product.getSellerId()).isEqualTo(SELLER_ID);
@@ -38,7 +39,7 @@ class ProductTest {
     @ValueSource(strings = {"", " ", "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A"})
     void create_invalidTitle(String title) {
         // when & then
-        assertThatThrownBy(() -> Product.create(SELLER_ID, title, "상태 좋음", 89000))
+        assertThatThrownBy(() -> Product.create(SELLER_ID, title, "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.INVALID_PRODUCT_TITLE.getMessage());
     }
@@ -49,7 +50,7 @@ class ProductTest {
     @ValueSource(strings = {"", " "})
     void create_invalidDescription(String description) {
         // when & then
-        assertThatThrownBy(() -> Product.create(SELLER_ID, "나이키 후드", description, 89000))
+        assertThatThrownBy(() -> Product.create(SELLER_ID, "나이키 후드", description, 89000, ProductCondition.USED, DeviceSpecFixture.sample()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.INVALID_PRODUCT_DESCRIPTION.getMessage());
     }
@@ -59,7 +60,7 @@ class ProductTest {
     @ValueSource(ints = {0, -1})
     void create_invalidPrice(int price) {
         // when & then
-        assertThatThrownBy(() -> Product.create(SELLER_ID, "나이키 후드", "상태 좋음", price))
+        assertThatThrownBy(() -> Product.create(SELLER_ID, "나이키 후드", "상태 좋음", price, ProductCondition.USED, DeviceSpecFixture.sample()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.INVALID_PRODUCT_PRICE.getMessage());
     }
@@ -68,7 +69,7 @@ class ProductTest {
     @Test
     void isOwnedBy() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
 
         // when & then
         assertThat(product.isOwnedBy(SELLER_ID)).isTrue();
@@ -79,7 +80,7 @@ class ProductTest {
     @Test
     void addImages() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
 
         // when
         product.addImages(List.of("u1.jpg", "u2.png"));
@@ -93,7 +94,7 @@ class ProductTest {
     @Test
     void removeImages() {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
         product.addImages(List.of("u1.jpg", "u2.png", "u3.gif"));
 
         // when
