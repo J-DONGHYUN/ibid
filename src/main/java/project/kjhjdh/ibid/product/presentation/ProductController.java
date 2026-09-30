@@ -108,7 +108,7 @@ public class ProductController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE,
                         productViewCookieHandler.createVisitorIdCookie(resolvedVisitorId).toString())
-                .body(ProductDetailResponse.of(result.product(), result.viewCount()));
+                .body(ProductDetailResponse.from(result));
     }
 
     @PatchMapping("/{productId}")

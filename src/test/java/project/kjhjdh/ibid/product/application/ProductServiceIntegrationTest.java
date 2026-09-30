@@ -55,11 +55,11 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
 
         // then
         assertThat(result.viewCount()).isEqualTo(1L);
-        assertThat(result.product().imageUrls()).containsExactly("https://image/a.jpg", "https://image/b.jpg");
-        assertThat(result.product().tagNames()).containsExactlyInAnyOrder("나이키", "후드");
-        assertThat(result.product().getProductCondition()).isEqualTo(ProductCondition.LIKE_NEW);
-        assertThat(result.product().getStatus()).isEqualTo(ProductStatus.ON_SALE);
-        assertThat(result.product().getCreatedAt()).isNotNull();
+        assertThat(result.imageUrls()).containsExactly("https://image/a.jpg", "https://image/b.jpg");
+        assertThat(result.tags()).containsExactlyInAnyOrder("나이키", "후드");
+        assertThat(result.productCondition()).isEqualTo(ProductCondition.LIKE_NEW);
+        assertThat(result.status()).isEqualTo(ProductStatus.ON_SALE);
+        assertThat(result.createdAt()).isNotNull();
     }
 
     private ProductRegisterCommand registerCommand(String title, List<String> tags) {
