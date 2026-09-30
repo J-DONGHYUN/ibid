@@ -37,8 +37,7 @@ public class LocalDataInitializer implements ApplicationRunner {
         User seller = userRepository.save(User.create(TEST_EMAIL2, encodedPassword, TEST_USERNAME2));
         userRepository.save(User.createAdmin(ADMIN_EMAIL, encodedPassword, ADMIN_USERNAME));
 
-        Product entity = Product.create(seller.getId(), "판매해요", "판매해요", 1000, 100);
-        entity.openForSale();
+        Product entity = Product.create(seller.getId(), "판매해요", "판매해요", 1000);
         productRepository.save(entity);
     }
 }
