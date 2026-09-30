@@ -25,7 +25,7 @@ import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.cookie.RefreshTokenCookieHandler;
 import project.kjhjdh.ibid.auth.presentation.interceptor.AuthenticationInterceptor;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
-import project.kjhjdh.ibid.common.config.WebConfig;
+import project.kjhjdh.ibid.auth.presentation.WebConfig;
 import project.kjhjdh.ibid.product.application.ProductLikeService;
 import project.kjhjdh.ibid.product.application.ProductService;
 import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;

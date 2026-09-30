@@ -1,4 +1,4 @@
-package project.kjhjdh.ibid.common.config;
+package project.kjhjdh.ibid.auth.presentation;
 
 import java.util.List;
 
