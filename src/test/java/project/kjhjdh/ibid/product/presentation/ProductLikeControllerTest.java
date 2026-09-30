@@ -1,5 +1,7 @@
 package project.kjhjdh.ibid.product.presentation;
 
+import project.kjhjdh.ibid.product.DeviceSpecFixture;
+
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -107,7 +109,7 @@ class ProductLikeControllerTest extends ControllerTestSupport {
     @Test
     void myLikes() {
         // given
-        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW);
+        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, DeviceSpecFixture.sample());
         ReflectionTestUtils.setField(product, "id", 10L);
         given(productLikeService.myLikedProducts(anyLong())).willReturn(List.of(
                 new ProductWithThumbnail(product, "https://image/a.jpg")

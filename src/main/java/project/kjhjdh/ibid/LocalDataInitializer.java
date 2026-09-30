@@ -7,9 +7,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
+import project.kjhjdh.ibid.product.domain.DeviceCategory;
+import project.kjhjdh.ibid.product.domain.DeviceSpec;
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
-import project.kjhjdh.ibid.user.domain.Email;
 import project.kjhjdh.ibid.user.domain.User;
 import project.kjhjdh.ibid.user.infra.UserRepository;
 
@@ -37,7 +39,8 @@ public class LocalDataInitializer implements ApplicationRunner {
         User seller = userRepository.save(User.create(TEST_EMAIL2, encodedPassword, TEST_USERNAME2));
         userRepository.save(User.createAdmin(ADMIN_EMAIL, encodedPassword, ADMIN_USERNAME));
 
-        Product entity = Product.create(seller.getId(), "판매해요", "판매해요", 1000);
+        Product entity = Product.create(seller.getId(), "판매해요", "판매해요", 1000, ProductCondition.USED,
+                new DeviceSpec(DeviceCategory.SMARTPHONE, "갤럭시 S23", 95, "본체, 충전기", null));
         productRepository.save(entity);
     }
 }

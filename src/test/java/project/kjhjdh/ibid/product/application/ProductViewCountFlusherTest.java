@@ -1,5 +1,9 @@
 package project.kjhjdh.ibid.product.application;
 
+import project.kjhjdh.ibid.product.domain.ProductCondition;
+
+import project.kjhjdh.ibid.product.DeviceSpecFixture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.DisplayName;
@@ -91,7 +95,7 @@ class ProductViewCountFlusherTest extends IntegrationTestSupport {
     }
 
     private Long saveProduct() {
-        return productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000)).getId();
+        return productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample())).getId();
     }
 
     private long findViewCount(Long productId) {

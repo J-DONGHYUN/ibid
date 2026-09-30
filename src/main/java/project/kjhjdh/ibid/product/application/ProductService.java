@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
+import project.kjhjdh.ibid.product.domain.DeviceSpec;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 
@@ -61,12 +62,15 @@ public class ProductService {
 
     @Transactional
     public Long register(Long sellerId, ProductRegisterCommand command) {
+        DeviceSpecCommand spec = command.deviceSpec();
         Product product = Product.create(
                 sellerId,
                 command.title(),
                 command.description(),
                 command.price(),
-                command.productCondition()
+                command.productCondition(),
+                new DeviceSpec(spec.category(), spec.modelName(), spec.batteryHealth(),
+                        spec.components(), spec.defects())
         );
         return productRepository.save(product).getId();
     }
