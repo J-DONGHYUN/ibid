@@ -1,0 +1,47 @@
+name: close-linked-issues
+
+# PR 이 main 에 머지되면 본문의 닫기 키워드(Closes #N 등)가 가리키는 이슈가 열려 있을 때 닫는다.
+# GitHub 의 Closes 자동 닫힘은 비동기 링크 등록에 기대 비결정적으로 샌다 (INC-05, ADR-0012).
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  close:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: 닫기 키워드가 가리키는 열린 이슈를 닫는다
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          numbers=$(printf '%s' "$PR_BODY" \
+            | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?)[[:space:]]+#[0-9]+' \
+            | grep -oE '[0-9]+' | sort -u)
+
+          if [ -z "$numbers" ]; then
+            echo "본문에 닫기 키워드가 없다. 할 일 없음."
+            exit 0
+          fi
+
+          for n in $numbers; do
+            state=$(gh issue view "$n" --repo "$REPO" --json state -q .state 2>/dev/null || echo "MISSING")
+            case "$state" in
+              OPEN)
+                gh issue close "$n" --repo "$REPO" \
+                  --comment "PR #${PR_NUMBER} 머지로 닫는다 (close-linked-issues, ADR-0012). GitHub 자동 닫힘이 안 걸린 경우의 게이트."
+                echo "#$n 닫음"
+                ;;
+              CLOSED) echo "#$n 이미 닫힘 — 건너뜀" ;;
+              *) echo "#$n 확인 불가($state) — 건너뜀" ;;
+            esac
+          done
