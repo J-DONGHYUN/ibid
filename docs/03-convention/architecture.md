@@ -30,7 +30,7 @@
 | `trade` | 예약 · 거래완료 조율 · 판매/구매 내역 | `chat` · `product` · `auth` · `common` |
 | `notification` | 알림 저장 · 조회 | `auth` · `common` |
 
-- [G] 표에 없는 방향의 import 를 하지 않는다 (동결 — `common.config` 의 `WebConfig` · `LocalDataInitializer` 가 도메인을 본다). 특히 **`product` → `chat` · `trade`, `chat` → `trade` 금지** (`ADR-0006`)
+- [G] 표에 없는 방향의 import 를 하지 않는다. 특히 **`product` → `chat` · `trade`, `chat` → `trade` 금지** (`ADR-0006`)
 - [G] 어떤 도메인도 `notification` 을 import 하지 않는다. 알림은 이벤트로만 받는다 (`ADR-0009`)
 - [G] `common.image` 는 어떤 도메인도 import 하지 않는다. 이미지를 소유하는 쪽은 도메인이다
   (`product.ProductImage` 가 `common.image` 의 업로더를 쓴다)

@@ -1,4 +1,4 @@
-package project.kjhjdh.ibid.common.config;
+package project.kjhjdh.ibid;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
