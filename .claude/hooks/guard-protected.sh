@@ -11,11 +11,11 @@ payload=$(cat)
 cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty')
 [ -n "$cmd" ] || exit 0
 
-protected='archunit-store|archunit\.properties|src/test/java/project/kjhjdh/ibid/architecture|build\.gradle|\.github/workflows|\.claude/settings\.json|\.claude/hooks'
+protected='archunit-store|archunit\.properties|src/test/java/project/kjhjdh/ibid/architecture|build\.gradle|\.github/workflows|\.claude/settings\.json|\.claude/hooks|\.claude/agents'
 writes='(>|(^|[[:space:];&|])(tee|mv|cp|rm|ln|truncate|patch|dd|install)[[:space:]]|sed[^|;&]*-i|git[[:space:]]+(rm|checkout|restore|mv)[[:space:]])'
 
 printf '%s' "$cmd" | grep -qE "$protected" || exit 0
 printf '%s' "$cmd" | grep -qE "$writes" || exit 0
 
-reason="게이트 · 동결 기록 · 빌드 설정을 셸 명령으로 고치려 한다. 이 파일들은 Edit 로 고쳐도 사람에게 묻는다 (ADR-0010). 게이트가 막으면 코드를 고치고, 규칙이 틀렸다고 판단되면 근거를 적어 사람에게 묻는다."
+reason="게이트 · 동결 기록 · 빌드 설정 · 훅 · 리뷰어를 셸 명령으로 고치려 한다. 이 파일들은 Edit 로 고쳐도 사람에게 묻는다 (ADR-0010). 게이트가 막으면 코드를 고치고, 규칙이 틀렸다고 판단되면 근거를 적어 사람에게 묻는다."
 jq -n --arg reason "$reason" '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "ask", permissionDecisionReason: $reason}}'
