@@ -49,8 +49,8 @@ public class ProductService {
     @Transactional
     public void update(Long sellerId, Long productId, ProductUpdateRequest request) {
         Product product = findOwnedProduct(sellerId, productId);
-        product.update(request.title(), request.description(), request.price(), request.stock(),
-                request.productCondition(), resolveTags(request.tags()), request.shippingFee());
+        product.update(request.title(), request.description(), request.price(),
+                request.productCondition(), resolveTags(request.tags()));
     }
 
     @Transactional
@@ -63,7 +63,6 @@ public class ProductService {
     @Transactional
     public void delete(Long sellerId, Long productId) {
         Product product = findOwnedProduct(sellerId, productId);
-        product.validateModifiable();
         List<String> imageUrls = product.imageUrls();
         productRepository.delete(product);
         productImageService.deleteFiles(imageUrls);
@@ -76,18 +75,10 @@ public class ProductService {
                 request.title(),
                 request.description(),
                 request.price(),
-                request.stock(),
                 request.productCondition(),
-                resolveTags(request.tags()),
-                request.shippingFee()
+                resolveTags(request.tags())
         );
         return productRepository.save(product).getId();
-    }
-
-    @Transactional
-    public void openForSale(Long sellerId, Long productId) {
-        Product product = findOwnedProduct(sellerId, productId);
-        product.openForSale();
     }
 
     @Transactional(readOnly = true)
