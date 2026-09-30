@@ -79,7 +79,7 @@ class ProductTest {
         assertThat(product.getReservedBuyerId()).isEqualTo(2L);
     }
 
-    @DisplayName("[I-12] 판매중이 아닌 상품은 예약할 수 없다")
+    @DisplayName("[TR-01] 판매중이 아닌 상품은 예약할 수 없다")
     @Test
     void reserve_notOnSale() {
         // given

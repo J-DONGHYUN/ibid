@@ -37,7 +37,12 @@
 
 ## 재현
 
+위 표는 **측정 시점(2026-10-01)의 로컬 실행값**이다. `ADR-0008` 채택으로 진 방식(비관적 락:
+`findByIdForUpdate`)의 코드는 삭제했으므로, 지금 이 브랜치의 테스트로는 **낙관적 락 행만 재현된다.**
+비관적 락 행은 측정 당시 두 경로를 함께 돌려 얻은 값이다(같은 `product.reserve()` 를
+`findById`+@Version / `findByIdForUpdate` 두 경로로 호출).
+
 ```
 AWS_ACCESS_KEY=test AWS_SECRET_KEY=test ./gradlew test --tests '*ProductReservationConcurrencyTest'
-# 테스트 stdout(build/test-results) 의 [EXP-01] 줄에 방식별 성공/실패/소요가 찍힌다
+# 테스트 stdout(build/test-results) 의 [EXP-01] 줄에 낙관적 락의 성공/실패/소요가 찍힌다
 ```
