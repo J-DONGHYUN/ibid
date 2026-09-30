@@ -46,5 +46,7 @@ T-34 가 **절차 안전망**을 더했다 — 루프가 다음 티켓 [0] 에�
 
 - 자동 닫힘이 세 겹이 된다 — ① GitHub `Closes`(불안정) → ② 이 Action(머지 시점 게이트) → ③ T-34 절차([0] 확인).
   Action 이 주력, `Closes` 와 절차는 보조.
-- `pull_request` 워크플로는 base(`main`) 버전으로 돌아서, **이 워크플로를 추가한 PR 자신의 머지에는 안 돈다.**
-  그 PR 은 T-34 절차 안전망이 받는다. 다음 PR 부터 Action 이 일차로 받는다.
+- **같은 저장소 브랜치의 `pull_request` 이벤트는 PR 브랜치(머지 커밋) 버전의 워크플로로 돈다** — base(`main`) 가 아니다
+  (`pull_request_target` 이나 포크 PR 과 다르다). 그래서 이 워크플로를 추가한 PR 자신의 머지에서도 돈다. 실제로
+  T-35(PR #87) 머지에서 이 Action 이 실행돼(run success) `Closes #86` 의 #86 을 닫았다 — GitHub 의 `Closes`
+  자동 닫힘(`closingIssuesReferences` 비어 있었다)이 아니라 Action 이 닫은 것으로 첫 실전 검증이 됐다.
