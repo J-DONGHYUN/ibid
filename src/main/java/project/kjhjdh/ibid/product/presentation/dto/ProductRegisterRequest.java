@@ -1,5 +1,6 @@
 package project.kjhjdh.ibid.product.presentation.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -20,6 +21,10 @@ public record ProductRegisterRequest(
         Integer price,
 
         @NotNull(message = "상품 상태를 선택해주세요.")
-        ProductCondition productCondition
+        ProductCondition productCondition,
+
+        @Valid
+        @NotNull(message = "전자기기 정보를 입력해주세요.")
+        DeviceSpecRequest deviceSpec
 ) {
 }

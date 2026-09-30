@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.interceptor.PublicApi;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
+import project.kjhjdh.ibid.product.application.DeviceSpecCommand;
 import project.kjhjdh.ibid.product.application.ImagePresignCommand;
 import project.kjhjdh.ibid.product.application.ProductDetailResult;
 import project.kjhjdh.ibid.product.application.ProductListResult;
@@ -82,7 +83,13 @@ public class ProductController {
     ) {
         ProductRegisterCommand command = new ProductRegisterCommand(
                 request.title(), request.description(), request.price(),
-                request.productCondition());
+                request.productCondition(),
+                new DeviceSpecCommand(
+                        request.deviceSpec().category(),
+                        request.deviceSpec().modelName(),
+                        request.deviceSpec().batteryHealth(),
+                        request.deviceSpec().components(),
+                        request.deviceSpec().defects()));
         Long productId = productService.register(loginUser.userId(), command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ProductRegisterResponse(productId));
