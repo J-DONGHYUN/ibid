@@ -135,7 +135,7 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct() {
         // given
         given(productService.getProduct(eq(1L), anyString()))
-                .willReturn(new ProductDetailResult(detailProduct(), 164L));
+                .willReturn(ProductDetailResult.from(detailProduct(), 164L));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -159,7 +159,7 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct_issuesVisitorCookie() {
         // given
         given(productService.getProduct(eq(1L), anyString()))
-                .willReturn(new ProductDetailResult(detailProduct(), 1L));
+                .willReturn(ProductDetailResult.from(detailProduct(), 1L));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -178,7 +178,7 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct_reusesVisitorCookie() {
         // given
         given(productService.getProduct(eq(1L), anyString()))
-                .willReturn(new ProductDetailResult(detailProduct(), 1L));
+                .willReturn(ProductDetailResult.from(detailProduct(), 1L));
 
         // when
         RestAssuredMockMvc.given()

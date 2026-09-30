@@ -90,7 +90,7 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         productViewCounter.record(productId, visitorId);
-        return new ProductDetailResult(product, productViewCounter.readTotal(product));
+        return ProductDetailResult.from(product, productViewCounter.readTotal(product));
     }
 
     private List<Tag> resolveTags(List<String> names) {

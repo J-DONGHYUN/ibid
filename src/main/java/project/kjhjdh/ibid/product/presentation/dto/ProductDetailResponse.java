@@ -3,7 +3,7 @@ package project.kjhjdh.ibid.product.presentation.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.application.ProductDetailResult;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.domain.ProductStatus;
 
@@ -21,19 +21,19 @@ public record ProductDetailResponse(
         List<String> tags
 ) {
 
-    public static ProductDetailResponse of(Product product, long viewCount) {
+    public static ProductDetailResponse from(ProductDetailResult result) {
         return new ProductDetailResponse(
-                product.getId(),
-                product.getSellerId(),
-                product.getTitle(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getStatus(),
-                viewCount,
-                product.getProductCondition(),
-                product.imageUrls(),
-                product.getCreatedAt(),
-                product.tagNames()
+                result.productId(),
+                result.sellerId(),
+                result.title(),
+                result.description(),
+                result.price(),
+                result.status(),
+                result.viewCount(),
+                result.productCondition(),
+                result.imageUrls(),
+                result.createdAt(),
+                result.tags()
         );
     }
 }
