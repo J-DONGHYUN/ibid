@@ -18,9 +18,6 @@ BASE_BRANCH=main
 cat > /dev/null
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 
-{ git diff --name-only "$BASE_BRANCH...HEAD" 2>/dev/null; git status --porcelain | cut -c4-; } \
-    | grep -qE '^(src/|build\.gradle)' || exit 0
-
 state_dir="$(git rev-parse --git-dir)/ibid-loop"
 mkdir -p "$state_dir"
 branch=$(git branch --show-current | tr '/' '_')
@@ -28,6 +25,24 @@ fails_file="$state_dir/${branch:-detached}.fails"
 passed_file="$state_dir/${branch:-detached}.passed"
 log_file="$state_dir/${branch:-detached}.log"
 now=$(date '+%Y-%m-%dT%H:%M:%S')
+
+# 무엇이 바뀌었나 — base(main)와 비교한 커밋 + 커밋 안 된 변경. main 이 로컬에 없으면(새 클론·CI·detached)
+# origin/main 으로 폴백한다. 둘 다 없거나 병합 기준이 없으면 비교할 수 없다 — 그때 조용히 통과하면 게이트가
+# 꺼진 채 초록불이 된다 (INC-02 부류, T-33). 바뀐 파일을 가릴 수 없으니 안전하게 게이트를 돌린다 (미탐 < 오탐).
+if git rev-parse --verify -q "$BASE_BRANCH" >/dev/null 2>&1; then
+    base="$BASE_BRANCH"
+elif git rev-parse --verify -q "origin/$BASE_BRANCH" >/dev/null 2>&1; then
+    base="origin/$BASE_BRANCH"
+else
+    base=""
+fi
+
+if [ -n "$base" ] && git merge-base "$base" HEAD >/dev/null 2>&1; then
+    { git diff --name-only "$base...HEAD"; git status --porcelain | cut -c4-; } \
+        | grep -qE '^(src/|build\.gradle)' || exit 0
+else
+    echo "$now BASE_UNAVAILABLE(${base:-none}) run-gate" >> "$log_file"
+fi
 
 code_hash=$(
     tmp_index="$state_dir/gate.index.$$"

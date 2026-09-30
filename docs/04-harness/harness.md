@@ -166,6 +166,18 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 | 문서만 고치고 끝내기 | 게이트 생략. 코드 지문이 그대로다 |
 | 주석 한 줄(위반)을 커밋하고 끝내기 | `block`. 이유·위반 파일(`probe/Probe.java`) 포함, 로그 `FAIL 1~2` |
 
+**T-33 (#89, 2026-09-30) — base 비교 실패 시 조용한 통과를 막는다**
+
+T-29 로 커밋된 변경까지 보게 했지만, `git diff main...HEAD` 자체가 실패하면(main 이 로컬에 없음·병합 기준
+없음) 빈 출력이 되고 커밋 안 된 변경만 남아 트리가 깨끗하면 `exit 0` 으로 조용히 통과했다 (`INC-02` 부류).
+base 를 `main` → `origin/main` 폴백, 둘 다 없으면 게이트를 돌린다. 임시 repo 로 탐침한 뒤 되돌렸다.
+
+| 탐침 | 결과 |
+|---|---|
+| `main`·`origin/main` 둘 다 없음 + src 커밋(트리 깨끗)으로 끝내기 | 게이트가 돈다. 로그 `BASE_UNAVAILABLE(none) run-gate` → `PASS` — 고치기 전엔 조용히 통과했다 |
+| 로컬 `main` 없고 `origin/main` 만 있는데 src 커밋 변경 | 게이트가 돈다 (origin/main 으로 비교, 정상 경로) |
+| `origin/main` 과 src 가 같음(변경 없음) | 게이트 생략 — 오탐 아님 |
+
 **T-31 (#77, 2026-09-28) — 리뷰어 읽기 전용 훅**
 
 `reviewer-readonly.sh` 에 만든 입력을 넣어 확인했다.
