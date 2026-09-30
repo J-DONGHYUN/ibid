@@ -22,9 +22,7 @@ import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
-import project.kjhjdh.ibid.product.domain.Tag;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
-import project.kjhjdh.ibid.product.infra.TagRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
@@ -37,9 +35,6 @@ class ProductServiceTest {
 
     @Mock
     private ProductRepository productRepository;
-
-    @Mock
-    private TagRepository tagRepository;
 
     @Mock
     private ProductViewCounter productViewCounter;
@@ -121,18 +116,14 @@ class ProductServiceTest {
         Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000);
         given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
 
-        given(tagRepository.findByName("새태그")).willReturn(Optional.empty());
-        given(tagRepository.save(any(Tag.class))).willAnswer(invocation -> invocation.getArgument(0));
-
         // when
         productService.update(SELLER_ID, PRODUCT_ID,
-                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW, List.of("새태그")));
+                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW));
 
         // then
         assertThat(product.getTitle()).isEqualTo("새 제목");
         assertThat(product.getPrice()).isEqualTo(50000);
         assertThat(product.getProductCondition()).isEqualTo(ProductCondition.NEW);
-        assertThat(product.tagNames()).containsExactly("새태그");
     }
 
     @DisplayName("본인 상품이 아니면 수정할 수 없다")
@@ -144,7 +135,7 @@ class ProductServiceTest {
 
         // when & then
         assertThatThrownBy(() -> productService.update(OTHER_USER_ID, PRODUCT_ID,
-                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW, List.of("새태그"))))
+                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW)))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
     }

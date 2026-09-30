@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.domain.ProductStatus;
-import project.kjhjdh.ibid.product.infra.TagRepository;
 import project.kjhjdh.ibid.support.IntegrationTestSupport;
 
 class ProductServiceIntegrationTest extends IntegrationTestSupport {
@@ -21,32 +20,11 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
     @Autowired
     private ProductService productService;
 
-    @Autowired
-    private TagRepository tagRepository;
-
-    @DisplayName("여러 상품이 같은 이름의 태그를 쓰면 태그는 재사용되어 한 번만 저장된다")
-    @Test
-    void register_reusesSameTag() {
-        // given
-        ProductRegisterCommand first = registerCommand("나이키 후드", List.of("나이키", "후드"));
-        ProductRegisterCommand second = registerCommand("나이키 데님", List.of(" 나이키 ", "데님"));
-
-        // when
-        productService.register(SELLER_ID, first);
-        productService.register(SELLER_ID, second);
-
-        // then
-        assertThat(tagRepository.count()).isEqualTo(3);
-        assertThat(tagRepository.findByName("나이키")).isPresent();
-        assertThat(tagRepository.findByName("후드")).isPresent();
-        assertThat(tagRepository.findByName("데님")).isPresent();
-    }
-
-    @DisplayName("상품 상세 조회는 조회수·이미지·상품상태·태그를 한 응답에 모두 담는다")
+    @DisplayName("상품 상세 조회는 조회수·이미지·상품상태를 한 응답에 모두 담는다")
     @Test
     void getProduct_returnsEveryDetailField() {
         // given
-        Long productId = productService.register(SELLER_ID, registerCommand("나이키 후드", List.of("나이키", "후드")));
+        Long productId = productService.register(SELLER_ID, registerCommand("나이키 후드"));
         productService.confirmImages(SELLER_ID, productId,
                 List.of("https://image/a.jpg", "https://image/b.jpg"));
 
@@ -56,13 +34,12 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
         // then
         assertThat(result.viewCount()).isEqualTo(1L);
         assertThat(result.imageUrls()).containsExactly("https://image/a.jpg", "https://image/b.jpg");
-        assertThat(result.tags()).containsExactlyInAnyOrder("나이키", "후드");
         assertThat(result.productCondition()).isEqualTo(ProductCondition.LIKE_NEW);
         assertThat(result.status()).isEqualTo(ProductStatus.ON_SALE);
         assertThat(result.createdAt()).isNotNull();
     }
 
-    private ProductRegisterCommand registerCommand(String title, List<String> tags) {
-        return new ProductRegisterCommand(title, "상태 좋음", 89000, ProductCondition.LIKE_NEW, tags);
+    private ProductRegisterCommand registerCommand(String title) {
+        return new ProductRegisterCommand(title, "상태 좋음", 89000, ProductCondition.LIKE_NEW);
     }
 }

@@ -17,8 +17,7 @@ public record ProductDetailResponse(
         long viewCount,
         ProductCondition productCondition,
         List<String> imageUrls,
-        LocalDateTime createdAt,
-        List<String> tags
+        LocalDateTime createdAt
 ) {
 
     public static ProductDetailResponse from(ProductDetailResult result) {
@@ -32,8 +31,7 @@ public record ProductDetailResponse(
                 result.viewCount(),
                 result.productCondition(),
                 result.imageUrls(),
-                result.createdAt(),
-                result.tags()
+                result.createdAt()
         );
     }
 }

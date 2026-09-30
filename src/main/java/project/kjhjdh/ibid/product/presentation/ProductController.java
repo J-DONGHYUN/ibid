@@ -82,7 +82,7 @@ public class ProductController {
     ) {
         ProductRegisterCommand command = new ProductRegisterCommand(
                 request.title(), request.description(), request.price(),
-                request.productCondition(), request.tags());
+                request.productCondition());
         Long productId = productService.register(loginUser.userId(), command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ProductRegisterResponse(productId));
@@ -119,7 +119,7 @@ public class ProductController {
     ) {
         ProductUpdateCommand command = new ProductUpdateCommand(
                 request.title(), request.description(), request.price(),
-                request.productCondition(), request.tags());
+                request.productCondition());
         productService.update(loginUser.userId(), productId, command);
         return ResponseEntity.ok().build();
     }

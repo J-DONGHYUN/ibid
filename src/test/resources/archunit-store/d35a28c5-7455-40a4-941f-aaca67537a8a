@@ -59,7 +59,6 @@ project.kjhjdh.ibid.product.application.ProductLikeServiceTest.like_productNotFo
 project.kjhjdh.ibid.product.application.ProductLikeServiceTest.myLikedProducts() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.application.ProductLikeServiceTest.unlike() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.application.ProductServiceIntegrationTest.getProduct_returnsEveryDetailField() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
-project.kjhjdh.ibid.product.application.ProductServiceIntegrationTest.register_reusesSameTag() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.application.ProductServiceTest.confirmImages() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.application.ProductServiceTest.confirmImages_notOwner() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.application.ProductServiceTest.delete() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
