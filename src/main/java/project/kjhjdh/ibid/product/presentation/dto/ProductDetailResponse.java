@@ -13,14 +13,12 @@ public record ProductDetailResponse(
         String title,
         String description,
         int price,
-        int stock,
         ProductStatus status,
         long viewCount,
         ProductCondition productCondition,
         List<String> imageUrls,
         LocalDateTime createdAt,
-        List<String> tags,
-        int shippingFee
+        List<String> tags
 ) {
 
     public static ProductDetailResponse of(Product product, long viewCount) {
@@ -30,14 +28,12 @@ public record ProductDetailResponse(
                 product.getTitle(),
                 product.getDescription(),
                 product.getPrice(),
-                product.getStock(),
                 product.getStatus(),
                 viewCount,
                 product.getProductCondition(),
                 product.imageUrls(),
                 product.getCreatedAt(),
-                product.tagNames(),
-                product.getShippingFee()
+                product.tagNames()
         );
     }
 }

@@ -97,15 +97,6 @@ public class ProductController {
                 .body(productService.getProduct(productId, resolvedVisitorId));
     }
 
-    @PatchMapping("/{productId}/on-sale")
-    public ResponseEntity<Void> openForSale(
-            @LoginUser UserInfo loginUser,
-            @PathVariable Long productId
-    ) {
-        productService.openForSale(loginUser.userId(), productId);
-        return ResponseEntity.ok().build();
-    }
-
     @PatchMapping("/{productId}")
     public ResponseEntity<Void> update(
             @LoginUser UserInfo loginUser,
