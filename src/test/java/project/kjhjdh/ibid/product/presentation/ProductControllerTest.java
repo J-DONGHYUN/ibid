@@ -12,14 +12,18 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import io.restassured.http.ContentType;
@@ -27,15 +31,15 @@ import jakarta.servlet.http.Cookie;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
+import project.kjhjdh.ibid.product.application.ProductDetailResult;
+import project.kjhjdh.ibid.product.application.ProductListResult;
+import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
-import project.kjhjdh.ibid.product.domain.ProductStatus;
+import project.kjhjdh.ibid.product.domain.Tag;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductDetailResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductListResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ProductSummaryResponse;
 import project.kjhjdh.ibid.product.presentation.dto.ProductUpdateRequest;
 import project.kjhjdh.ibid.support.ControllerTestSupport;
 
@@ -106,13 +110,11 @@ class ProductControllerTest extends ControllerTestSupport {
     @Test
     void getProducts() {
         // given
-        given(productService.getProducts(any())).willReturn(new ProductListResponse(
-                List.of(
-                        new ProductSummaryResponse(2L, "나이키 후드", 89000, ProductStatus.ON_SALE, "https://image/thumb.jpg"),
-                        new ProductSummaryResponse(1L, "아디다스 슬리퍼", 30000, ProductStatus.ON_SALE, null)
-                ),
-                1L, true
-        ));
+        Slice<Product> slice = new SliceImpl<>(
+                List.of(product(2L, "나이키 후드", 89000), product(1L, "아디다스 슬리퍼", 30000)),
+                PageRequest.of(0, 16), true);
+        given(productService.getProducts(any()))
+                .willReturn(new ProductListResult(slice, Map.of(2L, "https://image/thumb.jpg")));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -132,10 +134,8 @@ class ProductControllerTest extends ControllerTestSupport {
     @Test
     void getProduct() {
         // given
-        given(productService.getProduct(eq(1L), anyString())).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, ProductStatus.ON_SALE, 164L,
-                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
-                        List.of("나이키")));
+        given(productService.getProduct(eq(1L), anyString()))
+                .willReturn(new ProductDetailResult(detailProduct(), 164L));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -158,10 +158,8 @@ class ProductControllerTest extends ControllerTestSupport {
     @Test
     void getProduct_issuesVisitorCookie() {
         // given
-        given(productService.getProduct(eq(1L), anyString())).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, ProductStatus.ON_SALE, 1L,
-                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
-                        List.of("나이키")));
+        given(productService.getProduct(eq(1L), anyString()))
+                .willReturn(new ProductDetailResult(detailProduct(), 1L));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -179,10 +177,8 @@ class ProductControllerTest extends ControllerTestSupport {
     @Test
     void getProduct_reusesVisitorCookie() {
         // given
-        given(productService.getProduct(eq(1L), anyString())).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, ProductStatus.ON_SALE, 1L,
-                        ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
-                        List.of("나이키")));
+        given(productService.getProduct(eq(1L), anyString()))
+                .willReturn(new ProductDetailResult(detailProduct(), 1L));
 
         // when
         RestAssuredMockMvc.given()
@@ -204,7 +200,7 @@ class ProductControllerTest extends ControllerTestSupport {
     void presignImages() {
         // given
         given(productService.generatePresignedUrls(anyLong(), eq(1L), any()))
-                .willReturn(List.of(new ImagePresignResponse("https://presigned", "products/1/uuid.jpg", "https://image")));
+                .willReturn(List.of(new PresignedUploadResult("https://presigned", "products/1/uuid.jpg", "https://image")));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -319,5 +315,19 @@ class ProductControllerTest extends ControllerTestSupport {
             request.setCookies(new Cookie("visitor_id", visitorId));
             return request;
         };
+    }
+
+    private Product product(Long id, String title, int price) {
+        Product product = Product.create(5L, title, "상태 좋음", price, ProductCondition.LIKE_NEW, List.of());
+        ReflectionTestUtils.setField(product, "id", id);
+        return product;
+    }
+
+    private Product detailProduct() {
+        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000,
+                ProductCondition.LIKE_NEW, List.of(Tag.of("나이키")));
+        ReflectionTestUtils.setField(product, "id", 1L);
+        product.addImages(List.of("https://image/a.jpg"));
+        return product;
     }
 }

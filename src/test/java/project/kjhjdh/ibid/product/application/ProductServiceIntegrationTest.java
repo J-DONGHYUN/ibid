@@ -11,9 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.domain.ProductStatus;
 import project.kjhjdh.ibid.product.infra.TagRepository;
-import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ProductDetailResponse;
-import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterRequest;
 import project.kjhjdh.ibid.support.IntegrationTestSupport;
 
 class ProductServiceIntegrationTest extends IntegrationTestSupport {
@@ -31,8 +28,8 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
     @Test
     void register_reusesSameTag() {
         // given
-        ProductRegisterRequest first = registerRequest("나이키 후드", List.of("나이키", "후드"));
-        ProductRegisterRequest second = registerRequest("나이키 데님", List.of(" 나이키 ", "데님"));
+        ProductRegisterCommand first = registerCommand("나이키 후드", List.of("나이키", "후드"));
+        ProductRegisterCommand second = registerCommand("나이키 데님", List.of(" 나이키 ", "데님"));
 
         // when
         productService.register(SELLER_ID, first);
@@ -49,23 +46,23 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
     @Test
     void getProduct_returnsEveryDetailField() {
         // given
-        Long productId = productService.register(SELLER_ID, registerRequest("나이키 후드", List.of("나이키", "후드")));
+        Long productId = productService.register(SELLER_ID, registerCommand("나이키 후드", List.of("나이키", "후드")));
         productService.confirmImages(SELLER_ID, productId,
-                new ImageConfirmRequest(List.of("https://image/a.jpg", "https://image/b.jpg")));
+                List.of("https://image/a.jpg", "https://image/b.jpg"));
 
         // when
-        ProductDetailResponse response = productService.getProduct(productId, VISITOR_ID);
+        ProductDetailResult result = productService.getProduct(productId, VISITOR_ID);
 
         // then
-        assertThat(response.viewCount()).isEqualTo(1L);
-        assertThat(response.imageUrls()).containsExactly("https://image/a.jpg", "https://image/b.jpg");
-        assertThat(response.tags()).containsExactlyInAnyOrder("나이키", "후드");
-        assertThat(response.productCondition()).isEqualTo(ProductCondition.LIKE_NEW);
-        assertThat(response.status()).isEqualTo(ProductStatus.ON_SALE);
-        assertThat(response.createdAt()).isNotNull();
+        assertThat(result.viewCount()).isEqualTo(1L);
+        assertThat(result.product().imageUrls()).containsExactly("https://image/a.jpg", "https://image/b.jpg");
+        assertThat(result.product().tagNames()).containsExactlyInAnyOrder("나이키", "후드");
+        assertThat(result.product().getProductCondition()).isEqualTo(ProductCondition.LIKE_NEW);
+        assertThat(result.product().getStatus()).isEqualTo(ProductStatus.ON_SALE);
+        assertThat(result.product().getCreatedAt()).isNotNull();
     }
 
-    private ProductRegisterRequest registerRequest(String title, List<String> tags) {
-        return new ProductRegisterRequest(title, "상태 좋음", 89000, ProductCondition.LIKE_NEW, tags);
+    private ProductRegisterCommand registerCommand(String title, List<String> tags) {
+        return new ProductRegisterCommand(title, "상태 좋음", 89000, ProductCondition.LIKE_NEW, tags);
     }
 }

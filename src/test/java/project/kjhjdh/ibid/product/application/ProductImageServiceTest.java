@@ -23,8 +23,6 @@ import project.kjhjdh.ibid.common.image.infra.S3ImageUploader;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductImage;
 import project.kjhjdh.ibid.product.infra.ProductImageRepository;
-import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
-import project.kjhjdh.ibid.product.presentation.dto.ImagePresignResponse;
 
 @ExtendWith(MockitoExtension.class)
 class ProductImageServiceTest {
@@ -46,7 +44,7 @@ class ProductImageServiceTest {
         return ProductImage.of(product, url, sortOrder);
     }
 
-    @DisplayName("파일명으로 presigned URL을 발급해 응답으로 매핑한다")
+    @DisplayName("파일명으로 presigned URL을 발급해 업로드 결과로 돌려준다")
     @Test
     void presign() {
         // given
@@ -54,8 +52,8 @@ class ProductImageServiceTest {
                 .willReturn(new PresignedUploadResult("https://presigned", "products/1/uuid.jpg", "https://image"));
 
         // when
-        List<ImagePresignResponse> result = productImageService.presign(PRODUCT_ID,
-                List.of(new ImagePresignRequest("a.jpg", "image/jpeg")));
+        List<PresignedUploadResult> result = productImageService.presign(PRODUCT_ID,
+                List.of(new ImagePresignCommand("a.jpg", "image/jpeg")));
 
         // then
         assertThat(result).hasSize(1);
