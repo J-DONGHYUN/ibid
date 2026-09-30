@@ -6,6 +6,7 @@ public record ProductRegisterCommand(
         String title,
         String description,
         int price,
-        ProductCondition productCondition
+        ProductCondition productCondition,
+        DeviceSpecCommand deviceSpec
 ) {
 }
