@@ -85,7 +85,7 @@ class ProductViewConcurrencyTest extends IntegrationTestSupport {
     }
 
     private Long saveProduct() {
-        return productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 3)).getId();
+        return productRepository.save(Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000)).getId();
     }
 
     private long findViewCount(Long productId) {

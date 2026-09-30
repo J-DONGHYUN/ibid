@@ -37,7 +37,7 @@ class ProductLikeConcurrencyTest extends IntegrationTestSupport {
     @Test
     void like_concurrentRequestsLeaveSingleLike() throws InterruptedException {
         // given
-        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, 1);
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000);
         Long productId = productRepository.save(product).getId();
 
         // when

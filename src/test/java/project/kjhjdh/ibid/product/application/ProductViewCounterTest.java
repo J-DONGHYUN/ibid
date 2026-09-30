@@ -78,7 +78,7 @@ class ProductViewCounterTest {
     }
 
     private Product persistedProduct(long viewCount) {
-        Product product = Product.create(10L, "나이키 후드", "상태 좋음", 89000, 3);
+        Product product = Product.create(10L, "나이키 후드", "상태 좋음", 89000);
         ReflectionTestUtils.setField(product, "id", PRODUCT_ID);
         ReflectionTestUtils.setField(product, "viewCount", viewCount);
         return product;

@@ -45,14 +45,13 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
         assertThat(tagRepository.findByName("데님")).isPresent();
     }
 
-    @DisplayName("상품 상세 조회는 조회수·이미지·상품상태·태그·배송비를 한 응답에 모두 담는다")
+    @DisplayName("상품 상세 조회는 조회수·이미지·상품상태·태그를 한 응답에 모두 담는다")
     @Test
     void getProduct_returnsEveryDetailField() {
         // given
         Long productId = productService.register(SELLER_ID, registerRequest("나이키 후드", List.of("나이키", "후드")));
         productService.confirmImages(SELLER_ID, productId,
                 new ImageConfirmRequest(List.of("https://image/a.jpg", "https://image/b.jpg")));
-        productService.openForSale(SELLER_ID, productId);
 
         // when
         ProductDetailResponse response = productService.getProduct(productId, VISITOR_ID);
@@ -61,13 +60,12 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
         assertThat(response.viewCount()).isEqualTo(1L);
         assertThat(response.imageUrls()).containsExactly("https://image/a.jpg", "https://image/b.jpg");
         assertThat(response.tags()).containsExactlyInAnyOrder("나이키", "후드");
-        assertThat(response.shippingFee()).isEqualTo(3000);
         assertThat(response.productCondition()).isEqualTo(ProductCondition.LIKE_NEW);
         assertThat(response.status()).isEqualTo(ProductStatus.ON_SALE);
         assertThat(response.createdAt()).isNotNull();
     }
 
     private ProductRegisterRequest registerRequest(String title, List<String> tags) {
-        return new ProductRegisterRequest(title, "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW, tags, 3000);
+        return new ProductRegisterRequest(title, "상태 좋음", 89000, ProductCondition.LIKE_NEW, tags);
     }
 }

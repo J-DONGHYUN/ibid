@@ -50,12 +50,28 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW, List.of(), 3000))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, List.of()))
                 .when()
                 .post("/api/products")
                 .then()
                 .statusCode(HttpStatus.CREATED.value())
                 .body("productId", equalTo(10));
+    }
+
+    @DisplayName("[PD-01] 등록에 성공하면 상품은 바로 판매중 상태다")
+    @Test
+    void register_onSale() {
+        // given
+        given(productService.register(anyLong(), any())).willReturn(10L);
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, List.of()))
+                .when()
+                .post("/api/products")
+                .then()
+                .statusCode(HttpStatus.CREATED.value());
     }
 
     @DisplayName("제목이 비어 있으면 400을 응답한다")
@@ -64,7 +80,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("", "상태 좋음", 89000, 3, ProductCondition.LIKE_NEW, List.of(), 3000))
+                .body(new ProductRegisterRequest("", "상태 좋음", 89000, ProductCondition.LIKE_NEW, List.of()))
                 .when()
                 .post("/api/products")
                 .then()
@@ -78,21 +94,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, 3, ProductCondition.LIKE_NEW, List.of(), 3000))
-                .when()
-                .post("/api/products")
-                .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .body("code", equalTo("INVALID_INPUT"));
-    }
-
-    @DisplayName("재고 수량이 0 이하이면 400을 응답한다")
-    @Test
-    void register_invalidStock() {
-        // when & then
-        RestAssuredMockMvc.given()
-                .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, 0, ProductCondition.LIKE_NEW, List.of(), 3000))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, ProductCondition.LIKE_NEW, List.of()))
                 .when()
                 .post("/api/products")
                 .then()
@@ -106,8 +108,8 @@ class ProductControllerTest extends ControllerTestSupport {
         // given
         given(productService.getProducts(any())).willReturn(new ProductListResponse(
                 List.of(
-                        new ProductSummaryResponse(2L, "나이키 후드", 89000, 3, ProductStatus.ON_SALE, "https://image/thumb.jpg"),
-                        new ProductSummaryResponse(1L, "아디다스 슬리퍼", 30000, 0, ProductStatus.SOLD_OUT, null)
+                        new ProductSummaryResponse(2L, "나이키 후드", 89000, ProductStatus.ON_SALE, "https://image/thumb.jpg"),
+                        new ProductSummaryResponse(1L, "아디다스 슬리퍼", 30000, ProductStatus.ON_SALE, null)
                 ),
                 1L, true
         ));
@@ -120,10 +122,8 @@ class ProductControllerTest extends ControllerTestSupport {
                 .statusCode(HttpStatus.OK.value())
                 .body("products.size()", equalTo(2))
                 .body("products[0].productId", equalTo(2))
-                .body("products[0].stock", equalTo(3))
                 .body("products[0].status", equalTo("ON_SALE"))
                 .body("products[0].thumbnailUrl", equalTo("https://image/thumb.jpg"))
-                .body("products[1].status", equalTo("SOLD_OUT"))
                 .body("nextCursor", equalTo(1))
                 .body("hasNext", equalTo(true));
     }
@@ -133,9 +133,9 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct() {
         // given
         given(productService.getProduct(eq(1L), anyString())).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 164L,
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, ProductStatus.ON_SALE, 164L,
                         ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
-                        List.of("나이키"), 3000));
+                        List.of("나이키")));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -147,13 +147,11 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("sellerId", equalTo(5))
                 .body("title", equalTo("나이키 후드"))
                 .body("description", equalTo("상태 좋음"))
-                .body("stock", equalTo(3))
                 .body("status", equalTo("ON_SALE"))
                 .body("viewCount", equalTo(164))
                 .body("productCondition", equalTo("LIKE_NEW"))
                 .body("imageUrls[0]", equalTo("https://image/a.jpg"))
-                .body("tags[0]", equalTo("나이키"))
-                .body("shippingFee", equalTo(3000));
+                .body("tags[0]", equalTo("나이키"));
     }
 
     @DisplayName("방문자 쿠키가 없으면 새 방문자 식별자를 쿠키로 발급한다")
@@ -161,9 +159,9 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct_issuesVisitorCookie() {
         // given
         given(productService.getProduct(eq(1L), anyString())).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L,
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, ProductStatus.ON_SALE, 1L,
                         ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
-                        List.of("나이키"), 3000));
+                        List.of("나이키")));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -182,9 +180,9 @@ class ProductControllerTest extends ControllerTestSupport {
     void getProduct_reusesVisitorCookie() {
         // given
         given(productService.getProduct(eq(1L), anyString())).willReturn(
-                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, 3, ProductStatus.ON_SALE, 1L,
+                new ProductDetailResponse(1L, 5L, "나이키 후드", "상태 좋음", 89000, ProductStatus.ON_SALE, 1L,
                         ProductCondition.LIKE_NEW, List.of("https://image/a.jpg"), LocalDateTime.of(2026, 1, 1, 0, 0),
-                        List.of("나이키"), 3000));
+                        List.of("나이키")));
 
         // when
         RestAssuredMockMvc.given()
@@ -263,7 +261,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, 2, ProductCondition.USED, List.of(), 3000))
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED, List.of()))
                 .when()
                 .patch("/api/products/{productId}", 1L)
                 .then()
@@ -282,68 +280,6 @@ class ProductControllerTest extends ControllerTestSupport {
                 .delete("/api/products/{productId}", 1L)
                 .then()
                 .statusCode(HttpStatus.NO_CONTENT.value());
-    }
-
-    @DisplayName("거래된 상품을 삭제하면 409를 응답한다")
-    @Test
-    void delete_conflict() {
-        // given
-        willThrow(new BusinessException(ErrorCode.PRODUCT_NOT_MODIFIABLE))
-                .given(productService).delete(anyLong(), eq(1L));
-
-        // when & then
-        RestAssuredMockMvc.given()
-                .when()
-                .delete("/api/products/{productId}", 1L)
-                .then()
-                .statusCode(HttpStatus.CONFLICT.value())
-                .body("code", equalTo("PRODUCT_NOT_MODIFIABLE"));
-    }
-
-    @DisplayName("판매 시작에 성공하면 200을 응답한다")
-    @Test
-    void openForSale() {
-        // given
-        willDoNothing().given(productService).openForSale(anyLong(), eq(1L));
-
-        // when & then
-        RestAssuredMockMvc.given()
-                .when()
-                .patch("/api/products/{productId}/on-sale", 1L)
-                .then()
-                .statusCode(HttpStatus.OK.value());
-    }
-
-    @DisplayName("등록한 판매자가 아니면 판매 시작 시 403을 응답한다")
-    @Test
-    void openForSale_forbidden() {
-        // given
-        willThrow(new BusinessException(ErrorCode.ACCESS_DENIED))
-                .given(productService).openForSale(anyLong(), eq(1L));
-
-        // when & then
-        RestAssuredMockMvc.given()
-                .when()
-                .patch("/api/products/{productId}/on-sale", 1L)
-                .then()
-                .statusCode(HttpStatus.FORBIDDEN.value())
-                .body("code", equalTo("ACCESS_DENIED"));
-    }
-
-    @DisplayName("판매 대기 상태가 아닌 상품의 판매를 시작하면 409를 응답한다")
-    @Test
-    void openForSale_notPending() {
-        // given
-        willThrow(new BusinessException(ErrorCode.PRODUCT_NOT_PENDING))
-                .given(productService).openForSale(anyLong(), eq(1L));
-
-        // when & then
-        RestAssuredMockMvc.given()
-                .when()
-                .patch("/api/products/{productId}/on-sale", 1L)
-                .then()
-                .statusCode(HttpStatus.CONFLICT.value())
-                .body("code", equalTo("PRODUCT_NOT_PENDING"));
     }
 
     @DisplayName("존재하지 않는 상품을 조회하면 404를 응답하고 방문자 쿠키를 발급하지 않는다")
