@@ -122,6 +122,9 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 - **`@DisplayName` ID 게이트는 형식 · 접두어만 본다.** `[TR-01]` 처럼 요구사항 · 불변식 접두어(`AU|PD|CH|TR|NT|I`)로
   시작하는지 검사할 뿐, 그 ID 가 requirements.md 에 실제로 있는지는 막지 않는다 — 커버리지 리포트
   (`RequirementCoverageTest`, `build/requirement-coverage.txt`)가 보여줄 뿐이다. 기존 기능 테스트 156개는 ID 없이 동결됐다 (T-28)
+- **`FreezingArchRule` 의 규칙 문자열을 바꾸면 옛 baseline 이 고아로 남는다.** ArchUnit 은 규칙 문자열을 키로 store 에
+  기록해서, 규칙 서술 · 조건을 고치면 새 항목이 생기고 옛 항목은 `stored.rules` 에 남되 아무 `@ArchTest` 도 읽지 않는다.
+  게이트는 정상이지만 동결 목록이 죽은 부채로 부푼다. 규칙을 고쳤으면 옛 UUID 줄 · 파일을 지운다 (T-28 에서 겪음)
 - **에이전트 정의는 세션을 시작할 때 읽힌다.** 리뷰어를 만들거나 고친 세션에서는 새 리뷰어를 부를 수 없다.
   그런 티켓은 새 세션에서 [5] 를 이어 한다 (`INC-06`)
 - **리뷰어의 Bash 화이트리스트는 따옴표를 모른다.** `;` · `|` · `&` 로 조각을 나눠서 `grep -E 'a|b'` 는 막힌다.
