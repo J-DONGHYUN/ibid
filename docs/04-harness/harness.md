@@ -34,6 +34,7 @@ ibid 의 하네스가 **무엇으로 이루어져 있고, 왜 그렇게 만들�
 | ③ | `./gradlew architectureTest` | 에이전트가 자주 | 아키텍처 · 소스 · 테스트 컨벤션 · 공개 경로. **약 4초**, 스프링 · Docker 없음 |
 | ③ | `./gradlew test` | 구현을 마칠 때 | 전체 테스트. **약 1분 20초**, Docker 필요 |
 | ③ | `.github/workflows/ci.yml` | PR · push | 위 둘을 순서대로. 로컬과 **같은 게이트** |
+| ③ | `.github/workflows/close-linked-issues.yml` | PR 머지 시 | 본문 `Closes #N` 의 열린 이슈를 닫는다. `Closes` 자동 닫힘이 새는 것을 받는다 (`ADR-0012` · `INC-05`) |
 | ④ | `.claude/agents/reviewer.md` | PR 전, 전체 빌드 뒤 | 이슈 번호 · 브랜치만 받아 리뷰. 🔴 · 🟡 · ⚪ 로 돌려준다 (`loop.md`) |
 
 ## 게이트
