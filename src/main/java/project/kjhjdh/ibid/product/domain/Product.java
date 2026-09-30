@@ -12,9 +12,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -65,19 +62,11 @@ public class Product {
     @OrderBy("sortOrder")
     private List<ProductImage> images = new ArrayList<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "product_tag",
-            joinColumns = @JoinColumn(name = "product_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
-    private List<Tag> tags = new ArrayList<>();
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     private Product(Long sellerId, String title, String description, int price,
-                    ProductCondition productCondition, List<Tag> tags) {
+                    ProductCondition productCondition) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
@@ -87,7 +76,6 @@ public class Product {
         this.price = price;
         this.status = ProductStatus.ON_SALE;
         this.productCondition = productCondition;
-        this.tags = new ArrayList<>(tags);
         this.createdAt = LocalDateTime.now();
     }
 
@@ -96,16 +84,11 @@ public class Product {
     }
 
     public static Product create(Long sellerId, String title, String description, int price, ProductCondition productCondition) {
-        return create(sellerId, title, description, price, productCondition, List.of());
-    }
-
-    public static Product create(Long sellerId, String title, String description, int price,
-                                 ProductCondition productCondition, List<Tag> tags) {
-        return new Product(sellerId, title, description, price, productCondition, tags);
+        return new Product(sellerId, title, description, price, productCondition);
     }
 
     public void update(String title, String description, int price,
-                       ProductCondition productCondition, List<Tag> tags) {
+                       ProductCondition productCondition) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
@@ -113,8 +96,6 @@ public class Product {
         this.description = description;
         this.price = price;
         this.productCondition = productCondition;
-        this.tags.clear();
-        this.tags.addAll(tags);
     }
 
     public void addImages(List<String> urls) {
@@ -134,10 +115,6 @@ public class Product {
 
     public List<String> imageUrls() {
         return images.stream().map(ProductImage::getUrl).toList();
-    }
-
-    public List<String> tagNames() {
-        return tags.stream().map(Tag::getName).toList();
     }
 
     public boolean isOwnedBy(Long userId) {

@@ -36,7 +36,6 @@ import project.kjhjdh.ibid.product.application.ProductDetailResult;
 import project.kjhjdh.ibid.product.application.ProductListResult;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
-import project.kjhjdh.ibid.product.domain.Tag;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImagePresignRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ProductRegisterRequest;
@@ -54,7 +53,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, List.of()))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW))
                 .when()
                 .post("/api/products")
                 .then()
@@ -71,7 +70,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, List.of()))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW))
                 .when()
                 .post("/api/products")
                 .then()
@@ -84,7 +83,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("", "상태 좋음", 89000, ProductCondition.LIKE_NEW, List.of()))
+                .body(new ProductRegisterRequest("", "상태 좋음", 89000, ProductCondition.LIKE_NEW))
                 .when()
                 .post("/api/products")
                 .then()
@@ -98,7 +97,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, ProductCondition.LIKE_NEW, List.of()))
+                .body(new ProductRegisterRequest("나이키 후드", "상태 좋음", 0, ProductCondition.LIKE_NEW))
                 .when()
                 .post("/api/products")
                 .then()
@@ -150,8 +149,7 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("status", equalTo("ON_SALE"))
                 .body("viewCount", equalTo(164))
                 .body("productCondition", equalTo("LIKE_NEW"))
-                .body("imageUrls[0]", equalTo("https://image/a.jpg"))
-                .body("tags[0]", equalTo("나이키"));
+                .body("imageUrls[0]", equalTo("https://image/a.jpg"));
     }
 
     @DisplayName("방문자 쿠키가 없으면 새 방문자 식별자를 쿠키로 발급한다")
@@ -257,7 +255,7 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED, List.of()))
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED))
                 .when()
                 .patch("/api/products/{productId}", 1L)
                 .then()
@@ -318,14 +316,13 @@ class ProductControllerTest extends ControllerTestSupport {
     }
 
     private Product product(Long id, String title, int price) {
-        Product product = Product.create(5L, title, "상태 좋음", price, ProductCondition.LIKE_NEW, List.of());
+        Product product = Product.create(5L, title, "상태 좋음", price, ProductCondition.LIKE_NEW);
         ReflectionTestUtils.setField(product, "id", id);
         return product;
     }
 
     private Product detailProduct() {
-        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000,
-                ProductCondition.LIKE_NEW, List.of(Tag.of("나이키")));
+        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW);
         ReflectionTestUtils.setField(product, "id", 1L);
         product.addImages(List.of("https://image/a.jpg"));
         return product;

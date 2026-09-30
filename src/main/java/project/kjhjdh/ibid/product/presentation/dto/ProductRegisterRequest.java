@@ -1,7 +1,5 @@
 package project.kjhjdh.ibid.product.presentation.dto;
 
-import java.util.List;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -22,8 +20,6 @@ public record ProductRegisterRequest(
         Integer price,
 
         @NotNull(message = "상품 상태를 선택해주세요.")
-        ProductCondition productCondition,
-
-        List<String> tags
+        ProductCondition productCondition
 ) {
 }

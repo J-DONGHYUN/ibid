@@ -14,9 +14,7 @@ import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.product.domain.Product;
-import project.kjhjdh.ibid.product.domain.Tag;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
-import project.kjhjdh.ibid.product.infra.TagRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +23,6 @@ public class ProductService {
     private static final int PAGE_SIZE = 16;
 
     private final ProductRepository productRepository;
-    private final TagRepository tagRepository;
     private final ProductViewCounter productViewCounter;
     private final ProductImageService productImageService;
 
@@ -44,7 +41,7 @@ public class ProductService {
     public void update(Long sellerId, Long productId, ProductUpdateCommand command) {
         Product product = findOwnedProduct(sellerId, productId);
         product.update(command.title(), command.description(), command.price(),
-                command.productCondition(), resolveTags(command.tags()));
+                command.productCondition());
     }
 
     @Transactional
@@ -69,8 +66,7 @@ public class ProductService {
                 command.title(),
                 command.description(),
                 command.price(),
-                command.productCondition(),
-                resolveTags(command.tags())
+                command.productCondition()
         );
         return productRepository.save(product).getId();
     }
@@ -91,19 +87,6 @@ public class ProductService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         productViewCounter.record(productId, visitorId);
         return ProductDetailResult.from(product, productViewCounter.readTotal(product));
-    }
-
-    private List<Tag> resolveTags(List<String> names) {
-        if (names == null) {
-            return List.of();
-        }
-        return names.stream()
-                .map(String::trim)
-                .filter(name -> !name.isBlank())
-                .distinct()
-                .map(name -> tagRepository.findByName(name)
-                        .orElseGet(() -> tagRepository.save(Tag.of(name))))
-                .toList();
     }
 
     private Product findOwnedProduct(Long sellerId, Long productId) {
