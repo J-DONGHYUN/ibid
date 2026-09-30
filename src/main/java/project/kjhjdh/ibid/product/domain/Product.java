@@ -6,6 +6,7 @@ import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -58,6 +59,9 @@ public class Product {
     @Column(nullable = false)
     private ProductCondition productCondition;
 
+    @Embedded
+    private DeviceSpec deviceSpec;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder")
     private List<ProductImage> images = new ArrayList<>();
@@ -66,7 +70,7 @@ public class Product {
     private LocalDateTime createdAt;
 
     private Product(Long sellerId, String title, String description, int price,
-                    ProductCondition productCondition) {
+                    ProductCondition productCondition, DeviceSpec deviceSpec) {
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
@@ -76,15 +80,13 @@ public class Product {
         this.price = price;
         this.status = ProductStatus.ON_SALE;
         this.productCondition = productCondition;
+        this.deviceSpec = deviceSpec;
         this.createdAt = LocalDateTime.now();
     }
 
-    public static Product create(Long sellerId, String title, String description, int price) {
-        return create(sellerId, title, description, price, ProductCondition.USED);
-    }
-
-    public static Product create(Long sellerId, String title, String description, int price, ProductCondition productCondition) {
-        return new Product(sellerId, title, description, price, productCondition);
+    public static Product create(Long sellerId, String title, String description, int price,
+                                 ProductCondition productCondition, DeviceSpec deviceSpec) {
+        return new Product(sellerId, title, description, price, productCondition, deviceSpec);
     }
 
     public void update(String title, String description, int price,
