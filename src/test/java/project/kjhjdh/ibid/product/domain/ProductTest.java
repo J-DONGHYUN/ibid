@@ -65,6 +65,33 @@ class ProductTest {
                 .hasMessage(ErrorCode.INVALID_PRODUCT_PRICE.getMessage());
     }
 
+    @DisplayName("[I-01] 판매중 상품을 예약하면 예약중이 되고 예약 상대가 지정된다")
+    @Test
+    void reserve() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
+
+        // when
+        product.reserve(2L);
+
+        // then
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.RESERVED);
+        assertThat(product.getReservedBuyerId()).isEqualTo(2L);
+    }
+
+    @DisplayName("[TR-01] 판매중이 아닌 상품은 예약할 수 없다")
+    @Test
+    void reserve_notOnSale() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
+        product.reserve(2L);
+
+        // when & then
+        assertThatThrownBy(() -> product.reserve(3L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_ON_SALE.getMessage());
+    }
+
     @DisplayName("판매자 본인 여부를 판별한다")
     @Test
     void isOwnedBy() {

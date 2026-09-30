@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -52,6 +53,11 @@ public class Product {
     @Column(nullable = false)
     private ProductStatus status;
 
+    private Long reservedBuyerId;
+
+    @Version
+    private long version;
+
     @Column(nullable = false)
     private long viewCount;
 
@@ -87,6 +93,14 @@ public class Product {
     public static Product create(Long sellerId, String title, String description, int price,
                                  ProductCondition productCondition, DeviceSpec deviceSpec) {
         return new Product(sellerId, title, description, price, productCondition, deviceSpec);
+    }
+
+    public void reserve(Long buyerId) {
+        if (status != ProductStatus.ON_SALE) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_ON_SALE);
+        }
+        this.status = ProductStatus.RESERVED;
+        this.reservedBuyerId = buyerId;
     }
 
     public void update(String title, String description, int price,

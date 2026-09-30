@@ -36,6 +36,7 @@ public enum ErrorCode {
     INVALID_PRODUCT_TITLE(HttpStatus.BAD_REQUEST, "상품 제목은 1자 이상 100자 이하여야 합니다."),
     INVALID_PRODUCT_DESCRIPTION(HttpStatus.BAD_REQUEST, "상품 설명은 1자 이상 2000자 이하여야 합니다."),
     INVALID_PRODUCT_PRICE(HttpStatus.BAD_REQUEST, "판매가는 1원 이상이어야 합니다."),
+    PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다."),
     INVALID_DEVICE_CATEGORY(HttpStatus.BAD_REQUEST, "전자기기 카테고리를 선택해주세요."),
     INVALID_DEVICE_MODEL(HttpStatus.BAD_REQUEST, "모델명을 입력해주세요."),
     INVALID_BATTERY_HEALTH(HttpStatus.BAD_REQUEST, "배터리 성능은 0에서 100 사이여야 합니다."),

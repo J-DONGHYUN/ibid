@@ -21,9 +21,10 @@
 | 채팅방 | `ChatRoom` | (상품, 구매 희망자) 쌍 하나에 대한 1:1 대화 |
 | 클라이언트 메시지 식별자 | `clientMessageId` | 재전송을 판별하려고 클라이언트가 메시지마다 붙이는 값 |
 
-**현재 코드와 다른 것** — 코드의 `ProductStatus` 는 이제 `ON_SALE` 하나다 (`T-05` 로 이전 제품의
-`PENDING` · `SOLD_OUT` 을 지웠다). `RESERVED` · `SOLD` 와 `reservedBuyerId` · `soldBuyerId` 는
-거래 기능에서 추가한다 (`T-21` · `T-22` · `ADR-0006`).
+**현재 코드와 다른 것** — 코드의 `ProductStatus` 는 `ON_SALE` · `RESERVED` 다 (`T-05` 로 이전 제품의
+`PENDING` · `SOLD_OUT` 을 지웠고, `T-20` 이 `reserve` 전이·`reservedBuyerId`·낙관적 락(`ADR-0008`)을 더했다).
+`SOLD` 와 `soldBuyerId` 는 거래완료에서 추가한다 (`T-22` · `ADR-0006`). 예약 유스케이스 전체(본인·채팅
+상대 검증·해제·엔드포인트)는 `T-21`.
 
 ## 애그리게이트
 
