@@ -98,6 +98,7 @@ public class Product {
     }
 
     public void reserve(Long buyerId) {
+        requireBuyer(buyerId);
         if (status != ProductStatus.ON_SALE) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_ON_SALE);
         }
@@ -114,12 +115,19 @@ public class Product {
     }
 
     public void complete(Long buyerId) {
+        requireBuyer(buyerId);
         if (status == ProductStatus.SOLD) {
             throw new BusinessException(ErrorCode.PRODUCT_ALREADY_SOLD);
         }
         this.status = ProductStatus.SOLD;
         this.soldBuyerId = buyerId;
         this.reservedBuyerId = null;
+    }
+
+    private void requireBuyer(Long buyerId) {
+        if (buyerId == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
     }
 
     public void update(String title, String description, int price,
