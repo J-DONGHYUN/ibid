@@ -10,6 +10,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
@@ -215,5 +217,23 @@ class ProductServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
         then(productViewCounter).shouldHaveNoInteractions();
+    }
+
+    @DisplayName("[CH-05] 상품 요약을 id 로 묶어 제목과 썸네일과 함께 돌려준다")
+    @Test
+    void findSummaries() {
+        // given
+        Product product = Product.create(SELLER_ID, "아이폰 13", "A급", 500000, ProductCondition.USED, DeviceSpecFixture.sample());
+        ReflectionTestUtils.setField(product, "id", PRODUCT_ID);
+        given(productImageService.findThumbnails(List.of(PRODUCT_ID))).willReturn(Map.of(PRODUCT_ID, "https://thumb"));
+        given(productRepository.findAllById(List.of(PRODUCT_ID))).willReturn(List.of(product));
+
+        // when
+        Map<Long, ProductSummary> result = productService.findSummaries(List.of(PRODUCT_ID));
+
+        // then
+        assertThat(result).containsOnlyKeys(PRODUCT_ID);
+        assertThat(result.get(PRODUCT_ID).title()).isEqualTo("아이폰 13");
+        assertThat(result.get(PRODUCT_ID).thumbnailUrl()).isEqualTo("https://thumb");
     }
 }

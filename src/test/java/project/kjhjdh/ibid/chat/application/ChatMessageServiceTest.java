@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +17,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 
 import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
@@ -97,6 +102,47 @@ class ChatMessageServiceTest {
 
         // when & then
         assertThatThrownBy(() -> chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.CHAT_ROOM_NOT_FOUND.getMessage());
+    }
+
+    @DisplayName("[CH-04] 참여자는 지난 메시지를 최신순 커서로 조회한다")
+    @Test
+    void getMessages() {
+        // given
+        ChatMessage m = ChatMessage.create(ROOM_ID, SELLER_ID, "안녕하세요", CLIENT_MSG_ID);
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room()));
+        given(chatMessageRepository.findByChatRoomIdAndIdLessThanOrderByIdDesc(
+                eq(ROOM_ID), eq(Long.MAX_VALUE), any(PageRequest.class)))
+                .willReturn(new SliceImpl<>(List.of(m)));
+
+        // when
+        Slice<ChatMessage> slice = chatMessageService.getMessages(ROOM_ID, BUYER_ID, null);
+
+        // then
+        assertThat(slice.getContent()).containsExactly(m);
+    }
+
+    @DisplayName("[I-08] 참여자가 아니면 메시지를 조회할 수 없다")
+    @Test
+    void getMessages_notParticipant() {
+        // given
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room()));
+
+        // when & then
+        assertThatThrownBy(() -> chatMessageService.getMessages(ROOM_ID, STRANGER_ID, null))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
+    }
+
+    @DisplayName("[CH-04] 없는 채팅방은 메시지를 조회할 수 없다")
+    @Test
+    void getMessages_roomNotFound() {
+        // given
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> chatMessageService.getMessages(ROOM_ID, BUYER_ID, null))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.CHAT_ROOM_NOT_FOUND.getMessage());
     }
