@@ -250,6 +250,19 @@ ID 로 시작하는지 본다. architecture 패키지에 임시 테스트를 넣
 `ask` 이지 `deny` 가 아니다 — Docker 를 못 켜면 로컬 전체 빌드가 불가능한데(이 훅이 도는 환경도 그렇다),
 CI(`ci.yml`)가 PR 에서 전체 빌드를 최종적으로 돌린다. 실수로 빠뜨리는 건 막고, 의식적 우회는 사람이 승인한다.
 
+**T-15 (#112, 2026-10-01) — `chat` 도메인 생성 시 의존 방향 게이트 생존 확인**
+
+`chat` 도메인을 처음 만들며, 지금까지 대상이 없어 비어 있던 chat 의존 규칙이 사는지 탐침했다
+(`CLAUDE.md` 겪은 함정 「게이트 초록불이 규칙이 살아 있다는 뜻은 아니다」).
+
+| 탐침 | 결과 |
+|---|---|
+| `product` 에 `chat.domain.ChatRoom` 참조를 넣어 역방향 의존(`product → chat`, 금지) 만듦 | `architectureTest` 실패 (`DOMAIN_DEPENDENCY_DIRECTION`) |
+| 탐침 제거 | 통과 |
+
+`chat → product`(정상 방향, `ChatRoomService` 가 `ProductRepository` 를 봄)는 규칙대로 통과한다.
+탐침 파일(`product/_GateProbe.java`)은 확인 후 지웠다.
+
 ## 다음
 
 1. **첫 루프에서 샌 곳을 고친다** — 백로그 「하네스 개선」 T-29 ~ T-32 (`INC-02` ~ `INC-05`)
