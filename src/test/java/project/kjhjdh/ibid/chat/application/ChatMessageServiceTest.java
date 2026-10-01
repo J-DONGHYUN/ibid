@@ -50,12 +50,13 @@ class ChatMessageServiceTest {
         given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        ChatMessage message = chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요"));
+        SendMessageResult result = chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요"));
 
         // then
-        assertThat(message.getChatRoomId()).isEqualTo(ROOM_ID);
-        assertThat(message.getSenderId()).isEqualTo(BUYER_ID);
-        assertThat(message.getContent()).isEqualTo("안녕하세요");
+        assertThat(result.created()).isTrue();
+        assertThat(result.message().getChatRoomId()).isEqualTo(ROOM_ID);
+        assertThat(result.message().getSenderId()).isEqualTo(BUYER_ID);
+        assertThat(result.message().getContent()).isEqualTo("안녕하세요");
     }
 
     @DisplayName("[CH-02] 같은 클라이언트 메시지 식별자로 재전송하면 기존 메시지를 돌려준다")
@@ -67,10 +68,11 @@ class ChatMessageServiceTest {
         given(chatMessageRepository.findByChatRoomIdAndClientMessageId(ROOM_ID, CLIENT_MSG_ID)).willReturn(Optional.of(existing));
 
         // when
-        ChatMessage message = chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요"));
+        SendMessageResult result = chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요"));
 
         // then
-        assertThat(message).isSameAs(existing);
+        assertThat(result.created()).isFalse();
+        assertThat(result.message()).isSameAs(existing);
         then(chatMessageRepository).should(never()).save(any());
     }
 

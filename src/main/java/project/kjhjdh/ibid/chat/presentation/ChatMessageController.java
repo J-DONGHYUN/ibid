@@ -15,7 +15,7 @@ import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.chat.application.ChatMessageService;
 import project.kjhjdh.ibid.chat.application.SendMessageCommand;
-import project.kjhjdh.ibid.chat.domain.ChatMessage;
+import project.kjhjdh.ibid.chat.application.SendMessageResult;
 import project.kjhjdh.ibid.chat.presentation.dto.ChatMessageResponse;
 import project.kjhjdh.ibid.chat.presentation.dto.SendMessageRequest;
 
@@ -35,10 +35,12 @@ public class ChatMessageController {
             @PathVariable Long chatRoomId,
             @Valid @RequestBody SendMessageRequest request
     ) {
-        ChatMessage message = chatMessageService.send(new SendMessageCommand(
+        SendMessageResult result = chatMessageService.send(new SendMessageCommand(
                 chatRoomId, loginUser.userId(), request.clientMessageId(), request.content()));
-        ChatMessageResponse response = ChatMessageResponse.from(message);
-        messagingTemplate.convertAndSend(TOPIC_ROOM_PREFIX + chatRoomId, response);
+        ChatMessageResponse response = ChatMessageResponse.from(result.message());
+        if (result.created()) {
+            messagingTemplate.convertAndSend(TOPIC_ROOM_PREFIX + chatRoomId, response);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
