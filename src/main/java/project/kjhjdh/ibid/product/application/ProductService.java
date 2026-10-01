@@ -43,8 +43,11 @@ public class ProductService {
     @Transactional
     public void update(Long sellerId, Long productId, ProductUpdateCommand command) {
         Product product = findOwnedProduct(sellerId, productId);
+        DeviceSpecCommand spec = command.deviceSpec();
         product.update(command.title(), command.description(), command.price(),
-                command.productCondition());
+                command.productCondition(),
+                new DeviceSpec(spec.category(), spec.modelName(), spec.batteryHealth(),
+                        spec.components(), spec.defects()));
     }
 
     @Transactional
