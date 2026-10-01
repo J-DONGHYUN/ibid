@@ -2,6 +2,7 @@ package project.kjhjdh.ibid.common.exception;
 
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -64,6 +65,13 @@ public class GlobalExceptionHandler {
         log.warn(e.getMessage());
         return ResponseEntity.status(ErrorCode.DATA_INTEGRITY_VIOLATION.getHttpStatus())
                 .body(ErrorResponse.of(ErrorCode.DATA_INTEGRITY_VIOLATION));
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException e) {
+        log.warn(e.getMessage());
+        return ResponseEntity.status(ErrorCode.CONCURRENT_UPDATE.getHttpStatus())
+                .body(ErrorResponse.of(ErrorCode.CONCURRENT_UPDATE));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
