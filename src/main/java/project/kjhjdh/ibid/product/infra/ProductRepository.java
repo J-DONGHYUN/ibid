@@ -11,10 +11,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductStatus;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Slice<Product> findByIdLessThanOrderByIdDesc(Long id, Pageable pageable);
+
+    Slice<Product> findByStatusNotAndIdLessThanOrderByIdDesc(ProductStatus status, Long id, Pageable pageable);
 
     List<Product> findBySellerIdOrderByIdDesc(Long sellerId);
 

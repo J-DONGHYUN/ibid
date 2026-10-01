@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductStatus;
 import project.kjhjdh.ibid.support.RepositoryTestSupport;
 
 class ProductRepositoryTest extends RepositoryTestSupport {
@@ -52,6 +53,27 @@ class ProductRepositoryTest extends RepositoryTestSupport {
         // then
         assertThat(slice.getContent()).hasSize(2);
         assertThat(slice.hasNext()).isTrue();
+    }
+
+    @DisplayName("[PD-03] 거래완료를 뺀 상품만 커서로 조회한다")
+    @Test
+    void findByStatusNotAndIdLessThanOrderByIdDesc() {
+        // given — 판매중·예약중·거래완료 각 하나
+        Product onSale = productRepository.save(Product.create(SELLER_ID, "판매중", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        Product reserved = Product.create(SELLER_ID, "예약중", "상태 좋음", 20000, ProductCondition.USED, DeviceSpecFixture.sample());
+        reserved.reserve(2L);
+        reserved = productRepository.save(reserved);
+        Product sold = Product.create(SELLER_ID, "거래완료", "상태 좋음", 30000, ProductCondition.USED, DeviceSpecFixture.sample());
+        sold.complete(3L);
+        productRepository.save(sold);
+
+        // when
+        Slice<Product> slice = productRepository.findByStatusNotAndIdLessThanOrderByIdDesc(
+                ProductStatus.SOLD, Long.MAX_VALUE, PageRequest.of(0, 10));
+
+        // then — 거래완료는 빠지고 판매중·예약중만, 최신순
+        assertThat(slice.getContent()).extracting(Product::getId)
+                .containsExactly(reserved.getId(), onSale.getId());
     }
 
     @DisplayName("조회수를 delta만큼 증가시킨다")
