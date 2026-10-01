@@ -31,6 +31,7 @@ import project.kjhjdh.ibid.chat.application.ChatRoomService;
 import project.kjhjdh.ibid.product.application.ProductLikeService;
 import project.kjhjdh.ibid.product.application.ProductService;
 import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;
+import project.kjhjdh.ibid.trade.application.ReservationService;
 import project.kjhjdh.ibid.user.domain.Role;
 
 @ActiveProfiles("test")
@@ -61,6 +62,9 @@ public abstract class ControllerTestSupport {
 
     @MockitoBean
     protected org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
+    @MockitoBean
+    protected ReservationService reservationService;
 
     @BeforeEach
     void setUpMockMvc() {

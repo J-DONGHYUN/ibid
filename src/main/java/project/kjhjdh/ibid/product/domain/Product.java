@@ -103,6 +103,14 @@ public class Product {
         this.reservedBuyerId = buyerId;
     }
 
+    public void cancelReservation() {
+        if (status != ProductStatus.RESERVED) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_RESERVED);
+        }
+        this.status = ProductStatus.ON_SALE;
+        this.reservedBuyerId = null;
+    }
+
     public void update(String title, String description, int price,
                        ProductCondition productCondition) {
         validateTitle(title);

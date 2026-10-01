@@ -37,6 +37,8 @@ public enum ErrorCode {
     INVALID_PRODUCT_DESCRIPTION(HttpStatus.BAD_REQUEST, "상품 설명은 1자 이상 2000자 이하여야 합니다."),
     INVALID_PRODUCT_PRICE(HttpStatus.BAD_REQUEST, "판매가는 1원 이상이어야 합니다."),
     PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다."),
+    PRODUCT_NOT_RESERVED(HttpStatus.CONFLICT, "예약 중인 상품이 아닙니다."),
+    CONCURRENT_UPDATE(HttpStatus.CONFLICT, "다른 요청이 먼저 상품 상태를 바꿨습니다. 다시 시도해주세요."),
     INVALID_DEVICE_CATEGORY(HttpStatus.BAD_REQUEST, "전자기기 카테고리를 선택해주세요."),
     INVALID_DEVICE_MODEL(HttpStatus.BAD_REQUEST, "모델명을 입력해주세요."),
     INVALID_BATTERY_HEALTH(HttpStatus.BAD_REQUEST, "배터리 성능은 0에서 100 사이여야 합니다."),
@@ -47,6 +49,9 @@ public enum ErrorCode {
     CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
     INVALID_MESSAGE_CONTENT(HttpStatus.BAD_REQUEST, "메시지 내용은 1자 이상 1000자 이하여야 합니다."),
     INVALID_MESSAGE(HttpStatus.BAD_REQUEST, "메시지 식별자가 없습니다."),
+
+    // Trade
+    NOT_CHAT_PARTNER(HttpStatus.BAD_REQUEST, "그 상품의 채팅 상대가 아닙니다."),
 
     // File
     FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),

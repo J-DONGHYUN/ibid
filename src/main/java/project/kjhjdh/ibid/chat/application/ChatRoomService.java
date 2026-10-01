@@ -51,6 +51,11 @@ public class ChatRoomService {
     }
 
     @Transactional(readOnly = true)
+    public boolean isChatPartner(Long productId, Long buyerId) {
+        return chatRoomRepository.findByProductIdAndBuyerId(productId, buyerId).isPresent();
+    }
+
+    @Transactional(readOnly = true)
     public Slice<MyChatRoomResult> getMyRooms(Long userId, Long cursor) {
         Long effectiveCursor = (cursor == null) ? Long.MAX_VALUE : cursor;
         Slice<RoomLastMessage> slice = chatRoomRepository.findMyRoomsOrderByLastMessageDesc(
