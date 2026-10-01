@@ -107,15 +107,17 @@ public class ProductController {
     @PublicApi
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDetailResponse> getProduct(
+            @LoginUser(required = false) UserInfo loginUser,
             @PathVariable Long productId,
             @CookieValue(name = VISITOR_ID_COOKIE_NAME, required = false) String visitorId
     ) {
         String resolvedVisitorId = productViewCookieHandler.resolveVisitorId(visitorId);
         ProductDetailResult result = productService.getProduct(productId, resolvedVisitorId);
+        boolean owner = loginUser != null && loginUser.userId().equals(result.sellerId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE,
                         productViewCookieHandler.createVisitorIdCookie(resolvedVisitorId).toString())
-                .body(ProductDetailResponse.from(result));
+                .body(ProductDetailResponse.from(result, owner));
     }
 
     @PatchMapping("/{productId}")

@@ -75,6 +75,11 @@ public abstract class ControllerTestSupport {
                                               ModelAndViewContainer mavContainer,
                                               NativeWebRequest webRequest,
                                               WebDataBinderFactory binderFactory) {
+                    LoginUser annotation = parameter.getParameterAnnotation(LoginUser.class);
+                    boolean required = annotation == null || annotation.required();
+                    if (!required && webRequest.getHeader("Authorization") == null) {
+                        return null;
+                    }
                     return new UserInfo(LOGIN_USER_ID, Role.USER);
                 }
             });

@@ -80,6 +80,7 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
         // then
         assertThat(result.viewCount()).isEqualTo(1L);
         assertThat(result.imageUrls()).containsExactly("https://image/a.jpg", "https://image/b.jpg");
+        assertThat(result.deviceSpec().modelName()).isEqualTo("iPhone 13");
         assertThat(result.productCondition()).isEqualTo(ProductCondition.LIKE_NEW);
         assertThat(result.status()).isEqualTo(ProductStatus.ON_SALE);
         assertThat(result.createdAt()).isNotNull();

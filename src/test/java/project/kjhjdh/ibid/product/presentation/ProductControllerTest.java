@@ -38,6 +38,7 @@ import project.kjhjdh.ibid.product.application.ProductDetailResult;
 import project.kjhjdh.ibid.product.application.ProductListResult;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.DeviceCategory;
+import project.kjhjdh.ibid.product.domain.DeviceSpec;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.presentation.dto.DeviceSpecRequest;
 import project.kjhjdh.ibid.product.presentation.dto.ImageConfirmRequest;
@@ -177,7 +178,7 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("hasNext", equalTo(true));
     }
 
-    @DisplayName("상품 상세 조회에 성공하면 200과 조회수를 포함한 상품 정보를 응답한다")
+    @DisplayName("[PD-04] 상품 상세 조회에 성공하면 200과 전자기기 정보·상태·조회수를 응답한다")
     @Test
     void getProduct() {
         // given
@@ -197,7 +198,64 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("status", equalTo("ON_SALE"))
                 .body("viewCount", equalTo(164))
                 .body("productCondition", equalTo("LIKE_NEW"))
-                .body("imageUrls[0]", equalTo("https://image/a.jpg"));
+                .body("imageUrls[0]", equalTo("https://image/a.jpg"))
+                .body("deviceSpec.category", equalTo("SMARTPHONE"))
+                .body("deviceSpec.modelName", equalTo("iPhone 13"))
+                .body("deviceSpec.batteryHealth", equalTo(90))
+                .body("deviceSpec.components", equalTo("본체, 충전기"))
+                .body("deviceSpec.defects", equalTo("액정 잔기스"));
+    }
+
+    @DisplayName("[PD-04] 로그인하지 않고 조회하면 200과 owner=false 다")
+    @Test
+    void getProduct_anonymous() {
+        // given: Authorization 헤더 없음 → 비로그인
+        given(productService.getProduct(eq(1L), anyString()))
+                .willReturn(ProductDetailResult.from(detailProduct(), 1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("owner", equalTo(false));
+    }
+
+    @DisplayName("[PD-04] 로그인했지만 판매자 본인이 아니면 owner 는 false 다")
+    @Test
+    void getProduct_notOwner() {
+        // given: detailProduct 의 판매자는 5L, 로그인 사용자는 1L
+        given(productService.getProduct(eq(1L), anyString()))
+                .willReturn(ProductDetailResult.from(detailProduct(), 1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .header("Authorization", "Bearer token")
+                .when()
+                .get("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("owner", equalTo(false));
+    }
+
+    @DisplayName("[PD-04] 판매자 본인이 보면 owner 는 true 다")
+    @Test
+    void getProduct_owner() {
+        // given: 판매자 = 로그인 사용자(1L)
+        Product mine = Product.create(1L, "내 상품", "상태 좋음", 89000, ProductCondition.LIKE_NEW, DeviceSpecFixture.sample());
+        ReflectionTestUtils.setField(mine, "id", 1L);
+        given(productService.getProduct(eq(1L), anyString()))
+                .willReturn(ProductDetailResult.from(mine, 1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .header("Authorization", "Bearer token")
+                .when()
+                .get("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("owner", equalTo(true));
     }
 
     @DisplayName("방문자 쿠키가 없으면 새 방문자 식별자를 쿠키로 발급한다")
@@ -370,7 +428,8 @@ class ProductControllerTest extends ControllerTestSupport {
     }
 
     private Product detailProduct() {
-        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, DeviceSpecFixture.sample());
+        DeviceSpec spec = new DeviceSpec(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체, 충전기", "액정 잔기스");
+        Product product = Product.create(5L, "나이키 후드", "상태 좋음", 89000, ProductCondition.LIKE_NEW, spec);
         ReflectionTestUtils.setField(product, "id", 1L);
         product.addImages(List.of("https://image/a.jpg"));
         return product;
