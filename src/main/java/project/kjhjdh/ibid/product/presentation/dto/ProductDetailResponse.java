@@ -16,11 +16,13 @@ public record ProductDetailResponse(
         ProductStatus status,
         long viewCount,
         ProductCondition productCondition,
+        DeviceSpecResponse deviceSpec,
         List<String> imageUrls,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        boolean owner
 ) {
 
-    public static ProductDetailResponse from(ProductDetailResult result) {
+    public static ProductDetailResponse from(ProductDetailResult result, boolean owner) {
         return new ProductDetailResponse(
                 result.productId(),
                 result.sellerId(),
@@ -30,8 +32,10 @@ public record ProductDetailResponse(
                 result.status(),
                 result.viewCount(),
                 result.productCondition(),
+                DeviceSpecResponse.from(result.deviceSpec()),
                 result.imageUrls(),
-                result.createdAt()
+                result.createdAt(),
+                owner
         );
     }
 }
