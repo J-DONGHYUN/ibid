@@ -101,7 +101,7 @@ class ChatListIntegrationTest extends IntegrationTestSupport {
     }
 
     private Slice<ChatMessage> chatRoomMessages(Long roomId, Long cursor) {
-        return chatMessageService.getMessages(roomId, BUYER_ID, cursor);
+        return chatMessageService.getMessages(roomId, BUYER_ID, cursor).messages();
     }
 
     private Long openRoom(Long sellerId, Long buyerId) {

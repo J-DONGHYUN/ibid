@@ -18,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -118,10 +117,12 @@ class ChatMessageServiceTest {
                 .willReturn(new SliceImpl<>(List.of(m)));
 
         // when
-        Slice<ChatMessage> slice = chatMessageService.getMessages(ROOM_ID, BUYER_ID, null);
+        MessageListResult result = chatMessageService.getMessages(ROOM_ID, BUYER_ID, null);
 
         // then
-        assertThat(slice.getContent()).containsExactly(m);
+        assertThat(result.messages().getContent()).containsExactly(m);
+        assertThat(result.sellerLastReadMessageId()).isNull();
+        assertThat(result.buyerLastReadMessageId()).isNull();
     }
 
     @DisplayName("[I-08] 참여자가 아니면 메시지를 조회할 수 없다")

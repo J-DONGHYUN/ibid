@@ -18,6 +18,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
+import project.kjhjdh.ibid.chat.application.MessageListResult;
 import project.kjhjdh.ibid.chat.application.SendMessageResult;
 import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.presentation.dto.ChatMessageResponse;
@@ -131,7 +132,8 @@ class ChatMessageControllerTest extends ControllerTestSupport {
         ReflectionTestUtils.setField(m1, "id", 2L);
         ReflectionTestUtils.setField(m2, "id", 1L);
         given(chatMessageService.getMessages(any(), any(), any()))
-                .willReturn(new SliceImpl<>(List.of(m1, m2), PageRequest.of(0, 2), true));
+                .willReturn(new MessageListResult(
+                        new SliceImpl<>(List.of(m1, m2), PageRequest.of(0, 2), true), 2L, 1L));
 
         // when & then
         RestAssuredMockMvc.given()
@@ -142,7 +144,9 @@ class ChatMessageControllerTest extends ControllerTestSupport {
                 .body("messages[0].messageId", equalTo(2))
                 .body("messages[1].messageId", equalTo(1))
                 .body("nextCursor", equalTo(1))
-                .body("hasNext", equalTo(true));
+                .body("hasNext", equalTo(true))
+                .body("sellerLastReadMessageId", equalTo(2))
+                .body("buyerLastReadMessageId", equalTo(1));
     }
 
     @DisplayName("[I-08] 참여자가 아니면 메시지 목록 조회에 403을 응답한다")
