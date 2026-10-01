@@ -43,7 +43,6 @@ public enum ErrorCode {
     INVALID_DEVICE_COMPONENTS(HttpStatus.BAD_REQUEST, "구성품을 입력해주세요."),
 
     // Chat
-    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
     CANNOT_OPEN_CHAT_ON_OWN_PRODUCT(HttpStatus.BAD_REQUEST, "본인 상품에는 채팅방을 열 수 없습니다."),
 
     // File
