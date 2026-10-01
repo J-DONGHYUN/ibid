@@ -53,4 +53,8 @@ public class ChatRoom {
     public static ChatRoom open(Long productId, Long sellerId, Long buyerId) {
         return new ChatRoom(productId, sellerId, buyerId);
     }
+
+    public boolean isParticipant(Long userId) {
+        return sellerId.equals(userId) || buyerId.equals(userId);
+    }
 }

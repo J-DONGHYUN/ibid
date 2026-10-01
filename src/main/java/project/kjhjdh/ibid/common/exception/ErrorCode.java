@@ -44,6 +44,9 @@ public enum ErrorCode {
 
     // Chat
     CANNOT_OPEN_CHAT_ON_OWN_PRODUCT(HttpStatus.BAD_REQUEST, "본인 상품에는 채팅방을 열 수 없습니다."),
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
+    INVALID_MESSAGE_CONTENT(HttpStatus.BAD_REQUEST, "메시지 내용은 1자 이상 1000자 이하여야 합니다."),
+    INVALID_MESSAGE(HttpStatus.BAD_REQUEST, "메시지 식별자가 없습니다."),
 
     // File
     FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),

@@ -26,6 +26,7 @@ import project.kjhjdh.ibid.auth.presentation.cookie.RefreshTokenCookieHandler;
 import project.kjhjdh.ibid.auth.presentation.interceptor.AuthenticationInterceptor;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.auth.presentation.WebConfig;
+import project.kjhjdh.ibid.chat.application.ChatMessageService;
 import project.kjhjdh.ibid.chat.application.ChatRoomService;
 import project.kjhjdh.ibid.product.application.ProductLikeService;
 import project.kjhjdh.ibid.product.application.ProductService;
@@ -54,6 +55,9 @@ public abstract class ControllerTestSupport {
 
     @MockitoBean
     protected ChatRoomService chatRoomService;
+
+    @MockitoBean
+    protected ChatMessageService chatMessageService;
 
     @BeforeEach
     void setUpMockMvc() {
