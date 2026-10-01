@@ -263,6 +263,20 @@ CI(`ci.yml`)가 PR 에서 전체 빌드를 최종적으로 돌린다. 실수로 
 `chat → product`(정상 방향, `ChatRoomService` 가 `ProductRepository` 를 봄)는 규칙대로 통과한다.
 탐침 파일(`product/_GateProbe.java`)은 확인 후 지웠다.
 
+**T-21 (#122, 2026-10-01) — `trade` 도메인 생성 시 의존 방향 게이트 생존 확인**
+
+`trade` 도메인을 처음 만들며 탐침했다. **쓰지 않는 import 만으로는 안 막힌다** — Java 가
+미사용 import 를 바이트코드에서 버려 ArchUnit 이 못 본다. 실제 타입 참조를 넣어야 잡힌다.
+
+| 탐침 | 결과 |
+|---|---|
+| `product` 에 `trade.application.ReservationService` **import 만** 추가 | `architectureTest` 통과 (미사용 import 라 바이트코드에 없음 — 안 막힘) |
+| `product` 에 `trade` 타입을 **실제 참조**하는 메서드 추가(`product → trade`, 금지) | 실패 (`DOMAIN_DEPENDENCY_DIRECTION` · `DOMAIN_DOES_NOT_DEPEND_ON_OUTER_LAYERS`) |
+| 탐침 제거 | 통과 |
+
+`trade → chat → product`(정상 방향, `ReservationService` 가 `ChatRoomService`·`ProductRepository` 를 봄)는 규칙대로 통과한다.
+탐침은 확인 후 되돌렸다(커밋하지 않음).
+
 ## 다음
 
 1. **첫 루프에서 샌 곳을 고친다** — 백로그 「하네스 개선」 T-29 ~ T-32 (`INC-02` ~ `INC-05`)
