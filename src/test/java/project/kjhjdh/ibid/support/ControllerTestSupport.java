@@ -31,6 +31,7 @@ import project.kjhjdh.ibid.chat.application.ChatRoomService;
 import project.kjhjdh.ibid.product.application.ProductLikeService;
 import project.kjhjdh.ibid.product.application.ProductService;
 import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;
+import project.kjhjdh.ibid.trade.application.CompletionService;
 import project.kjhjdh.ibid.trade.application.ReservationService;
 import project.kjhjdh.ibid.user.domain.Role;
 
@@ -65,6 +66,9 @@ public abstract class ControllerTestSupport {
 
     @MockitoBean
     protected ReservationService reservationService;
+
+    @MockitoBean
+    protected CompletionService completionService;
 
     @BeforeEach
     void setUpMockMvc() {
