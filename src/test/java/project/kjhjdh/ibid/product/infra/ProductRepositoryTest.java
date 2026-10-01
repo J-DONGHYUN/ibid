@@ -76,6 +76,34 @@ class ProductRepositoryTest extends RepositoryTestSupport {
                 .containsExactly(reserved.getId(), onSale.getId());
     }
 
+    @DisplayName("[PD-03] 거래완료 제외 조회도 커서 경계에서 겹치거나 빠지지 않는다")
+    @Test
+    void findByStatusNotAndIdLessThanOrderByIdDesc_cursor() {
+        // given — 판매중·거래완료·판매중·판매중 순 (거래완료가 윈도 중간에 낀다)
+        Product p1 = productRepository.save(Product.create(SELLER_ID, "판매중1", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        Product sold = Product.create(SELLER_ID, "거래완료", "상태 좋음", 20000, ProductCondition.USED, DeviceSpecFixture.sample());
+        sold.complete(9L);
+        productRepository.save(sold);
+        Product p3 = productRepository.save(Product.create(SELLER_ID, "판매중3", "상태 좋음", 30000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        Product p4 = productRepository.save(Product.create(SELLER_ID, "판매중4", "상태 좋음", 40000, ProductCondition.USED, DeviceSpecFixture.sample()));
+
+        // when — 첫 페이지(크기 2)
+        Slice<Product> first = productRepository.findByStatusNotAndIdLessThanOrderByIdDesc(
+                ProductStatus.SOLD, Long.MAX_VALUE, PageRequest.of(0, 2));
+
+        // then — 최신 판매중 둘, 다음 있음
+        assertThat(first.getContent()).extracting(Product::getId).containsExactly(p4.getId(), p3.getId());
+        assertThat(first.hasNext()).isTrue();
+
+        // when — 마지막(p3) 커서로 이어 받으면 거래완료는 건너뛰고 p1 만
+        Slice<Product> next = productRepository.findByStatusNotAndIdLessThanOrderByIdDesc(
+                ProductStatus.SOLD, p3.getId(), PageRequest.of(0, 2));
+
+        // then — 겹침·빠짐 없이 p1 만, 다음 없음
+        assertThat(next.getContent()).extracting(Product::getId).containsExactly(p1.getId());
+        assertThat(next.hasNext()).isFalse();
+    }
+
     @DisplayName("조회수를 delta만큼 증가시킨다")
     @Test
     void increaseViewCount() {
