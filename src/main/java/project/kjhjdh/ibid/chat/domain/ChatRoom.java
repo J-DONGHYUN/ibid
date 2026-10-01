@@ -40,6 +40,12 @@ public class ChatRoom {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "seller_last_read_message_id")
+    private Long sellerLastReadMessageId;
+
+    @Column(name = "buyer_last_read_message_id")
+    private Long buyerLastReadMessageId;
+
     private ChatRoom(Long productId, Long sellerId, Long buyerId) {
         if (sellerId.equals(buyerId)) {
             throw new BusinessException(ErrorCode.CANNOT_OPEN_CHAT_ON_OWN_PRODUCT);
@@ -56,5 +62,15 @@ public class ChatRoom {
 
     public boolean isParticipant(Long userId) {
         return sellerId.equals(userId) || buyerId.equals(userId);
+    }
+
+    public Long lastReadMessageIdOf(Long userId) {
+        if (sellerId.equals(userId)) {
+            return sellerLastReadMessageId;
+        }
+        if (buyerId.equals(userId)) {
+            return buyerLastReadMessageId;
+        }
+        throw new BusinessException(ErrorCode.ACCESS_DENIED);
     }
 }
