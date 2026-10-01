@@ -212,6 +212,37 @@ class ProductTest {
                 .hasMessage(ErrorCode.INVALID_INPUT.getMessage());
     }
 
+    @DisplayName("[PD-05] 수정하면 제목·설명·가격·상태와 전자기기 정보가 바뀐다")
+    @Test
+    void update() {
+        // given
+        Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
+        DeviceSpec newSpec = new DeviceSpec(DeviceCategory.LAPTOP, "MacBook Air M2", 80, "본체", "흠집");
+
+        // when
+        product.update("새 제목", "새 설명", 50000, ProductCondition.NEW, newSpec);
+
+        // then
+        assertThat(product.getTitle()).isEqualTo("새 제목");
+        assertThat(product.getDescription()).isEqualTo("새 설명");
+        assertThat(product.getPrice()).isEqualTo(50000);
+        assertThat(product.getProductCondition()).isEqualTo(ProductCondition.NEW);
+        assertThat(product.getDeviceSpec().modelName()).isEqualTo("MacBook Air M2");
+    }
+
+    @DisplayName("[PD-05] 거래완료 상품은 수정할 수 없다")
+    @Test
+    void update_whenSold() {
+        // given
+        Product product = Product.create(SELLER_ID, "제목", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
+        product.complete(2L);
+
+        // when & then
+        assertThatThrownBy(() -> product.update("새 제목", "새 설명", 50000, ProductCondition.NEW, DeviceSpecFixture.sample()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_ALREADY_SOLD.getMessage());
+    }
+
     @DisplayName("판매자 본인 여부를 판별한다")
     @Test
     void isOwnedBy() {
