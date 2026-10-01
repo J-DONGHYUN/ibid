@@ -59,6 +59,9 @@ public abstract class ControllerTestSupport {
     @MockitoBean
     protected ChatMessageService chatMessageService;
 
+    @MockitoBean
+    protected org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
     @BeforeEach
     void setUpMockMvc() {
         RestAssuredMockMvc.mockMvc(mockMvc);

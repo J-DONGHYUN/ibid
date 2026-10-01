@@ -2,6 +2,7 @@ package project.kjhjdh.ibid.chat.presentation;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,7 +24,10 @@ import project.kjhjdh.ibid.chat.presentation.dto.SendMessageRequest;
 @RequiredArgsConstructor
 public class ChatMessageController {
 
+    private static final String TOPIC_ROOM_PREFIX = "/topic/room.";
+
     private final ChatMessageService chatMessageService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @PostMapping
     public ResponseEntity<ChatMessageResponse> send(
@@ -33,7 +37,8 @@ public class ChatMessageController {
     ) {
         ChatMessage message = chatMessageService.send(new SendMessageCommand(
                 chatRoomId, loginUser.userId(), request.clientMessageId(), request.content()));
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ChatMessageResponse.from(message));
+        ChatMessageResponse response = ChatMessageResponse.from(message);
+        messagingTemplate.convertAndSend(TOPIC_ROOM_PREFIX + chatRoomId, response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
