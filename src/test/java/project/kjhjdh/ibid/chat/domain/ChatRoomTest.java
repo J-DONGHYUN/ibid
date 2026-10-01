@@ -52,4 +52,44 @@ class ChatRoomTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
     }
+
+    @DisplayName("[CH-06] 읽음 처리하면 그 참여자의 읽음 위치가 오른다")
+    @Test
+    void markRead() {
+        // given
+        ChatRoom room = ChatRoom.open(PRODUCT_ID, SELLER_ID, BUYER_ID);
+
+        // when
+        room.markRead(BUYER_ID, 5L);
+
+        // then
+        assertThat(room.lastReadMessageIdOf(BUYER_ID)).isEqualTo(5L);
+        assertThat(room.lastReadMessageIdOf(SELLER_ID)).isNull();
+    }
+
+    @DisplayName("[CH-06] 읽음 위치는 뒤로 가지 않는다")
+    @Test
+    void markRead_doesNotRegress() {
+        // given
+        ChatRoom room = ChatRoom.open(PRODUCT_ID, SELLER_ID, BUYER_ID);
+        room.markRead(BUYER_ID, 5L);
+
+        // when — 더 작은 값으로 읽음 처리
+        room.markRead(BUYER_ID, 3L);
+
+        // then — 유지
+        assertThat(room.lastReadMessageIdOf(BUYER_ID)).isEqualTo(5L);
+    }
+
+    @DisplayName("[I-08] 참여자가 아니면 읽음 처리할 수 없다")
+    @Test
+    void markRead_notParticipant() {
+        // given
+        ChatRoom room = ChatRoom.open(PRODUCT_ID, SELLER_ID, BUYER_ID);
+
+        // when & then
+        assertThatThrownBy(() -> room.markRead(STRANGER_ID, 5L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
+    }
 }

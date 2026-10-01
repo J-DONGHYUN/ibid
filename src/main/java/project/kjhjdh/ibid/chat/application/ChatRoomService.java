@@ -69,6 +69,28 @@ public class ChatRoomService {
                 lastMessages.get(entry.getLastMessageId()), summaries));
     }
 
+    @Transactional(readOnly = true)
+    public Slice<ProductChatRoomResult> getProductRooms(Long productId, Long sellerId, Long cursor) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        if (!product.isOwnedBy(sellerId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+        Long effectiveCursor = (cursor == null) ? Long.MAX_VALUE : cursor;
+        Slice<ChatRoom> slice = chatRoomRepository.findByProductIdAndSellerIdAndIdLessThanOrderByIdDesc(
+                productId, sellerId, effectiveCursor, PageRequest.of(0, PAGE_SIZE));
+        return slice.map(room -> toProductRoomResult(room, sellerId));
+    }
+
+    private ProductChatRoomResult toProductRoomResult(ChatRoom room, Long sellerId) {
+        ChatMessage lastMessage = chatMessageRepository.findFirstByChatRoomIdOrderByIdDesc(room.getId())
+                .orElse(null);
+        Long lastRead = room.lastReadMessageIdOf(sellerId);
+        long unreadCount = chatMessageRepository.countByChatRoomIdAndIdGreaterThanAndSenderIdNot(
+                room.getId(), lastRead == null ? 0L : lastRead, sellerId);
+        return new ProductChatRoomResult(room.getId(), room.getBuyerId(), lastMessage, unreadCount);
+    }
+
     private MyChatRoomResult toResult(Long userId, ChatRoom room, ChatMessage lastMessage,
                                       Map<Long, ProductSummary> summaries) {
         Long peerId = room.getSellerId().equals(userId) ? room.getBuyerId() : room.getSellerId();

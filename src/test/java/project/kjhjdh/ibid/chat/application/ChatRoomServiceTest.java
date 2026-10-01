@@ -174,6 +174,59 @@ class ChatRoomServiceTest {
         assertThat(result.getContent().get(0).unreadCount()).isEqualTo(3L);
     }
 
+    @DisplayName("[CH-07] 판매자는 내 상품의 채팅방들을 상대·마지막 메시지·안 읽은 수와 함께 조회한다")
+    @Test
+    void getProductRooms() {
+        // given
+        ChatRoom room = ChatRoom.open(PRODUCT_ID, SELLER_ID, BUYER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+        ChatMessage lastMessage = ChatMessage.create(ROOM_ID, BUYER_ID, "안녕하세요", "c-1");
+        ReflectionTestUtils.setField(lastMessage, "id", 3L);
+
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product()));
+        given(chatRoomRepository.findByProductIdAndSellerIdAndIdLessThanOrderByIdDesc(
+                eq(PRODUCT_ID), eq(SELLER_ID), any(), any()))
+                .willReturn(new SliceImpl<>(List.of(room), PageRequest.of(0, 20), false));
+        given(chatMessageRepository.findFirstByChatRoomIdOrderByIdDesc(ROOM_ID))
+                .willReturn(Optional.of(lastMessage));
+        given(chatMessageRepository.countByChatRoomIdAndIdGreaterThanAndSenderIdNot(ROOM_ID, 0L, SELLER_ID))
+                .willReturn(2L);
+
+        // when
+        Slice<ProductChatRoomResult> result = chatRoomService.getProductRooms(PRODUCT_ID, SELLER_ID, null);
+
+        // then
+        ProductChatRoomResult room0 = result.getContent().get(0);
+        assertThat(room0.chatRoomId()).isEqualTo(ROOM_ID);
+        assertThat(room0.buyerId()).isEqualTo(BUYER_ID);
+        assertThat(room0.lastMessage().getId()).isEqualTo(3L);
+        assertThat(room0.unreadCount()).isEqualTo(2L);
+    }
+
+    @DisplayName("[CH-07] 판매자 본인이 아니면 상품별 채팅방을 조회할 수 없다")
+    @Test
+    void getProductRooms_notOwner() {
+        // given
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product()));
+
+        // when & then — 구매자는 상품 소유자가 아니다
+        assertThatThrownBy(() -> chatRoomService.getProductRooms(PRODUCT_ID, BUYER_ID, null))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
+    }
+
+    @DisplayName("[CH-07] 없는 상품의 채팅방은 조회할 수 없다")
+    @Test
+    void getProductRooms_productNotFound() {
+        // given
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> chatRoomService.getProductRooms(PRODUCT_ID, SELLER_ID, null))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+    }
+
     private RoomLastMessage roomLastMessage(Long roomId, Long lastMessageId) {
         return new RoomLastMessage() {
             @Override

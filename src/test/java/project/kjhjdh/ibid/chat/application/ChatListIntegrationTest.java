@@ -1,6 +1,7 @@
 package project.kjhjdh.ibid.chat.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
 import project.kjhjdh.ibid.chat.infra.ChatMessageRepository;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
+import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.product.DeviceSpecFixture;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
@@ -100,8 +102,49 @@ class ChatListIntegrationTest extends IntegrationTestSupport {
         assertThat(next.getContent()).extracting(ChatMessage::getId).containsExactly(m1);
     }
 
+    @DisplayName("[CH-07] 판매자는 내 상품의 채팅방들을 방 id 역순 커서로 조회한다 — 메시지 없는 방도 포함, 겹침·빠짐 없음")
+    @Test
+    void getProductRooms_includesEmptyAndCursor() {
+        // given — 한 상품에 두 구매 희망자가 방을 열고, 한 방만 메시지가 있다
+        Long seller = 10L;
+        Long productId = productRepository.save(Product.create(
+                seller, "아이폰 13", "A급", 500000, ProductCondition.USED, DeviceSpecFixture.sample())).getId();
+        Long roomA = chatRoomRepository.save(ChatRoom.open(productId, seller, 100L)).getId();
+        Long roomB = chatRoomRepository.save(ChatRoom.open(productId, seller, 200L)).getId();
+        send(roomA, 100L, "a1");
+
+        // when — 첫 페이지 (방 id 역순)
+        Slice<ProductChatRoomResult> first = chatRoomService.getProductRooms(productId, seller, null);
+
+        // then — 메시지 없는 roomB 도 포함, 역순
+        assertThat(first.getContent()).extracting(ProductChatRoomResult::chatRoomId)
+                .containsExactly(roomB, roomA);
+        assertThat(first.getContent().get(0).lastMessage()).as("메시지 없는 방").isNull();
+
+        // when — roomB 를 커서로 이어 받으면
+        Slice<ProductChatRoomResult> second = chatRoomService.getProductRooms(productId, seller, roomB);
+
+        // then — roomB 는 빠지고 roomA 만
+        assertThat(second.getContent()).extracting(ProductChatRoomResult::chatRoomId)
+                .containsExactly(roomA);
+    }
+
+    @DisplayName("[CH-07] 판매자 본인이 아니면 상품별 채팅방을 조회할 수 없다")
+    @Test
+    void getProductRooms_notOwner() {
+        // given
+        Long seller = 10L;
+        Long productId = productRepository.save(Product.create(
+                seller, "아이폰 13", "A급", 500000, ProductCondition.USED, DeviceSpecFixture.sample())).getId();
+        chatRoomRepository.save(ChatRoom.open(productId, seller, 100L));
+
+        // when & then — 다른 사용자
+        assertThatThrownBy(() -> chatRoomService.getProductRooms(productId, 999L, null))
+                .isInstanceOf(BusinessException.class);
+    }
+
     private Slice<ChatMessage> chatRoomMessages(Long roomId, Long cursor) {
-        return chatMessageService.getMessages(roomId, BUYER_ID, cursor);
+        return chatMessageService.getMessages(roomId, BUYER_ID, cursor).messages();
     }
 
     private Long openRoom(Long sellerId, Long buyerId) {

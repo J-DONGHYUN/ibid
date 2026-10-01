@@ -24,15 +24,32 @@ public class ChatMessageService {
     private final ChatRoomRepository chatRoomRepository;
 
     @Transactional(readOnly = true)
-    public Slice<ChatMessage> getMessages(Long chatRoomId, Long userId, Long cursor) {
+    public MessageListResult getMessages(Long chatRoomId, Long userId, Long cursor) {
         ChatRoom room = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
         if (!room.isParticipant(userId)) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
         Long effectiveCursor = (cursor == null) ? Long.MAX_VALUE : cursor;
-        return chatMessageRepository.findByChatRoomIdAndIdLessThanOrderByIdDesc(
+        Slice<ChatMessage> messages = chatMessageRepository.findByChatRoomIdAndIdLessThanOrderByIdDesc(
                 chatRoomId, effectiveCursor, PageRequest.of(0, PAGE_SIZE));
+        return new MessageListResult(messages,
+                room.getSellerLastReadMessageId(), room.getBuyerLastReadMessageId());
+    }
+
+    @Transactional
+    public ReadReceiptResult markRead(Long chatRoomId, Long userId) {
+        ChatRoom room = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+        if (!room.isParticipant(userId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+        chatMessageRepository.findFirstByChatRoomIdOrderByIdDesc(chatRoomId)
+                .ifPresent(latest -> {
+                    room.markRead(userId, latest.getId());
+                    chatRoomRepository.save(room);
+                });
+        return new ReadReceiptResult(chatRoomId, userId, room.lastReadMessageIdOf(userId));
     }
 
     public SendMessageResult send(SendMessageCommand command) {

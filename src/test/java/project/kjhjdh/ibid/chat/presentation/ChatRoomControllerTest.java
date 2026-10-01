@@ -1,17 +1,24 @@
 package project.kjhjdh.ibid.chat.presentation;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
+import project.kjhjdh.ibid.chat.application.ProductChatRoomResult;
+import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
@@ -68,5 +75,45 @@ class ChatRoomControllerTest extends ControllerTestSupport {
                 .then()
                 .statusCode(HttpStatus.NOT_FOUND.value())
                 .body("code", equalTo("PRODUCT_NOT_FOUND"));
+    }
+
+    @DisplayName("[CH-07] 상품별 채팅방 목록을 조회하면 방마다 상대·마지막 메시지·안 읽은 수와 다음 커서를 응답한다")
+    @Test
+    void productRooms() {
+        // given
+        ChatMessage lastMessage = ChatMessage.create(5L, 20L, "안녕하세요", "c-1");
+        ReflectionTestUtils.setField(lastMessage, "id", 3L);
+        ProductChatRoomResult result = new ProductChatRoomResult(5L, 20L, lastMessage, 2L);
+        given(chatRoomService.getProductRooms(eq(1L), anyLong(), any()))
+                .willReturn(new SliceImpl<>(List.of(result), PageRequest.of(0, 20), true));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/products/{productId}/chat-rooms", 1L)
+                .then()
+                .statusCode(200)
+                .body("rooms[0].chatRoomId", equalTo(5))
+                .body("rooms[0].buyerId", equalTo(20))
+                .body("rooms[0].lastMessage.messageId", equalTo(3))
+                .body("rooms[0].unreadCount", equalTo(2))
+                .body("nextCursor", equalTo(5))
+                .body("hasNext", equalTo(true));
+    }
+
+    @DisplayName("[CH-07] 판매자 본인이 아니면 상품별 채팅방 조회에 403을 응답한다")
+    @Test
+    void productRooms_notOwner() {
+        // given
+        willThrow(new BusinessException(ErrorCode.ACCESS_DENIED))
+                .given(chatRoomService).getProductRooms(eq(1L), anyLong(), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/products/{productId}/chat-rooms", 1L)
+                .then()
+                .statusCode(403)
+                .body("code", equalTo("ACCESS_DENIED"));
     }
 }

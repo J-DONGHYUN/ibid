@@ -1,6 +1,5 @@
 package project.kjhjdh.ibid.chat.presentation;
 
-import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,8 +17,8 @@ import project.kjhjdh.ibid.auth.domain.UserInfo;
 import project.kjhjdh.ibid.auth.presentation.resolver.LoginUser;
 import project.kjhjdh.ibid.chat.application.ChatMessageService;
 import project.kjhjdh.ibid.chat.application.SendMessageCommand;
+import project.kjhjdh.ibid.chat.application.MessageListResult;
 import project.kjhjdh.ibid.chat.application.SendMessageResult;
-import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.presentation.dto.ChatMessageListResponse;
 import project.kjhjdh.ibid.chat.presentation.dto.ChatMessageResponse;
 import project.kjhjdh.ibid.chat.presentation.dto.SendMessageRequest;
@@ -55,7 +54,7 @@ public class ChatMessageController {
             @PathVariable Long chatRoomId,
             @RequestParam(required = false) Long cursor
     ) {
-        Slice<ChatMessage> slice = chatMessageService.getMessages(chatRoomId, loginUser.userId(), cursor);
-        return ResponseEntity.ok(ChatMessageListResponse.of(slice));
+        MessageListResult result = chatMessageService.getMessages(chatRoomId, loginUser.userId(), cursor);
+        return ResponseEntity.ok(ChatMessageListResponse.of(result));
     }
 }

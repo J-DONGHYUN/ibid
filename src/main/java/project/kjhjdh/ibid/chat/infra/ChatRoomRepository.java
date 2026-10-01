@@ -14,6 +14,9 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     Optional<ChatRoom> findByProductIdAndBuyerId(Long productId, Long buyerId);
 
+    Slice<ChatRoom> findByProductIdAndSellerIdAndIdLessThanOrderByIdDesc(
+            Long productId, Long sellerId, Long id, Pageable pageable);
+
     @Query("select r.id as roomId, max(m.id) as lastMessageId "
             + "from ChatRoom r join ChatMessage m on m.chatRoomId = r.id "
             + "where r.sellerId = :userId or r.buyerId = :userId "
