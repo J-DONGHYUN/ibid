@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
@@ -143,6 +144,65 @@ class ChatMessageServiceTest {
 
         // when & then
         assertThatThrownBy(() -> chatMessageService.getMessages(ROOM_ID, BUYER_ID, null))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.CHAT_ROOM_NOT_FOUND.getMessage());
+    }
+
+    @DisplayName("[CH-06] 읽음 처리하면 내 읽음 위치가 마지막 메시지로 오른다")
+    @Test
+    void markRead() {
+        // given
+        ChatRoom room = room();
+        ChatMessage latest = ChatMessage.create(ROOM_ID, SELLER_ID, "마지막", CLIENT_MSG_ID);
+        ReflectionTestUtils.setField(latest, "id", 9L);
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room));
+        given(chatMessageRepository.findFirstByChatRoomIdOrderByIdDesc(ROOM_ID)).willReturn(Optional.of(latest));
+
+        // when
+        ReadReceiptResult result = chatMessageService.markRead(ROOM_ID, BUYER_ID);
+
+        // then
+        assertThat(result.readerId()).isEqualTo(BUYER_ID);
+        assertThat(result.lastReadMessageId()).isEqualTo(9L);
+        assertThat(room.lastReadMessageIdOf(BUYER_ID)).isEqualTo(9L);
+        then(chatRoomRepository).should().save(room);
+    }
+
+    @DisplayName("[CH-06] 메시지가 없는 방을 읽음 처리하면 읽음 위치는 비어 있다")
+    @Test
+    void markRead_noMessages() {
+        // given
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room()));
+        given(chatMessageRepository.findFirstByChatRoomIdOrderByIdDesc(ROOM_ID)).willReturn(Optional.empty());
+
+        // when
+        ReadReceiptResult result = chatMessageService.markRead(ROOM_ID, BUYER_ID);
+
+        // then
+        assertThat(result.lastReadMessageId()).isNull();
+        then(chatRoomRepository).should(never()).save(any());
+    }
+
+    @DisplayName("[I-08] 참여자가 아니면 읽음 처리할 수 없다")
+    @Test
+    void markRead_notParticipant() {
+        // given
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room()));
+
+        // when & then
+        assertThatThrownBy(() -> chatMessageService.markRead(ROOM_ID, STRANGER_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
+    }
+
+    @DisplayName("[CH-06] 없는 채팅방은 읽음 처리할 수 없다")
+    @Test
+    void markRead_roomNotFound() {
+        // given
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> chatMessageService.markRead(ROOM_ID, BUYER_ID))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.CHAT_ROOM_NOT_FOUND.getMessage());
     }

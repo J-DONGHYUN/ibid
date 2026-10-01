@@ -35,6 +35,21 @@ public class ChatMessageService {
                 chatRoomId, effectiveCursor, PageRequest.of(0, PAGE_SIZE));
     }
 
+    @Transactional
+    public ReadReceiptResult markRead(Long chatRoomId, Long userId) {
+        ChatRoom room = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+        if (!room.isParticipant(userId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+        chatMessageRepository.findFirstByChatRoomIdOrderByIdDesc(chatRoomId)
+                .ifPresent(latest -> {
+                    room.markRead(userId, latest.getId());
+                    chatRoomRepository.save(room);
+                });
+        return new ReadReceiptResult(chatRoomId, userId, room.lastReadMessageIdOf(userId));
+    }
+
     public SendMessageResult send(SendMessageCommand command) {
         ChatRoom room = chatRoomRepository.findById(command.chatRoomId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
