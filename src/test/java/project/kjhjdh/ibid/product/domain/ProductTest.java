@@ -119,6 +119,75 @@ class ProductTest {
                 .hasMessage(ErrorCode.PRODUCT_NOT_RESERVED.getMessage());
     }
 
+    @DisplayName("[TR-03] 판매중 상품을 거래완료하면 거래완료 상태가 되고 거래 상대가 지정된다")
+    @Test
+    void complete_fromOnSale() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
+
+        // when
+        product.complete(2L);
+
+        // then
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.SOLD);
+        assertThat(product.getSoldBuyerId()).isEqualTo(2L);
+    }
+
+    @DisplayName("[TR-03][I-02] 예약중 상품을 거래완료하면 예약 상대가 비워지고 거래 상대가 정확히 한 명 지정된다")
+    @Test
+    void complete_fromReserved() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
+        product.reserve(2L);
+
+        // when
+        product.complete(3L);
+
+        // then
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.SOLD);
+        assertThat(product.getSoldBuyerId()).isEqualTo(3L);
+        assertThat(product.getReservedBuyerId()).isNull();
+    }
+
+    @DisplayName("[I-03] 거래완료 상품은 다시 거래완료할 수 없다")
+    @Test
+    void complete_alreadySold() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
+        product.complete(2L);
+
+        // when & then
+        assertThatThrownBy(() -> product.complete(3L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_ALREADY_SOLD.getMessage());
+    }
+
+    @DisplayName("[I-03] 거래완료 상품은 예약할 수 없다")
+    @Test
+    void reserve_whenSold() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
+        product.complete(2L);
+
+        // when & then
+        assertThatThrownBy(() -> product.reserve(3L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_ON_SALE.getMessage());
+    }
+
+    @DisplayName("[I-03] 거래완료 상품은 예약 해제할 수 없다")
+    @Test
+    void cancelReservation_whenSold() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
+        product.complete(2L);
+
+        // when & then
+        assertThatThrownBy(product::cancelReservation)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_RESERVED.getMessage());
+    }
+
     @DisplayName("판매자 본인 여부를 판별한다")
     @Test
     void isOwnedBy() {

@@ -55,6 +55,8 @@ public class Product {
 
     private Long reservedBuyerId;
 
+    private Long soldBuyerId;
+
     @Version
     private long version;
 
@@ -108,6 +110,15 @@ public class Product {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_RESERVED);
         }
         this.status = ProductStatus.ON_SALE;
+        this.reservedBuyerId = null;
+    }
+
+    public void complete(Long buyerId) {
+        if (status == ProductStatus.SOLD) {
+            throw new BusinessException(ErrorCode.PRODUCT_ALREADY_SOLD);
+        }
+        this.status = ProductStatus.SOLD;
+        this.soldBuyerId = buyerId;
         this.reservedBuyerId = null;
     }
 
