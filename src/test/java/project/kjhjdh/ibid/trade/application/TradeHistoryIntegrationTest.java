@@ -70,11 +70,17 @@ class TradeHistoryIntegrationTest extends IntegrationTestSupport {
         Long bought2 = saveSold(SELLER_ID, BUYER_ID);
         saveSold(SELLER_ID, 777L); // 다른 구매자
 
-        // when
+        // when — 첫 조회
         ProductListResult result = tradeHistoryService.getPurchases(BUYER_ID, null);
 
-        // then
+        // then — 내가 거래 상대인 상품만 최신순
         assertThat(ids(result)).containsExactly(bought2, bought1);
+
+        // when — bought2 를 커서로 이어 받으면
+        ProductListResult next = tradeHistoryService.getPurchases(BUYER_ID, bought2);
+
+        // then — bought2 미만만, 겹침·빠짐 없음
+        assertThat(ids(next)).containsExactly(bought1);
     }
 
     private java.util.List<Long> ids(ProductListResult result) {
