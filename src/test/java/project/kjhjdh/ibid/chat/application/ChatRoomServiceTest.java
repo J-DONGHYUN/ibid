@@ -3,10 +3,13 @@ package project.kjhjdh.ibid.chat.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -15,13 +18,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
+import project.kjhjdh.ibid.chat.infra.ChatMessageRepository;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
+import project.kjhjdh.ibid.chat.infra.RoomLastMessage;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.DeviceSpecFixture;
+import project.kjhjdh.ibid.product.application.ProductService;
+import project.kjhjdh.ibid.product.application.ProductSummary;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
@@ -32,12 +43,19 @@ class ChatRoomServiceTest {
     private static final Long PRODUCT_ID = 1L;
     private static final Long SELLER_ID = 10L;
     private static final Long BUYER_ID = 20L;
+    private static final Long ROOM_ID = 5L;
 
     @Mock
     private ChatRoomRepository chatRoomRepository;
 
     @Mock
+    private ChatMessageRepository chatMessageRepository;
+
+    @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private ProductService productService;
 
     @InjectMocks
     private ChatRoomService chatRoomService;
@@ -98,6 +116,76 @@ class ChatRoomServiceTest {
         assertThatThrownBy(() -> chatRoomService.open(PRODUCT_ID, BUYER_ID))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+    }
+
+    @DisplayName("[CH-05] 내 채팅방마다 상대·상품·마지막 메시지·안 읽은 수가 실린다")
+    @Test
+    void getMyRooms() {
+        // given — 내가 구매 희망자인 방, 내 읽음 위치는 2
+        ChatRoom room = ChatRoom.open(PRODUCT_ID, SELLER_ID, BUYER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+        ReflectionTestUtils.setField(room, "buyerLastReadMessageId", 2L);
+        ChatMessage lastMessage = ChatMessage.create(ROOM_ID, SELLER_ID, "마지막", "c-3");
+        ReflectionTestUtils.setField(lastMessage, "id", 3L);
+
+        given(chatRoomRepository.findMyRoomsOrderByLastMessageDesc(eq(BUYER_ID), any(), any()))
+                .willReturn(new SliceImpl<>(List.of(roomLastMessage(ROOM_ID, 3L)), PageRequest.of(0, 20), false));
+        given(chatRoomRepository.findAllById(List.of(ROOM_ID))).willReturn(List.of(room));
+        given(chatMessageRepository.findAllById(List.of(3L))).willReturn(List.of(lastMessage));
+        given(productService.findSummaries(List.of(PRODUCT_ID)))
+                .willReturn(Map.of(PRODUCT_ID, new ProductSummary(PRODUCT_ID, "아이폰 13", "https://thumb")));
+        given(chatMessageRepository.countByChatRoomIdAndIdGreaterThanAndSenderIdNot(ROOM_ID, 2L, BUYER_ID))
+                .willReturn(4L);
+
+        // when
+        Slice<MyChatRoomResult> result = chatRoomService.getMyRooms(BUYER_ID, null);
+
+        // then
+        MyChatRoomResult room0 = result.getContent().get(0);
+        assertThat(room0.chatRoomId()).isEqualTo(ROOM_ID);
+        assertThat(room0.peerId()).isEqualTo(SELLER_ID);
+        assertThat(room0.product().title()).isEqualTo("아이폰 13");
+        assertThat(room0.lastMessage().getId()).isEqualTo(3L);
+        assertThat(room0.unreadCount()).isEqualTo(4L);
+    }
+
+    @DisplayName("[CH-05] 읽음 위치가 없으면 상대가 보낸 메시지 전부가 안 읽은 수다")
+    @Test
+    void getMyRooms_noReadPositionCountsFromStart() {
+        // given — 읽음 위치 미세팅(null)
+        ChatRoom room = ChatRoom.open(PRODUCT_ID, SELLER_ID, BUYER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+        ChatMessage lastMessage = ChatMessage.create(ROOM_ID, SELLER_ID, "마지막", "c-3");
+        ReflectionTestUtils.setField(lastMessage, "id", 3L);
+
+        given(chatRoomRepository.findMyRoomsOrderByLastMessageDesc(eq(BUYER_ID), any(), any()))
+                .willReturn(new SliceImpl<>(List.of(roomLastMessage(ROOM_ID, 3L)), PageRequest.of(0, 20), false));
+        given(chatRoomRepository.findAllById(List.of(ROOM_ID))).willReturn(List.of(room));
+        given(chatMessageRepository.findAllById(List.of(3L))).willReturn(List.of(lastMessage));
+        given(productService.findSummaries(List.of(PRODUCT_ID)))
+                .willReturn(Map.of(PRODUCT_ID, new ProductSummary(PRODUCT_ID, "아이폰 13", "https://thumb")));
+        given(chatMessageRepository.countByChatRoomIdAndIdGreaterThanAndSenderIdNot(ROOM_ID, 0L, BUYER_ID))
+                .willReturn(3L);
+
+        // when
+        Slice<MyChatRoomResult> result = chatRoomService.getMyRooms(BUYER_ID, null);
+
+        // then
+        assertThat(result.getContent().get(0).unreadCount()).isEqualTo(3L);
+    }
+
+    private RoomLastMessage roomLastMessage(Long roomId, Long lastMessageId) {
+        return new RoomLastMessage() {
+            @Override
+            public Long getRoomId() {
+                return roomId;
+            }
+
+            @Override
+            public Long getLastMessageId() {
+                return lastMessageId;
+            }
+        };
     }
 
     private Product product() {
