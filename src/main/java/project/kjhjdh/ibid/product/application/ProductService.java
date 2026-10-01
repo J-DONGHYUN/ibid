@@ -2,6 +2,7 @@ package project.kjhjdh.ibid.product.application;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -83,6 +84,16 @@ public class ProductService {
         List<Long> productIds = slice.getContent().stream().map(Product::getId).toList();
         Map<Long, String> thumbnails = productImageService.findThumbnails(productIds);
         return new ProductListResult(slice, thumbnails);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, ProductSummary> findSummaries(List<Long> productIds) {
+        Map<Long, String> thumbnails = productImageService.findThumbnails(productIds);
+        return productRepository.findAllById(productIds).stream()
+                .collect(Collectors.toMap(
+                        Product::getId,
+                        product -> new ProductSummary(
+                                product.getId(), product.getTitle(), thumbnails.get(product.getId()))));
     }
 
     @Transactional(readOnly = true)
