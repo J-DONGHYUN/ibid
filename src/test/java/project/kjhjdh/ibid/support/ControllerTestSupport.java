@@ -33,6 +33,7 @@ import project.kjhjdh.ibid.product.application.ProductService;
 import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;
 import project.kjhjdh.ibid.trade.application.CompletionService;
 import project.kjhjdh.ibid.trade.application.ReservationService;
+import project.kjhjdh.ibid.trade.application.TradeHistoryService;
 import project.kjhjdh.ibid.user.domain.Role;
 
 @ActiveProfiles("test")
@@ -69,6 +70,9 @@ public abstract class ControllerTestSupport {
 
     @MockitoBean
     protected CompletionService completionService;
+
+    @MockitoBean
+    protected TradeHistoryService tradeHistoryService;
 
     @BeforeEach
     void setUpMockMvc() {
