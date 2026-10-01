@@ -227,6 +227,20 @@ class ChatRoomServiceTest {
                 .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
     }
 
+    @DisplayName("[I-04] 그 상품에 채팅방이 있는 사용자는 채팅 상대다")
+    @Test
+    void isChatPartner() {
+        // given
+        given(chatRoomRepository.findByProductIdAndBuyerId(PRODUCT_ID, BUYER_ID))
+                .willReturn(Optional.of(ChatRoom.open(PRODUCT_ID, SELLER_ID, BUYER_ID)));
+        given(chatRoomRepository.findByProductIdAndBuyerId(PRODUCT_ID, 999L))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThat(chatRoomService.isChatPartner(PRODUCT_ID, BUYER_ID)).isTrue();
+        assertThat(chatRoomService.isChatPartner(PRODUCT_ID, 999L)).isFalse();
+    }
+
     private RoomLastMessage roomLastMessage(Long roomId, Long lastMessageId) {
         return new RoomLastMessage() {
             @Override
