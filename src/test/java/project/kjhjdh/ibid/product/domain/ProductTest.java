@@ -230,6 +230,21 @@ class ProductTest {
         assertThat(product.getDeviceSpec().modelName()).isEqualTo("MacBook Air M2");
     }
 
+    @DisplayName("[PD-05] 예약중 상품도 수정할 수 있다")
+    @Test
+    void update_whenReserved() {
+        // given
+        Product product = Product.create(SELLER_ID, "제목", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
+        product.reserve(2L);
+
+        // when
+        product.update("새 제목", "새 설명", 50000, ProductCondition.NEW, DeviceSpecFixture.sample());
+
+        // then — 예약 상태는 유지되고 내용은 바뀐다
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.RESERVED);
+        assertThat(product.getTitle()).isEqualTo("새 제목");
+    }
+
     @DisplayName("[PD-05] 거래완료 상품은 수정할 수 없다")
     @Test
     void update_whenSold() {
