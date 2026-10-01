@@ -100,7 +100,6 @@ project.kjhjdh.ibid.product.infra.ProductViewRedisRepositoryTest.takePendingCoun
 project.kjhjdh.ibid.product.presentation.ProductControllerTest.confirmImages() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.presentation.ProductControllerTest.confirmImages_forbidden() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.presentation.ProductControllerTest.delete() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
-project.kjhjdh.ibid.product.presentation.ProductControllerTest.getProduct() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.presentation.ProductControllerTest.getProduct_issuesVisitorCookie() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.presentation.ProductControllerTest.getProduct_notFound() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다
 project.kjhjdh.ibid.product.presentation.ProductControllerTest.getProduct_reusesVisitorCookie() 의 @DisplayName 이 요구사항 · 불변식 ID([AU|PD|CH|TR|NT|I]-nn)로 시작하지 않는다

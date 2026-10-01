@@ -177,7 +177,7 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("hasNext", equalTo(true));
     }
 
-    @DisplayName("상품 상세 조회에 성공하면 200과 조회수를 포함한 상품 정보를 응답한다")
+    @DisplayName("[PD-04] 상품 상세 조회에 성공하면 200과 전자기기 정보·상태·조회수를 응답한다")
     @Test
     void getProduct() {
         // given
@@ -197,7 +197,45 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("status", equalTo("ON_SALE"))
                 .body("viewCount", equalTo(164))
                 .body("productCondition", equalTo("LIKE_NEW"))
-                .body("imageUrls[0]", equalTo("https://image/a.jpg"));
+                .body("imageUrls[0]", equalTo("https://image/a.jpg"))
+                .body("deviceSpec.category", equalTo("SMARTPHONE"))
+                .body("deviceSpec.modelName", equalTo("iPhone 13"))
+                .body("deviceSpec.batteryHealth", equalTo(90))
+                .body("deviceSpec.components", equalTo("본체, 충전기"));
+    }
+
+    @DisplayName("[PD-04] 판매자 본인이 아니면 owner 는 false 다")
+    @Test
+    void getProduct_notOwner() {
+        // given: detailProduct 의 판매자는 5L, 로그인 사용자는 1L
+        given(productService.getProduct(eq(1L), anyString()))
+                .willReturn(ProductDetailResult.from(detailProduct(), 1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("owner", equalTo(false));
+    }
+
+    @DisplayName("[PD-04] 판매자 본인이 보면 owner 는 true 다")
+    @Test
+    void getProduct_owner() {
+        // given: 판매자 = 로그인 사용자(1L)
+        Product mine = Product.create(1L, "내 상품", "상태 좋음", 89000, ProductCondition.LIKE_NEW, DeviceSpecFixture.sample());
+        ReflectionTestUtils.setField(mine, "id", 1L);
+        given(productService.getProduct(eq(1L), anyString()))
+                .willReturn(ProductDetailResult.from(mine, 1L));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("owner", equalTo(true));
     }
 
     @DisplayName("방문자 쿠키가 없으면 새 방문자 식별자를 쿠키로 발급한다")
