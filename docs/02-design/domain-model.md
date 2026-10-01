@@ -24,7 +24,7 @@
 **현재 코드와 다른 것** — 코드의 `ProductStatus` 는 `ON_SALE` · `RESERVED` 다 (`T-05` 로 이전 제품의
 `PENDING` · `SOLD_OUT` 을 지웠고, `T-20` 이 `reserve` 전이·`reservedBuyerId`·낙관적 락(`ADR-0008`)을 더했다).
 `SOLD` 와 `soldBuyerId` 는 거래완료에서 추가한다 (`T-22` · `ADR-0006`). 예약 유스케이스 전체(본인·채팅
-상대 검증·해제·엔드포인트)는 `T-21`.
+상대 검증·해제·엔드포인트)는 `T-21` 에서 `trade` 가 조율하도록 구현했다.
 
 ## 애그리게이트
 
