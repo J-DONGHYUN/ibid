@@ -8,8 +8,12 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import io.restassured.http.ContentType;
@@ -116,5 +120,60 @@ class ChatMessageControllerTest extends ControllerTestSupport {
                 .then()
                 .statusCode(403)
                 .body("code", equalTo("ACCESS_DENIED"));
+    }
+
+    @DisplayName("[CH-04] 메시지 목록을 조회하면 200과 다음 커서를 응답한다")
+    @Test
+    void list() {
+        // given
+        ChatMessage m1 = ChatMessage.create(1L, 20L, "둘", "c-2");
+        ChatMessage m2 = ChatMessage.create(1L, 10L, "하나", "c-1");
+        ReflectionTestUtils.setField(m1, "id", 2L);
+        ReflectionTestUtils.setField(m2, "id", 1L);
+        given(chatMessageService.getMessages(any(), any(), any()))
+                .willReturn(new SliceImpl<>(List.of(m1, m2), PageRequest.of(0, 2), true));
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/chat-rooms/{chatRoomId}/messages", 1L)
+                .then()
+                .statusCode(200)
+                .body("messages[0].messageId", equalTo(2))
+                .body("messages[1].messageId", equalTo(1))
+                .body("nextCursor", equalTo(1))
+                .body("hasNext", equalTo(true));
+    }
+
+    @DisplayName("[I-08] 참여자가 아니면 메시지 목록 조회에 403을 응답한다")
+    @Test
+    void list_notParticipant() {
+        // given
+        willThrow(new BusinessException(ErrorCode.ACCESS_DENIED))
+                .given(chatMessageService).getMessages(any(), any(), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/chat-rooms/{chatRoomId}/messages", 1L)
+                .then()
+                .statusCode(403)
+                .body("code", equalTo("ACCESS_DENIED"));
+    }
+
+    @DisplayName("[CH-04] 없는 채팅방은 메시지 목록 조회에 404를 응답한다")
+    @Test
+    void list_roomNotFound() {
+        // given
+        willThrow(new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND))
+                .given(chatMessageService).getMessages(any(), any(), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .when()
+                .get("/api/chat-rooms/{chatRoomId}/messages", 1L)
+                .then()
+                .statusCode(404)
+                .body("code", equalTo("CHAT_ROOM_NOT_FOUND"));
     }
 }
