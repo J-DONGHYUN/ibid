@@ -2,6 +2,7 @@ package project.kjhjdh.ibid.chat.application;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
@@ -24,6 +25,13 @@ public class ChatRoomService {
 
         return chatRoomRepository.findByProductIdAndBuyerId(productId, buyerId)
                 .orElseGet(() -> save(product, buyerId));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isParticipant(Long chatRoomId, Long userId) {
+        return chatRoomRepository.findById(chatRoomId)
+                .map(room -> room.isParticipant(userId))
+                .orElse(false);
     }
 
     private ChatRoom save(Product product, Long buyerId) {

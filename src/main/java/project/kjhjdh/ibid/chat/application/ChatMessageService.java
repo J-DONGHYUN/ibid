@@ -18,23 +18,26 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
 
-    public ChatMessage send(SendMessageCommand command) {
+    public SendMessageResult send(SendMessageCommand command) {
         ChatRoom room = chatRoomRepository.findById(command.chatRoomId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
         if (!room.isParticipant(command.senderId())) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
         return chatMessageRepository.findByChatRoomIdAndClientMessageId(command.chatRoomId(), command.clientMessageId())
+                .map(existing -> new SendMessageResult(existing, false))
                 .orElseGet(() -> save(command));
     }
 
-    private ChatMessage save(SendMessageCommand command) {
+    private SendMessageResult save(SendMessageCommand command) {
         try {
-            return chatMessageRepository.save(ChatMessage.create(
+            ChatMessage saved = chatMessageRepository.save(ChatMessage.create(
                     command.chatRoomId(), command.senderId(), command.content(), command.clientMessageId()));
+            return new SendMessageResult(saved, true);
         } catch (DataIntegrityViolationException e) {
-            return chatMessageRepository.findByChatRoomIdAndClientMessageId(command.chatRoomId(), command.clientMessageId())
-                    .orElseThrow(() -> e);
+            ChatMessage existing = chatMessageRepository.findByChatRoomIdAndClientMessageId(
+                    command.chatRoomId(), command.clientMessageId()).orElseThrow(() -> e);
+            return new SendMessageResult(existing, false);
         }
     }
 }
