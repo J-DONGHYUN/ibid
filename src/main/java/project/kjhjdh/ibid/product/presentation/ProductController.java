@@ -98,9 +98,10 @@ public class ProductController {
     @PublicApi
     @GetMapping
     public ResponseEntity<ProductListResponse> getProducts(
-            @RequestParam(required = false) Long cursor
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "true") boolean includeSold
     ) {
-        ProductListResult result = productService.getProducts(cursor);
+        ProductListResult result = productService.getProducts(cursor, includeSold);
         return ResponseEntity.ok(ProductListResponse.of(result.slice(), result.thumbnails()));
     }
 
