@@ -42,6 +42,9 @@ public enum ErrorCode {
     INVALID_BATTERY_HEALTH(HttpStatus.BAD_REQUEST, "배터리 성능은 0에서 100 사이여야 합니다."),
     INVALID_DEVICE_COMPONENTS(HttpStatus.BAD_REQUEST, "구성품을 입력해주세요."),
 
+    // Chat
+    CANNOT_OPEN_CHAT_ON_OWN_PRODUCT(HttpStatus.BAD_REQUEST, "본인 상품에는 채팅방을 열 수 없습니다."),
+
     // File
     FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),
     FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일 크기는 10MB 이하여야 합니다."),
