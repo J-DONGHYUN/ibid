@@ -22,4 +22,15 @@ class ChatMessageTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.INVALID_MESSAGE_CONTENT.getMessage());
     }
+
+    @DisplayName("[CH-02] 클라이언트 메시지 식별자가 없으면 만들 수 없다")
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" "})
+    void create_blankClientMessageId(String clientMessageId) {
+        // when & then
+        assertThatThrownBy(() -> ChatMessage.create(1L, 20L, "안녕하세요", clientMessageId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_MESSAGE.getMessage());
+    }
 }
