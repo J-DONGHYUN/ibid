@@ -73,4 +73,23 @@ public class ChatRoom {
         }
         throw new BusinessException(ErrorCode.ACCESS_DENIED);
     }
+
+    public void markRead(Long userId, Long lastReadMessageId) {
+        if (sellerId.equals(userId)) {
+            sellerLastReadMessageId = advance(sellerLastReadMessageId, lastReadMessageId);
+            return;
+        }
+        if (buyerId.equals(userId)) {
+            buyerLastReadMessageId = advance(buyerLastReadMessageId, lastReadMessageId);
+            return;
+        }
+        throw new BusinessException(ErrorCode.ACCESS_DENIED);
+    }
+
+    private Long advance(Long current, Long next) {
+        if (current != null && current >= next) {
+            return current;
+        }
+        return next;
+    }
 }
