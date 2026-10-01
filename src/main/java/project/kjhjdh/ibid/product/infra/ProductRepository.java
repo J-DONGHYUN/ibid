@@ -17,6 +17,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Slice<Product> findByIdLessThanOrderByIdDesc(Long id, Pageable pageable);
 
+    Slice<Product> findByStatusNotAndIdLessThanOrderByIdDesc(ProductStatus status, Long id, Pageable pageable);
+
     List<Product> findBySellerIdOrderByIdDesc(Long sellerId);
 
     Slice<Product> findBySellerIdAndIdLessThanOrderByIdDesc(Long sellerId, Long id, Pageable pageable);

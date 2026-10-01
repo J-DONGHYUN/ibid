@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -161,7 +162,7 @@ class ProductControllerTest extends ControllerTestSupport {
         Slice<Product> slice = new SliceImpl<>(
                 List.of(product(2L, "나이키 후드", 89000), product(1L, "아디다스 슬리퍼", 30000)),
                 PageRequest.of(0, 16), true);
-        given(productService.getProducts(any()))
+        given(productService.getProducts(any(), anyBoolean()))
                 .willReturn(new ProductListResult(slice, Map.of(2L, "https://image/thumb.jpg")));
 
         // when & then
@@ -176,6 +177,22 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("products[0].thumbnailUrl", equalTo("https://image/thumb.jpg"))
                 .body("nextCursor", equalTo(1))
                 .body("hasNext", equalTo(true));
+    }
+
+    @DisplayName("[PD-03] 기본은 거래완료 포함, includeSold=false 면 서비스에 제외를 넘긴다")
+    @Test
+    void getProducts_includeSold() {
+        // given
+        given(productService.getProducts(any(), anyBoolean()))
+                .willReturn(new ProductListResult(new SliceImpl<>(List.of(), PageRequest.of(0, 16), false), Map.of()));
+
+        // when — 파라미터 없으면 기본 포함(true)
+        RestAssuredMockMvc.given().when().get("/api/products").then().statusCode(HttpStatus.OK.value());
+        then(productService).should().getProducts(any(), eq(true));
+
+        // when — includeSold=false 면 제외를 넘긴다
+        RestAssuredMockMvc.given().queryParam("includeSold", "false").when().get("/api/products").then().statusCode(HttpStatus.OK.value());
+        then(productService).should().getProducts(any(), eq(false));
     }
 
     @DisplayName("[PD-04] 상품 상세 조회에 성공하면 200과 전자기기 정보·상태·조회수를 응답한다")
