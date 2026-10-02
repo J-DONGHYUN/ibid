@@ -60,4 +60,4 @@
 | 두 애그리게이트를 봐야 하는 판정 ("예약 상대는 채팅 상대다") | 둘을 모두 볼 수 있는 도메인의 `application` (`trade`) |
 | 요청 형식 검사 (빈 값 · 길이) | `presentation` DTO 의 Bean Validation. **최종 방어는 도메인이 한다** |
 | 복잡한 조회 쿼리 | `infra` 저장소 메서드 |
-| 외부 호출(S3 · Kafka) | `infra`. `application` 은 그 결과만 받는다 |
+| 외부 호출(S3 · RabbitMQ) | `infra`. `application` 은 그 결과만 받는다 |
