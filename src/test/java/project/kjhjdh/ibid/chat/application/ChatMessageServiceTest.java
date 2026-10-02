@@ -15,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +26,8 @@ import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
 import project.kjhjdh.ibid.chat.infra.ChatMessageRepository;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
+import project.kjhjdh.ibid.common.event.NotificationEventPublisher;
+import project.kjhjdh.ibid.common.event.NotificationMessage;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.DeviceSpecFixture;
@@ -50,6 +53,12 @@ class ChatMessageServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private ChatPresenceRegistry presenceRegistry;
+
+    @Mock
+    private NotificationEventPublisher notificationEventPublisher;
+
     @InjectMocks
     private ChatMessageService chatMessageService;
 
@@ -69,6 +78,56 @@ class ChatMessageServiceTest {
         assertThat(result.message().getChatRoomId()).isEqualTo(ROOM_ID);
         assertThat(result.message().getSenderId()).isEqualTo(BUYER_ID);
         assertThat(result.message().getContent()).isEqualTo("안녕하세요");
+    }
+
+    @DisplayName("[NT-01] 메시지를 보내면 그 방을 안 보는 상대에게 알림을 발행한다")
+    @Test
+    void send_notifiesAbsentRecipient() {
+        // given — buyer 가 보내고, seller 는 그 방을 안 보는 중
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room()));
+        given(chatMessageRepository.findByChatRoomIdAndClientMessageId(ROOM_ID, CLIENT_MSG_ID)).willReturn(Optional.empty());
+        given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(presenceRegistry.isViewing(ROOM_ID, SELLER_ID)).willReturn(false);
+
+        // when
+        chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요"));
+
+        // then — 상대(seller)에게 NEW_MESSAGE 알림
+        ArgumentCaptor<NotificationMessage> captor = ArgumentCaptor.forClass(NotificationMessage.class);
+        then(notificationEventPublisher).should().publish(captor.capture());
+        assertThat(captor.getValue().recipientId()).isEqualTo(SELLER_ID);
+        assertThat(captor.getValue().type()).isEqualTo(NotificationMessage.NotificationType.NEW_MESSAGE);
+    }
+
+    @DisplayName("[NT-01] 상대가 그 방을 보고 있으면 알림을 발행하지 않는다")
+    @Test
+    void send_skipsNotificationWhenRecipientViewing() {
+        // given — seller 가 그 방을 보는 중
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room()));
+        given(chatMessageRepository.findByChatRoomIdAndClientMessageId(ROOM_ID, CLIENT_MSG_ID)).willReturn(Optional.empty());
+        given(chatMessageRepository.save(any(ChatMessage.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(presenceRegistry.isViewing(ROOM_ID, SELLER_ID)).willReturn(true);
+
+        // when
+        chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요"));
+
+        // then
+        then(notificationEventPublisher).shouldHaveNoInteractions();
+    }
+
+    @DisplayName("[NT-01] 재전송(멱등)은 알림을 다시 발행하지 않는다")
+    @Test
+    void send_idempotentDoesNotNotify() {
+        // given — 같은 clientMessageId 로 이미 저장돼 있음
+        ChatMessage existing = ChatMessage.create(ROOM_ID, BUYER_ID, "안녕하세요", CLIENT_MSG_ID);
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room()));
+        given(chatMessageRepository.findByChatRoomIdAndClientMessageId(ROOM_ID, CLIENT_MSG_ID)).willReturn(Optional.of(existing));
+
+        // when
+        chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요"));
+
+        // then
+        then(notificationEventPublisher).shouldHaveNoInteractions();
     }
 
     @DisplayName("[CH-02] 같은 클라이언트 메시지 식별자로 재전송하면 기존 메시지를 돌려준다")
@@ -232,6 +291,8 @@ class ChatMessageServiceTest {
     }
 
     private ChatRoom room() {
-        return ChatRoom.open(99L, SELLER_ID, BUYER_ID);
+        ChatRoom room = ChatRoom.open(99L, SELLER_ID, BUYER_ID);
+        ReflectionTestUtils.setField(room, "id", ROOM_ID);
+        return room;
     }
 }

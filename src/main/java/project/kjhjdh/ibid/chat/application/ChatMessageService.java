@@ -11,6 +11,8 @@ import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
 import project.kjhjdh.ibid.chat.infra.ChatMessageRepository;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
+import project.kjhjdh.ibid.common.event.NotificationEventPublisher;
+import project.kjhjdh.ibid.common.event.NotificationMessage;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.domain.Product;
@@ -25,6 +27,8 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ProductRepository productRepository;
+    private final ChatPresenceRegistry presenceRegistry;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Transactional(readOnly = true)
     public MessageListResult getMessages(Long chatRoomId, Long userId, Long cursor) {
@@ -67,9 +71,23 @@ public class ChatMessageService {
         if (productDeleted) {
             throw new BusinessException(ErrorCode.PRODUCT_DELETED);
         }
-        return chatMessageRepository.findByChatRoomIdAndClientMessageId(command.chatRoomId(), command.clientMessageId())
+        SendMessageResult result = chatMessageRepository
+                .findByChatRoomIdAndClientMessageId(command.chatRoomId(), command.clientMessageId())
                 .map(existing -> new SendMessageResult(existing, false))
                 .orElseGet(() -> save(command));
+        if (result.created()) {
+            notifyRecipient(room, command.senderId());
+        }
+        return result;
+    }
+
+    private void notifyRecipient(ChatRoom room, Long senderId) {
+        Long recipientId = room.getSellerId().equals(senderId) ? room.getBuyerId() : room.getSellerId();
+        if (presenceRegistry.isViewing(room.getId(), recipientId)) {
+            return;
+        }
+        notificationEventPublisher.publish(new NotificationMessage(
+                recipientId, NotificationMessage.NotificationType.NEW_MESSAGE, room.getId()));
     }
 
     private SendMessageResult save(SendMessageCommand command) {

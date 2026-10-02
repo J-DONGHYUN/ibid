@@ -20,6 +20,7 @@ import org.springframework.messaging.support.MessageBuilder;
 
 import project.kjhjdh.ibid.auth.application.TokenProvider;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
+import project.kjhjdh.ibid.chat.application.ChatPresenceRegistry;
 import project.kjhjdh.ibid.chat.application.ChatRoomService;
 import project.kjhjdh.ibid.common.exception.GlobalException;
 import project.kjhjdh.ibid.user.domain.Role;
@@ -35,6 +36,9 @@ class StompAuthChannelInterceptorTest {
 
     @Mock
     private ChatRoomService chatRoomService;
+
+    @Mock
+    private ChatPresenceRegistry presenceRegistry;
 
     @InjectMocks
     private StompAuthChannelInterceptor interceptor;
