@@ -50,4 +50,12 @@ public class Notification {
     public static Notification create(Long recipientId, NotificationType type, Long referenceId) {
         return new Notification(recipientId, type, referenceId);
     }
+
+    public void markRead() {
+        this.read = true;
+    }
+
+    public boolean isOwnedBy(Long userId) {
+        return recipientId.equals(userId);
+    }
 }

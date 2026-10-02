@@ -31,6 +31,7 @@ import project.kjhjdh.ibid.chat.application.ChatRoomService;
 import project.kjhjdh.ibid.product.application.ProductLikeService;
 import project.kjhjdh.ibid.product.application.ProductService;
 import project.kjhjdh.ibid.product.presentation.cookie.ProductViewCookieHandler;
+import project.kjhjdh.ibid.notification.application.NotificationService;
 import project.kjhjdh.ibid.trade.application.CompletionService;
 import project.kjhjdh.ibid.trade.application.ReservationService;
 import project.kjhjdh.ibid.trade.application.TradeHistoryService;
@@ -73,6 +74,9 @@ public abstract class ControllerTestSupport {
 
     @MockitoBean
     protected TradeHistoryService tradeHistoryService;
+
+    @MockitoBean
+    protected NotificationService notificationService;
 
     @BeforeEach
     void setUpMockMvc() {

@@ -38,7 +38,7 @@
 | 찜 | `ProductLike` | — | `userId` · `productId` | 구현됨 |
 | 채팅방 | `ChatRoom` | 참여자별 읽음 위치 | `productId` · `sellerId` · `buyerId` | 신규 |
 | 채팅 메시지 | `ChatMessage` | — | `roomId` · `senderId` | 신규 |
-| 알림 | `Notification` | — | `userId` | 신규 |
+| 알림 | `Notification` | — | `userId` | 구현됨 |
 
 - **찜을 상품에서 분리한 이유** — 찜은 상품의 생명주기와 무관하게 쌓이고, 상품을
   수정할 때마다 찜 목록을 불러올 이유가 없다
