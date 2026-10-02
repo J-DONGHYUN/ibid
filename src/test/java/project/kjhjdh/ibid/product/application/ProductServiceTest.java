@@ -24,6 +24,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
+import project.kjhjdh.ibid.product.domain.DeviceCategory;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
@@ -122,12 +123,14 @@ class ProductServiceTest {
 
         // when
         productService.update(SELLER_ID, PRODUCT_ID,
-                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW));
+                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW,
+                        new DeviceSpecCommand(DeviceCategory.LAPTOP, "MacBook Air M2", 80, "본체", null)));
 
         // then
         assertThat(product.getTitle()).isEqualTo("새 제목");
         assertThat(product.getPrice()).isEqualTo(50000);
         assertThat(product.getProductCondition()).isEqualTo(ProductCondition.NEW);
+        assertThat(product.getDeviceSpec().modelName()).isEqualTo("MacBook Air M2");
     }
 
     @DisplayName("본인 상품이 아니면 수정할 수 없다")
@@ -139,7 +142,8 @@ class ProductServiceTest {
 
         // when & then
         assertThatThrownBy(() -> productService.update(OTHER_USER_ID, PRODUCT_ID,
-                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW)))
+                new ProductUpdateCommand("새 제목", "새 설명", 50000, ProductCondition.NEW,
+                        new DeviceSpecCommand(DeviceCategory.LAPTOP, "MacBook Air M2", 80, "본체", null))))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.ACCESS_DENIED.getMessage());
     }

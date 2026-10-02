@@ -98,9 +98,10 @@ public class ProductController {
     @PublicApi
     @GetMapping
     public ResponseEntity<ProductListResponse> getProducts(
-            @RequestParam(required = false) Long cursor
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "true") boolean includeSold
     ) {
-        ProductListResult result = productService.getProducts(cursor);
+        ProductListResult result = productService.getProducts(cursor, includeSold);
         return ResponseEntity.ok(ProductListResponse.of(result.slice(), result.thumbnails()));
     }
 
@@ -128,7 +129,13 @@ public class ProductController {
     ) {
         ProductUpdateCommand command = new ProductUpdateCommand(
                 request.title(), request.description(), request.price(),
-                request.productCondition());
+                request.productCondition(),
+                new DeviceSpecCommand(
+                        request.deviceSpec().category(),
+                        request.deviceSpec().modelName(),
+                        request.deviceSpec().batteryHealth(),
+                        request.deviceSpec().components(),
+                        request.deviceSpec().defects()));
         productService.update(loginUser.userId(), productId, command);
         return ResponseEntity.ok().build();
     }

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -161,7 +162,7 @@ class ProductControllerTest extends ControllerTestSupport {
         Slice<Product> slice = new SliceImpl<>(
                 List.of(product(2L, "나이키 후드", 89000), product(1L, "아디다스 슬리퍼", 30000)),
                 PageRequest.of(0, 16), true);
-        given(productService.getProducts(any()))
+        given(productService.getProducts(any(), anyBoolean()))
                 .willReturn(new ProductListResult(slice, Map.of(2L, "https://image/thumb.jpg")));
 
         // when & then
@@ -176,6 +177,22 @@ class ProductControllerTest extends ControllerTestSupport {
                 .body("products[0].thumbnailUrl", equalTo("https://image/thumb.jpg"))
                 .body("nextCursor", equalTo(1))
                 .body("hasNext", equalTo(true));
+    }
+
+    @DisplayName("[PD-03] 기본은 거래완료 포함, includeSold=false 면 서비스에 제외를 넘긴다")
+    @Test
+    void getProducts_includeSold() {
+        // given
+        given(productService.getProducts(any(), anyBoolean()))
+                .willReturn(new ProductListResult(new SliceImpl<>(List.of(), PageRequest.of(0, 16), false), Map.of()));
+
+        // when — 파라미터 없으면 기본 포함(true)
+        RestAssuredMockMvc.given().when().get("/api/products").then().statusCode(HttpStatus.OK.value());
+        then(productService).should().getProducts(any(), eq(true));
+
+        // when — includeSold=false 면 제외를 넘긴다
+        RestAssuredMockMvc.given().queryParam("includeSold", "false").when().get("/api/products").then().statusCode(HttpStatus.OK.value());
+        then(productService).should().getProducts(any(), eq(false));
     }
 
     @DisplayName("[PD-04] 상품 상세 조회에 성공하면 200과 전자기기 정보·상태·조회수를 응답한다")
@@ -361,11 +378,44 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED))
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED,
+                        new DeviceSpecRequest(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null)))
                 .when()
                 .patch("/api/products/{productId}", 1L)
                 .then()
                 .statusCode(HttpStatus.OK.value());
+    }
+
+    @DisplayName("[PD-05] 전자기기 정보 없이 수정하면 400을 응답한다")
+    @Test
+    void update_missingDeviceSpec() {
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED, null))
+                .when()
+                .patch("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @DisplayName("[PD-05] 거래완료 상품을 수정하면 409를 응답한다")
+    @Test
+    void update_whenSold() {
+        // given
+        willThrow(new BusinessException(ErrorCode.PRODUCT_ALREADY_SOLD))
+                .given(productService).update(anyLong(), eq(1L), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED,
+                        new DeviceSpecRequest(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null)))
+                .when()
+                .patch("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.CONFLICT.value())
+                .body("code", equalTo("PRODUCT_ALREADY_SOLD"));
     }
 
     @DisplayName("상품 삭제에 성공하면 204를 응답한다")

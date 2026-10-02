@@ -86,6 +86,25 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
         assertThat(result.createdAt()).isNotNull();
     }
 
+    @DisplayName("[PD-03] 목록은 기본으로 거래완료를 포함하고, 제외하면 거래완료가 빠진다")
+    @Test
+    void getProducts_includeSold() {
+        // given — 판매중 하나, 거래완료 하나
+        Long onSale = productService.register(SELLER_ID, registerCommand("판매중"));
+        Long sold = productService.register(SELLER_ID, registerCommand("거래완료"));
+        Product soldProduct = productRepository.findById(sold).orElseThrow();
+        soldProduct.complete(99L);
+        productRepository.save(soldProduct);
+
+        // when & then — 포함(기본)
+        ProductListResult included = productService.getProducts(null, true);
+        assertThat(included.slice().getContent()).extracting(Product::getId).contains(onSale, sold);
+
+        // when & then — 제외
+        ProductListResult excluded = productService.getProducts(null, false);
+        assertThat(excluded.slice().getContent()).extracting(Product::getId).contains(onSale).doesNotContain(sold);
+    }
+
     private ProductRegisterCommand registerCommand(String title) {
         return new ProductRegisterCommand(title, "상태 좋음", 89000, ProductCondition.LIKE_NEW,
                 new DeviceSpecCommand(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체, 충전기", null));

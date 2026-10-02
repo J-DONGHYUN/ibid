@@ -131,7 +131,10 @@ public class Product {
     }
 
     public void update(String title, String description, int price,
-                       ProductCondition productCondition) {
+                       ProductCondition productCondition, DeviceSpec deviceSpec) {
+        if (status == ProductStatus.SOLD) {
+            throw new BusinessException(ErrorCode.PRODUCT_ALREADY_SOLD);
+        }
         validateTitle(title);
         validateDescription(description);
         validatePrice(price);
@@ -139,6 +142,7 @@ public class Product {
         this.description = description;
         this.price = price;
         this.productCondition = productCondition;
+        this.deviceSpec = deviceSpec;
     }
 
     public void addImages(List<String> urls) {

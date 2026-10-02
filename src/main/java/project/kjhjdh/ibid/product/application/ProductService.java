@@ -16,6 +16,7 @@ import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.product.domain.DeviceSpec;
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductStatus;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 
 @Service
@@ -42,8 +43,11 @@ public class ProductService {
     @Transactional
     public void update(Long sellerId, Long productId, ProductUpdateCommand command) {
         Product product = findOwnedProduct(sellerId, productId);
+        DeviceSpecCommand spec = command.deviceSpec();
         product.update(command.title(), command.description(), command.price(),
-                command.productCondition());
+                command.productCondition(),
+                new DeviceSpec(spec.category(), spec.modelName(), spec.batteryHealth(),
+                        spec.components(), spec.defects()));
     }
 
     @Transactional
@@ -77,10 +81,12 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductListResult getProducts(Long cursor) {
+    public ProductListResult getProducts(Long cursor, boolean includeSold) {
         Pageable pageable = PageRequest.of(0, PAGE_SIZE);
         Long effectiveCursor = (cursor == null) ? Long.MAX_VALUE : cursor;
-        Slice<Product> slice = productRepository.findByIdLessThanOrderByIdDesc(effectiveCursor, pageable);
+        Slice<Product> slice = includeSold
+                ? productRepository.findByIdLessThanOrderByIdDesc(effectiveCursor, pageable)
+                : productRepository.findByStatusNotAndIdLessThanOrderByIdDesc(ProductStatus.SOLD, effectiveCursor, pageable);
         List<Long> productIds = slice.getContent().stream().map(Product::getId).toList();
         Map<Long, String> thumbnails = productImageService.findThumbnails(productIds);
         return new ProductListResult(slice, thumbnails);
