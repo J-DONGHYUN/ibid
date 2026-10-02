@@ -143,4 +143,24 @@ class ProductLikeServiceTest {
         assertThat(result.get(0).thumbnailUrl()).isEqualTo("https://t10.jpg");
         assertThat(result.get(1).thumbnailUrl()).isNull();
     }
+
+    @DisplayName("[PD-08] 삭제된 상품은 관심목록에 나오지 않는다")
+    @Test
+    void myLikedProducts_excludesDeleted() {
+        // given — 찜한 상품 둘 중 20 은 삭제됨
+        given(productLikeRepository.findByUserIdOrderByIdDesc(USER_ID)).willReturn(List.of(
+                ProductLike.of(USER_ID, 10L), ProductLike.of(USER_ID, 20L)));
+        Product deleted = product(20L, "삭제됨");
+        deleted.delete();
+        given(productRepository.findAllById(List.of(10L, 20L)))
+                .willReturn(List.of(product(10L, "A"), deleted));
+        given(productImageService.findThumbnails(List.of(10L, 20L)))
+                .willReturn(Map.of());
+
+        // when
+        List<ProductWithThumbnail> result = productLikeService.myLikedProducts(USER_ID);
+
+        // then — 삭제된 20 은 빠지고 10 만
+        assertThat(result).extracting(item -> item.product().getId()).containsExactly(10L);
+    }
 }
