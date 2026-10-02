@@ -33,7 +33,7 @@ public class Notification {
 
     private Long referenceId;
 
-    @Column(nullable = false)
+    @Column(name = "is_read", nullable = false)
     private boolean read;
 
     @Column(nullable = false, updatable = false)
