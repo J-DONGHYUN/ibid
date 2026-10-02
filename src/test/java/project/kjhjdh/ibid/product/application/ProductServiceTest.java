@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 import java.util.List;
 import java.util.Map;
@@ -164,7 +165,7 @@ class ProductServiceTest {
         then(productImageService).should().deleteFiles(List.of("https://img1.jpg", "https://img2.png"));
     }
 
-    @DisplayName("본인 상품을 삭제하면 상품과 이미지(DB·S3)를 함께 삭제한다")
+    @DisplayName("[PD-06] 본인 상품을 삭제하면 소프트 삭제되고 행·이미지는 남는다")
     @Test
     void delete() {
         // given
@@ -175,9 +176,24 @@ class ProductServiceTest {
         // when
         productService.delete(SELLER_ID, PRODUCT_ID);
 
-        // then
-        then(productRepository).should().delete(product);
-        then(productImageService).should().deleteFiles(List.of("https://img1.jpg", "https://img2.png"));
+        // then — 소프트 삭제: deletedAt 만 찍히고 행·S3 는 그대로
+        assertThat(product.isDeleted()).isTrue();
+        then(productRepository).should(never()).delete(any(Product.class));
+        then(productImageService).should(never()).deleteFiles(any());
+    }
+
+    @DisplayName("[PD-06] 이미 삭제된 상품은 다시 삭제할 수 없다")
+    @Test
+    void delete_alreadyDeleted() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
+        product.delete();
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when & then — findOwnedProduct 가 삭제 상품을 404 로 거른다
+        assertThatThrownBy(() -> productService.delete(SELLER_ID, PRODUCT_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
     }
 
     @DisplayName("본인 상품이 아니면 삭제할 수 없다")
