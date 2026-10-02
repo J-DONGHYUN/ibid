@@ -39,6 +39,7 @@ public enum ErrorCode {
     PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다."),
     PRODUCT_NOT_RESERVED(HttpStatus.CONFLICT, "예약 중인 상품이 아닙니다."),
     PRODUCT_ALREADY_SOLD(HttpStatus.CONFLICT, "이미 거래완료된 상품입니다."),
+    PRODUCT_DELETED(HttpStatus.CONFLICT, "삭제된 상품입니다."),
     CONCURRENT_UPDATE(HttpStatus.CONFLICT, "다른 요청이 먼저 상품 상태를 바꿨습니다. 다시 시도해주세요."),
     INVALID_DEVICE_CATEGORY(HttpStatus.BAD_REQUEST, "전자기기 카테고리를 선택해주세요."),
     INVALID_DEVICE_MODEL(HttpStatus.BAD_REQUEST, "모델명을 입력해주세요."),

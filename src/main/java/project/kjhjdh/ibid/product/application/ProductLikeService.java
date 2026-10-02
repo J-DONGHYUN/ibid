@@ -64,6 +64,7 @@ public class ProductLikeService {
         return productIds.stream()
                 .map(productsById::get)
                 .filter(Objects::nonNull)
+                .filter(product -> !product.isDeleted())
                 .map(product -> new ProductWithThumbnail(product, thumbnails.get(product.getId())))
                 .toList();
     }

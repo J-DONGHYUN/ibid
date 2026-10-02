@@ -60,9 +60,7 @@ public class ProductService {
     @Transactional
     public void delete(Long sellerId, Long productId) {
         Product product = findOwnedProduct(sellerId, productId);
-        List<String> imageUrls = product.imageUrls();
-        productRepository.delete(product);
-        productImageService.deleteFiles(imageUrls);
+        product.delete();
     }
 
     @Transactional
@@ -85,8 +83,8 @@ public class ProductService {
         Pageable pageable = PageRequest.of(0, PAGE_SIZE);
         Long effectiveCursor = (cursor == null) ? Long.MAX_VALUE : cursor;
         Slice<Product> slice = includeSold
-                ? productRepository.findByIdLessThanOrderByIdDesc(effectiveCursor, pageable)
-                : productRepository.findByStatusNotAndIdLessThanOrderByIdDesc(ProductStatus.SOLD, effectiveCursor, pageable);
+                ? productRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(effectiveCursor, pageable)
+                : productRepository.findByDeletedAtIsNullAndStatusNotAndIdLessThanOrderByIdDesc(ProductStatus.SOLD, effectiveCursor, pageable);
         List<Long> productIds = slice.getContent().stream().map(Product::getId).toList();
         Map<Long, String> thumbnails = productImageService.findThumbnails(productIds);
         return new ProductListResult(slice, thumbnails);
@@ -105,6 +103,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResult getProduct(Long productId, String visitorId) {
         Product product = productRepository.findById(productId)
+                .filter(p -> !p.isDeleted())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         productViewCounter.record(productId, visitorId);
         return ProductDetailResult.from(product, productViewCounter.readTotal(product));
@@ -112,6 +111,7 @@ public class ProductService {
 
     private Product findOwnedProduct(Long sellerId, Long productId) {
         Product product = productRepository.findById(productId)
+                .filter(p -> !p.isDeleted())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         if (!product.isOwnedBy(sellerId)) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);

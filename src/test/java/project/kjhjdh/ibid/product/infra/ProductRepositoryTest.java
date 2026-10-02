@@ -32,7 +32,7 @@ class ProductRepositoryTest extends RepositoryTestSupport {
         Product third = productRepository.save(Product.create(SELLER_ID, "세번째", "상태 좋음", 30000, ProductCondition.USED, DeviceSpecFixture.sample()));
 
         // when
-        Slice<Product> slice = productRepository.findByIdLessThanOrderByIdDesc(third.getId(), PageRequest.of(0, 10));
+        Slice<Product> slice = productRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(third.getId(), PageRequest.of(0, 10));
 
         // then
         assertThat(slice.getContent()).extracting(Product::getId)
@@ -48,11 +48,27 @@ class ProductRepositoryTest extends RepositoryTestSupport {
         }
 
         // when
-        Slice<Product> slice = productRepository.findByIdLessThanOrderByIdDesc(Long.MAX_VALUE, PageRequest.of(0, 2));
+        Slice<Product> slice = productRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long.MAX_VALUE, PageRequest.of(0, 2));
 
         // then
         assertThat(slice.getContent()).hasSize(2);
         assertThat(slice.hasNext()).isTrue();
+    }
+
+    @DisplayName("[PD-06] 삭제된 상품은 목록 조회에서 빠진다")
+    @Test
+    void findByDeletedAtIsNull_excludesDeleted() {
+        // given — 살아있는 상품 하나, 삭제된 상품 하나
+        Product alive = productRepository.save(Product.create(SELLER_ID, "살아있음", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        Product deleted = Product.create(SELLER_ID, "삭제됨", "상태 좋음", 20000, ProductCondition.USED, DeviceSpecFixture.sample());
+        deleted.delete();
+        productRepository.save(deleted);
+
+        // when
+        Slice<Product> slice = productRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long.MAX_VALUE, PageRequest.of(0, 10));
+
+        // then — 삭제된 상품은 빠지고 살아있는 상품만
+        assertThat(slice.getContent()).extracting(Product::getId).containsExactly(alive.getId());
     }
 
     @DisplayName("[PD-03] 거래완료를 뺀 상품만 커서로 조회한다")
@@ -68,7 +84,7 @@ class ProductRepositoryTest extends RepositoryTestSupport {
         productRepository.save(sold);
 
         // when
-        Slice<Product> slice = productRepository.findByStatusNotAndIdLessThanOrderByIdDesc(
+        Slice<Product> slice = productRepository.findByDeletedAtIsNullAndStatusNotAndIdLessThanOrderByIdDesc(
                 ProductStatus.SOLD, Long.MAX_VALUE, PageRequest.of(0, 10));
 
         // then — 거래완료는 빠지고 판매중·예약중만, 최신순
@@ -88,7 +104,7 @@ class ProductRepositoryTest extends RepositoryTestSupport {
         Product p4 = productRepository.save(Product.create(SELLER_ID, "판매중4", "상태 좋음", 40000, ProductCondition.USED, DeviceSpecFixture.sample()));
 
         // when — 첫 페이지(크기 2)
-        Slice<Product> first = productRepository.findByStatusNotAndIdLessThanOrderByIdDesc(
+        Slice<Product> first = productRepository.findByDeletedAtIsNullAndStatusNotAndIdLessThanOrderByIdDesc(
                 ProductStatus.SOLD, Long.MAX_VALUE, PageRequest.of(0, 2));
 
         // then — 최신 판매중 둘, 다음 있음
@@ -96,7 +112,7 @@ class ProductRepositoryTest extends RepositoryTestSupport {
         assertThat(first.hasNext()).isTrue();
 
         // when — 마지막(p3) 커서로 이어 받으면 거래완료는 건너뛰고 p1 만
-        Slice<Product> next = productRepository.findByStatusNotAndIdLessThanOrderByIdDesc(
+        Slice<Product> next = productRepository.findByDeletedAtIsNullAndStatusNotAndIdLessThanOrderByIdDesc(
                 ProductStatus.SOLD, p3.getId(), PageRequest.of(0, 2));
 
         // then — 겹침·빠짐 없이 p1 만, 다음 없음

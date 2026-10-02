@@ -13,6 +13,8 @@ import project.kjhjdh.ibid.chat.infra.ChatMessageRepository;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.infra.ProductRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class ChatMessageService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final ProductRepository productRepository;
 
     @Transactional(readOnly = true)
     public MessageListResult getMessages(Long chatRoomId, Long userId, Long cursor) {
@@ -57,6 +60,12 @@ public class ChatMessageService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
         if (!room.isParticipant(command.senderId())) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+        boolean productDeleted = productRepository.findById(room.getProductId())
+                .map(Product::isDeleted)
+                .orElse(false);
+        if (productDeleted) {
+            throw new BusinessException(ErrorCode.PRODUCT_DELETED);
         }
         return chatMessageRepository.findByChatRoomIdAndClientMessageId(command.chatRoomId(), command.clientMessageId())
                 .map(existing -> new SendMessageResult(existing, false))
