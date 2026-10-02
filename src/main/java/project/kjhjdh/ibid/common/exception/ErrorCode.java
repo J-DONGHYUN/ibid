@@ -55,6 +55,9 @@ public enum ErrorCode {
     // Trade
     NOT_CHAT_PARTNER(HttpStatus.BAD_REQUEST, "그 상품의 채팅 상대가 아닙니다."),
 
+    // Notification
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
+
     // File
     FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),
     FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일 크기는 10MB 이하여야 합니다."),
