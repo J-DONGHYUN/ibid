@@ -1,0 +1,29 @@
+# 로컬 개발 인프라. 테스트는 Testcontainers 가 따로 띄운다 (이 파일을 쓰지 않는다).
+# 올릴 때: docker compose up -d
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ibid
+      MYSQL_DATABASE: ibid
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # 관리 UI (guest/guest)
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+volumes:
+  mysql-data:
+  rabbitmq-data:
