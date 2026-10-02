@@ -3,6 +3,7 @@ package project.kjhjdh.ibid.trade.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 import java.util.Optional;
 
@@ -12,9 +13,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import project.kjhjdh.ibid.chat.application.ChatRoomService;
+import project.kjhjdh.ibid.common.event.NotificationMessage;
+import project.kjhjdh.ibid.common.event.NotificationMessage.NotificationType;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.DeviceSpecFixture;
@@ -37,6 +41,9 @@ class ReservationServiceTest {
     @Mock
     private ChatRoomService chatRoomService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private ReservationService reservationService;
 
@@ -54,6 +61,24 @@ class ReservationServiceTest {
         // then
         assertThat(product.getStatus()).isEqualTo(ProductStatus.RESERVED);
         assertThat(product.getReservedBuyerId()).isEqualTo(BUYER_ID);
+        then(eventPublisher).should().publishEvent(
+                new NotificationMessage(BUYER_ID, NotificationType.RESERVED, PRODUCT_ID));
+    }
+
+    @DisplayName("[NT-02] 예약을 해제하면 예약 상대에게 해제 알림 이벤트를 낸다")
+    @Test
+    void cancelReservation_notifiesBuyer() {
+        // given
+        Product product = onSaleProduct();
+        product.reserve(BUYER_ID);
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+
+        // when
+        reservationService.cancelReservation(PRODUCT_ID, SELLER_ID);
+
+        // then
+        then(eventPublisher).should().publishEvent(
+                new NotificationMessage(BUYER_ID, NotificationType.RESERVATION_CANCELED, PRODUCT_ID));
     }
 
     @DisplayName("[TR-01] 판매자 본인이 아니면 예약할 수 없다")
