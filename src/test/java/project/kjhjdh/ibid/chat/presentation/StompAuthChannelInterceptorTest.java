@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import org.springframework.messaging.support.MessageBuilder;
 
 import project.kjhjdh.ibid.auth.application.TokenProvider;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
+import project.kjhjdh.ibid.chat.application.ChatPresenceRegistry;
 import project.kjhjdh.ibid.chat.application.ChatRoomService;
 import project.kjhjdh.ibid.common.exception.GlobalException;
 import project.kjhjdh.ibid.user.domain.Role;
@@ -35,6 +37,9 @@ class StompAuthChannelInterceptorTest {
 
     @Mock
     private ChatRoomService chatRoomService;
+
+    @Mock
+    private ChatPresenceRegistry presenceRegistry;
 
     @InjectMocks
     private StompAuthChannelInterceptor interceptor;
@@ -89,6 +94,46 @@ class StompAuthChannelInterceptorTest {
                 .isInstanceOf(GlobalException.class);
     }
 
+    @DisplayName("[NT-01] 구독하면 presence 레지스트리에 세션·구독·사용자·방을 기록한다")
+    @Test
+    void subscribe_recordsPresence() {
+        // given
+        given(chatRoomService.isParticipant(eq(ROOM_ID), anyLong())).willReturn(true);
+        Message<byte[]> message = subscribeMessage("/topic/room." + ROOM_ID);
+
+        // when
+        interceptor.preSend(message, null);
+
+        // then
+        then(presenceRegistry).should().subscribe("sess-1", "sub-1", USER_ID, ROOM_ID);
+    }
+
+    @DisplayName("[NT-01] 구독 해제하면 presence 레지스트리에서 그 세션·구독을 지운다")
+    @Test
+    void unsubscribe_clearsPresence() {
+        // given
+        Message<byte[]> message = frameMessage(StompCommand.UNSUBSCRIBE);
+
+        // when
+        interceptor.preSend(message, null);
+
+        // then
+        then(presenceRegistry).should().unsubscribe("sess-1", "sub-1");
+    }
+
+    @DisplayName("[NT-01] 연결이 끊기면 presence 레지스트리에서 그 세션을 지운다")
+    @Test
+    void disconnect_clearsSession() {
+        // given
+        Message<byte[]> message = frameMessage(StompCommand.DISCONNECT);
+
+        // when
+        interceptor.preSend(message, null);
+
+        // then
+        then(presenceRegistry).should().disconnect("sess-1");
+    }
+
     private Message<byte[]> connectMessage(String authorization) {
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
         if (authorization != null) {
@@ -100,6 +145,16 @@ class StompAuthChannelInterceptorTest {
     private Message<byte[]> subscribeMessage(String destination) {
         StompHeaderAccessor accessor = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
         accessor.setDestination(destination);
+        accessor.setSessionId("sess-1");
+        accessor.setSubscriptionId("sub-1");
+        accessor.setUser(new StompAuthChannelInterceptor.StompPrincipal(USER_ID));
+        return MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+    }
+
+    private Message<byte[]> frameMessage(StompCommand command) {
+        StompHeaderAccessor accessor = StompHeaderAccessor.create(command);
+        accessor.setSessionId("sess-1");
+        accessor.setSubscriptionId("sub-1");
         accessor.setUser(new StompAuthChannelInterceptor.StompPrincipal(USER_ID));
         return MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
     }

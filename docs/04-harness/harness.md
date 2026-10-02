@@ -277,6 +277,21 @@ CI(`ci.yml`)가 PR 에서 전체 빌드를 최종적으로 돌린다. 실수로 
 `trade → chat → product`(정상 방향, `ReservationService` 가 `ChatRoomService`·`ProductRepository` 를 봄)는 규칙대로 통과한다.
 탐침은 확인 후 되돌렸다(커밋하지 않음).
 
+**T-25 (#138, 2026-10-02) — `notification` 도메인 생성 시 "아무도 안 본다" 게이트 생존 확인**
+
+`notification` 을 처음 만들며 탐침했다. 이 도메인은 방향 규칙이 다르다 — **아무 도메인도 notification 을
+import 하면 안 된다**(이벤트로만 받는다, `architecture.md` · `ADR-0009`). 그런데 기존 게이트엔
+`notification` 의 "무엇을 보나"(`mayOnlyAccessLayers`)만 있고 "아무도 못 본다"가 **없어** 문서-게이트가
+어긋나 있었다. `legacy` 처럼 `.whereLayer("notification").mayNotBeAccessedByAnyLayer()` 를 더해 맞췄다.
+
+| 탐침 | 결과 |
+|---|---|
+| `product` 가 `notification.domain.Notification` 을 **실제 참조**(`product → notification`, 금지) | 실패 (`DOMAIN_DEPENDENCY_DIRECTION`) |
+| 탐침 제거 | 통과 |
+
+chat·trade 는 notification 을 import 하지 않고 `common.event.NotificationMessage` 를 RabbitMQ 로 흘린다.
+탐침은 확인 후 되돌렸다(커밋하지 않음).
+
 ## 다음
 
 1. **첫 루프에서 샌 곳을 고친다** — 백로그 「하네스 개선」 T-29 ~ T-32 (`INC-02` ~ `INC-05`)

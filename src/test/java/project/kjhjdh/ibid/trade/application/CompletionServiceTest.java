@@ -3,6 +3,7 @@ package project.kjhjdh.ibid.trade.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 import java.util.Optional;
 
@@ -12,9 +13,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import project.kjhjdh.ibid.chat.application.ChatRoomService;
+import project.kjhjdh.ibid.common.event.NotificationMessage;
+import project.kjhjdh.ibid.common.event.NotificationMessage.NotificationType;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.DeviceSpecFixture;
@@ -37,6 +41,9 @@ class CompletionServiceTest {
     @Mock
     private ChatRoomService chatRoomService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private CompletionService completionService;
 
@@ -54,6 +61,8 @@ class CompletionServiceTest {
         // then
         assertThat(product.getStatus()).isEqualTo(ProductStatus.SOLD);
         assertThat(product.getSoldBuyerId()).isEqualTo(BUYER_ID);
+        then(eventPublisher).should().publishEvent(
+                new NotificationMessage(BUYER_ID, NotificationType.SOLD, PRODUCT_ID));
     }
 
     @DisplayName("[TR-03] 판매자 본인이 아니면 거래완료할 수 없다")

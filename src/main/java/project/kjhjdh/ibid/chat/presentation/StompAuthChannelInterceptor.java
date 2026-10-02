@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 import project.kjhjdh.ibid.auth.application.TokenProvider;
 import project.kjhjdh.ibid.auth.domain.UserInfo;
+import project.kjhjdh.ibid.chat.application.ChatPresenceRegistry;
 import project.kjhjdh.ibid.chat.application.ChatRoomService;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.exception.GlobalException;
@@ -27,6 +28,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
     private final TokenProvider tokenProvider;
     private final ChatRoomService chatRoomService;
+    private final ChatPresenceRegistry presenceRegistry;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -39,9 +41,25 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         }
         if (StompCommand.SUBSCRIBE.equals(command)) {
             authorizeSubscribe(accessor);
+            enterRoom(accessor);
+        }
+        if (StompCommand.UNSUBSCRIBE.equals(command)) {
+            presenceRegistry.unsubscribe(accessor.getSessionId(), accessor.getSubscriptionId());
+        }
+        if (StompCommand.DISCONNECT.equals(command)) {
+            presenceRegistry.disconnect(accessor.getSessionId());
         }
 
         return message;
+    }
+
+    private void enterRoom(StompHeaderAccessor accessor) {
+        String destination = accessor.getDestination();
+        if (destination == null || !destination.startsWith(TOPIC_ROOM_PREFIX)) {
+            return;
+        }
+        presenceRegistry.subscribe(accessor.getSessionId(), accessor.getSubscriptionId(),
+                currentUserId(accessor), parseRoomId(destination));
     }
 
     private Principal authenticate(StompHeaderAccessor accessor) {

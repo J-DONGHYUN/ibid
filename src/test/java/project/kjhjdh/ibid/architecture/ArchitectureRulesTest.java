@@ -39,6 +39,7 @@ class ArchitectureRulesTest {
                     .whereLayer("chat").mayOnlyAccessLayers("product", "auth", "common")
                     .whereLayer("trade").mayOnlyAccessLayers("chat", "product", "auth", "common")
                     .whereLayer("notification").mayOnlyAccessLayers("auth", "common")
+                    .whereLayer("notification").mayNotBeAccessedByAnyLayer()
                     .whereLayer("legacy").mayNotBeAccessedByAnyLayer()
                     .because("도메인 의존 방향은 docs/03-convention/architecture.md 「도메인과 의존 방향」 표가 정본이다. "
                             + "product 가 chat 을 보면 순환이다 — 둘을 모두 봐야 하면 trade 에 둔다 (ADR-0006). "
