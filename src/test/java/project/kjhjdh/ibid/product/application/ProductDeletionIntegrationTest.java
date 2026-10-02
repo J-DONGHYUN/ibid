@@ -9,12 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import project.kjhjdh.ibid.chat.application.ChatMessageService;
 import project.kjhjdh.ibid.chat.application.ChatRoomService;
+import project.kjhjdh.ibid.chat.application.MyChatRoomResult;
 import project.kjhjdh.ibid.chat.application.SendMessageCommand;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.domain.DeviceCategory;
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductCondition;
+import project.kjhjdh.ibid.trade.application.CompletionService;
 import project.kjhjdh.ibid.trade.application.TradeHistoryService;
 import project.kjhjdh.ibid.support.IntegrationTestSupport;
 
@@ -37,46 +40,60 @@ class ProductDeletionIntegrationTest extends IntegrationTestSupport {
     private ChatMessageService chatMessageService;
 
     @Autowired
+    private CompletionService completionService;
+
+    @Autowired
     private TradeHistoryService tradeHistoryService;
 
     @Autowired
     private ChatRoomRepository chatRoomRepository;
 
-    @DisplayName("[PD-06] 상품을 삭제하면 목록·상세·관심목록에서 숨고, 채팅방은 남지만 메시지는 못 보낸다")
+    @DisplayName("[PD-06] 삭제하면 목록·상세·관심목록에서 숨고, 채팅방·내역엔 남으며 메시지는 못 보낸다")
     @Test
     void softDelete_surface() {
-        // given — 상품 등록 + 채팅방 + 찜
+        // given — 상품 등록 + 채팅방 + 찜 + 메시지 + 거래완료(구매 내역에 남도록)
         Long productId = productService.register(SELLER_ID, registerCommand());
         Long roomId = chatRoomService.open(productId, BUYER_ID).getId();
         productLikeService.like(BUYER_ID, productId);
+        chatMessageService.send(new SendMessageCommand(roomId, BUYER_ID, "c-1", "삭제 전 메시지"));
+        completionService.complete(productId, SELLER_ID, BUYER_ID);
 
-        // when — 삭제
+        // when — 삭제 (거래완료 상품도 삭제 가능)
         productService.delete(SELLER_ID, productId);
 
-        // then — 목록에서 숨는다
+        // then — 숨길 경로
         assertThat(ids(productService.getProducts(null, true))).doesNotContain(productId);
-        // 상세는 404
         assertThatThrownBy(() -> productService.getProduct(productId, VISITOR_ID))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
-        // 관심목록에서 숨는다
         assertThat(productLikeService.myLikedProducts(BUYER_ID)).isEmpty();
-        // 채팅방은 남는다
+
+        // then — 보여줄 경로 (삭제분 보존)
+        assertThat(ids(tradeHistoryService.getSales(SELLER_ID, null, null))).contains(productId);     // TR-04
+        assertThat(ids(tradeHistoryService.getPurchases(BUYER_ID, null))).contains(productId);        // TR-05
+        assertThat(myRoomProductIds()).contains(productId);                                           // CH-05 (채팅방 목록에 상품 요약 남음)
+
+        // then — 채팅방은 남고, 새 메시지는 못 보낸다 (I-09)
         assertThat(chatRoomRepository.findById(roomId)).isPresent();
-        // 그 방엔 새 메시지를 못 보낸다 (I-09)
-        assertThatThrownBy(() -> chatMessageService.send(new SendMessageCommand(roomId, BUYER_ID, "c-1", "안녕하세요")))
+        assertThatThrownBy(() -> chatMessageService.send(new SendMessageCommand(roomId, BUYER_ID, "c-2", "삭제 후 메시지")))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.PRODUCT_DELETED.getMessage());
-        // 판매 내역엔 남는다 (보여줄 경로)
-        assertThat(ids(tradeHistoryService.getSales(SELLER_ID, null, null))).contains(productId);
     }
 
     private java.util.List<Long> ids(ProductListResult result) {
         return result.slice().getContent().stream().map(Product::getId).toList();
     }
 
+    private java.util.List<Long> myRoomProductIds() {
+        return chatRoomService.getMyRooms(BUYER_ID, null).getContent().stream()
+                .map(MyChatRoomResult::product)
+                .filter(java.util.Objects::nonNull)
+                .map(summary -> summary.productId())
+                .toList();
+    }
+
     private ProductRegisterCommand registerCommand() {
-        return new ProductRegisterCommand("아이폰 13", "A급", 500000, project.kjhjdh.ibid.product.domain.ProductCondition.USED,
+        return new ProductRegisterCommand("아이폰 13", "A급", 500000, ProductCondition.USED,
                 new DeviceSpecCommand(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null));
     }
 }
