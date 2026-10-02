@@ -27,6 +27,10 @@ import project.kjhjdh.ibid.chat.infra.ChatMessageRepository;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
+import project.kjhjdh.ibid.product.DeviceSpecFixture;
+import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductCondition;
+import project.kjhjdh.ibid.product.infra.ProductRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ChatMessageServiceTest {
@@ -42,6 +46,9 @@ class ChatMessageServiceTest {
 
     @Mock
     private ChatRoomRepository chatRoomRepository;
+
+    @Mock
+    private ProductRepository productRepository;
 
     @InjectMocks
     private ChatMessageService chatMessageService;
@@ -104,6 +111,22 @@ class ChatMessageServiceTest {
         assertThatThrownBy(() -> chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요")))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.CHAT_ROOM_NOT_FOUND.getMessage());
+    }
+
+    @DisplayName("[I-09] 삭제된 상품의 채팅방에는 메시지를 보낼 수 없다")
+    @Test
+    void send_productDeleted() {
+        // given — 방의 상품이 삭제됨 (room() 의 productId = 99)
+        Product deleted = Product.create(SELLER_ID, "삭제됨", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
+        deleted.delete();
+        given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room()));
+        given(productRepository.findById(99L)).willReturn(Optional.of(deleted));
+
+        // when & then
+        assertThatThrownBy(() -> chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_DELETED.getMessage());
+        then(chatMessageRepository).should(never()).save(any());
     }
 
     @DisplayName("[CH-04] 참여자는 지난 메시지를 최신순 커서로 조회한다")
