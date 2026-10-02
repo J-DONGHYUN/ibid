@@ -129,7 +129,13 @@ public class ProductController {
     ) {
         ProductUpdateCommand command = new ProductUpdateCommand(
                 request.title(), request.description(), request.price(),
-                request.productCondition());
+                request.productCondition(),
+                new DeviceSpecCommand(
+                        request.deviceSpec().category(),
+                        request.deviceSpec().modelName(),
+                        request.deviceSpec().batteryHealth(),
+                        request.deviceSpec().components(),
+                        request.deviceSpec().defects()));
         productService.update(loginUser.userId(), productId, command);
         return ResponseEntity.ok().build();
     }

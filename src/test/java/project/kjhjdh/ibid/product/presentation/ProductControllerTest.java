@@ -378,11 +378,44 @@ class ProductControllerTest extends ControllerTestSupport {
         // when & then
         RestAssuredMockMvc.given()
                 .contentType(ContentType.JSON)
-                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED))
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED,
+                        new DeviceSpecRequest(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null)))
                 .when()
                 .patch("/api/products/{productId}", 1L)
                 .then()
                 .statusCode(HttpStatus.OK.value());
+    }
+
+    @DisplayName("[PD-05] 전자기기 정보 없이 수정하면 400을 응답한다")
+    @Test
+    void update_missingDeviceSpec() {
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED, null))
+                .when()
+                .patch("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @DisplayName("[PD-05] 거래완료 상품을 수정하면 409를 응답한다")
+    @Test
+    void update_whenSold() {
+        // given
+        willThrow(new BusinessException(ErrorCode.PRODUCT_ALREADY_SOLD))
+                .given(productService).update(anyLong(), eq(1L), any());
+
+        // when & then
+        RestAssuredMockMvc.given()
+                .contentType(ContentType.JSON)
+                .body(new ProductUpdateRequest("수정", "수정 설명", 50000, ProductCondition.USED,
+                        new DeviceSpecRequest(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null)))
+                .when()
+                .patch("/api/products/{productId}", 1L)
+                .then()
+                .statusCode(HttpStatus.CONFLICT.value())
+                .body("code", equalTo("PRODUCT_ALREADY_SOLD"));
     }
 
     @DisplayName("상품 삭제에 성공하면 204를 응답한다")
