@@ -57,6 +57,8 @@ public class Product {
 
     private Long soldBuyerId;
 
+    private LocalDateTime deletedAt;
+
     @Version
     private long version;
 
@@ -128,6 +130,14 @@ public class Product {
         if (buyerId == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
+    }
+
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 
     public void update(String title, String description, int price,

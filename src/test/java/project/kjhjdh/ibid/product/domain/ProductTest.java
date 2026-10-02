@@ -258,6 +258,21 @@ class ProductTest {
                 .hasMessage(ErrorCode.PRODUCT_ALREADY_SOLD.getMessage());
     }
 
+    @DisplayName("[PD-06] 삭제하면 삭제 시각이 찍히고 삭제 상태가 된다")
+    @Test
+    void delete() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
+        assertThat(product.isDeleted()).isFalse();
+
+        // when
+        product.delete();
+
+        // then
+        assertThat(product.isDeleted()).isTrue();
+        assertThat(product.getDeletedAt()).isNotNull();
+    }
+
     @DisplayName("판매자 본인 여부를 판별한다")
     @Test
     void isOwnedBy() {
