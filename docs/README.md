@@ -25,7 +25,8 @@ docs/
 │   ├── loop.md                루프 설계서. 작업 하나가 어떻게 시작해 어떻게 끝나는가
 │   └── incidents.md           에이전트 사고와 처방 기록 (INC)
 └── 05-records/
-    └── experiments/           측정·실험 기록 (EXP-01-*.md)
+    ├── experiments/           측정·실험 기록 (EXP-01-*.md)
+    └── qa/                    적대적 QA 시나리오와 발견 (QA-01-*.md)
 ```
 
 **진행 상태의 정본은 `01-product/backlog.md` 다.** GitHub 이슈는 미리 만들지 않고, 티켓을 시작할 때 만든다 —
@@ -63,6 +64,7 @@ docs/
 | `I-nn` | 불변식 | `02-design/domain-model.md` | `I-01` 예약 상대는 한 명이다 |
 | `ADR-nnnn` | 설계 결정 | `02-design/adr/` | `ADR-0001` 채팅 실시간 전달 방식 |
 | `EXP-nn` | 실험·측정 | `05-records/experiments/` | `EXP-01` 예약 동시 요청 처리 |
+| `QA-nn` | 적대적 QA 시나리오·발견 | `05-records/qa/` | `QA-01` 교차 도메인 불변식 갭 |
 | `INC-nn` | 에이전트 사고 | `04-harness/incidents.md` | `INC-01` |
 
 **ID 는 한 번 쓰면 재사용하지 않는다.** 폐기된 요구사항은 지우지 않고 `폐기` 로 표시한다.
