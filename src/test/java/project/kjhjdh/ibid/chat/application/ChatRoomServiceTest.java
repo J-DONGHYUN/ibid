@@ -42,6 +42,7 @@ class ChatRoomServiceTest {
 
     private static final Long PRODUCT_ID = 1L;
     private static final Long SELLER_ID = 10L;
+    private static final Long OTHER_BUYER_ID = 99L;
     private static final Long BUYER_ID = 20L;
     private static final Long ROOM_ID = 5L;
 
@@ -64,7 +65,7 @@ class ChatRoomServiceTest {
     @Test
     void open() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product()));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product()));
         given(chatRoomRepository.findByProductIdAndBuyerId(PRODUCT_ID, BUYER_ID)).willReturn(Optional.empty());
         given(chatRoomRepository.save(any(ChatRoom.class))).willAnswer(invocation -> invocation.getArgument(0));
 
@@ -82,7 +83,6 @@ class ChatRoomServiceTest {
     void open_idempotent() {
         // given
         ChatRoom existing = ChatRoom.open(PRODUCT_ID, SELLER_ID, BUYER_ID);
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product()));
         given(chatRoomRepository.findByProductIdAndBuyerId(PRODUCT_ID, BUYER_ID)).willReturn(Optional.of(existing));
 
         // when
@@ -91,13 +91,14 @@ class ChatRoomServiceTest {
         // then
         assertThat(room).isSameAs(existing);
         then(chatRoomRepository).should(never()).save(any());
+        then(productRepository).shouldHaveNoInteractions();
     }
 
     @DisplayName("[I-05] 판매자 본인은 자기 상품에 채팅방을 열 수 없다")
     @Test
     void open_ownProduct() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product()));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product()));
         given(chatRoomRepository.findByProductIdAndBuyerId(PRODUCT_ID, SELLER_ID)).willReturn(Optional.empty());
 
         // when & then
@@ -106,11 +107,28 @@ class ChatRoomServiceTest {
                 .hasMessage(ErrorCode.CANNOT_OPEN_CHAT_ON_OWN_PRODUCT.getMessage());
     }
 
-    @DisplayName("[CH-01] 존재하지 않는 상품에는 채팅방을 열 수 없다")
+    @DisplayName("[CH-01] 거래완료된 상품에는 새 채팅방을 열 수 없다")
+    @Test
+    void open_soldProduct() {
+        // given
+        Product sold = product();
+        sold.complete(BUYER_ID);
+        given(chatRoomRepository.findByProductIdAndBuyerId(PRODUCT_ID, OTHER_BUYER_ID)).willReturn(Optional.empty());
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(sold));
+
+        // when & then
+        assertThatThrownBy(() -> chatRoomService.open(PRODUCT_ID, OTHER_BUYER_ID))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_ALREADY_SOLD.getMessage());
+        then(chatRoomRepository).should(never()).save(any());
+    }
+
+    @DisplayName("[CH-01] 존재하지 않거나 삭제된 상품에는 새 채팅방을 열 수 없다")
     @Test
     void open_productNotFound() {
-        // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
+        // given — 삭제된 상품은 쓰기 경로 전용 조회가 돌려주지 않는다
+        given(chatRoomRepository.findByProductIdAndBuyerId(PRODUCT_ID, BUYER_ID)).willReturn(Optional.empty());
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> chatRoomService.open(PRODUCT_ID, BUYER_ID))
