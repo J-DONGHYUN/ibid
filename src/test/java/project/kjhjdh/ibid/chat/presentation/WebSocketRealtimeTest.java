@@ -3,7 +3,7 @@ package project.kjhjdh.ibid.chat.presentation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.times;
 
 import java.time.Duration;
@@ -42,6 +42,7 @@ class WebSocketRealtimeTest extends WebIntegrationTestSupport {
     private static final Long SELLER_ID = 960L;
     private static final Long BUYER_ID = 970L;
     private static final String READY_CONTENT = "준비 확인";
+    private static final long NOTIFICATION_WAIT_MILLIS = 300;
 
     @LocalServerPort
     private int port;
@@ -95,7 +96,7 @@ class WebSocketRealtimeTest extends WebIntegrationTestSupport {
             send(roomId, "m-1", "보는 중에 보냄");
 
             // then — 알림이 발행되지 않는다
-            then(notificationEventPublisher).should(never()).publish(expected);
+            then(notificationEventPublisher).should(after(NOTIFICATION_WAIT_MILLIS).never()).publish(expected);
         }
 
         // when — 구매자가 연결을 닫아 방을 떠난 뒤 판매자가 다시 보낸다
