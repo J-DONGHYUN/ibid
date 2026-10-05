@@ -52,7 +52,7 @@ ibid 의 하네스가 **무엇으로 이루어져 있고, 왜 그렇게 만들�
 | 〃 | `domain` 은 스프링 · 바깥 계층에 의존하지 않는다 | `architecture.md` 「계층」 | — |
 | 〃 | `@Transactional` 은 `application` 에만 | 〃 | 메서드 규칙만 동결 |
 | 〃 | 저장소 인터페이스는 `infra` 에 | `ADR-0001` | — |
-| 〃 | `application` 은 상품을 날것의 id 조회(`findById` · `existsById` · `findAllById`)로 읽지 않는다 — 용도에 맞는 조회로 | `ADR-0013` · `I-13` | 동결 (쓰기 2곳 — 처음 4곳에서 `T-39` 가 줄였다) |
+| 〃 | `application` 은 상품을 날것의 id 조회(`findById` · `existsById` · `findAllById`)로 읽지 않는다 — 용도에 맞는 조회로 | `ADR-0013` · `I-13` | 동결 (남은 쓰기는 저장소가 정본 — 처음 4곳에서 `T-39` · `T-42` 가 줄였다) |
 | `TestConventionRulesTest` | `@Test` 에 `@DisplayName` | `test.md` | 동결 |
 | 〃 | 테스트에 `@Transactional` 금지 · AssertJ 사용 | 〃 | — |
 | `SourceRulesTest` | 주석 금지 · `@Setter` · `@Data` 금지 | `code.md` | 목록으로 동결 |
