@@ -34,7 +34,7 @@ class ProductViewRedisDownTest extends IntegrationTestSupport {
     @Autowired
     private ProductRepository productRepository;
 
-    @DisplayName("[PD-09] Redis 가 내려가 연결이 거부돼도 상품 상세는 빠르게 응답한다 (QA-B.1 연결 거부)")
+    @DisplayName("[PD-09] Redis 가 내려가 연결이 거부돼도 상품 상세는 빠르게 응답한다 (QA-B.1 연결 거부 — 현재 동작 고정, 고치기 전에도 통과)")
     @Test
     void getProduct_whileRedisIsDown() {
         // given — 조회수가 DB 에 3 으로 반영된 상품. Redis 컨테이너가 내려간다 (연결 거부)
