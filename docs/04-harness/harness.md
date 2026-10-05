@@ -52,6 +52,7 @@ ibid 의 하네스가 **무엇으로 이루어져 있고, 왜 그렇게 만들�
 | 〃 | `domain` 은 스프링 · 바깥 계층에 의존하지 않는다 | `architecture.md` 「계층」 | — |
 | 〃 | `@Transactional` 은 `application` 에만 | 〃 | 메서드 규칙만 동결 |
 | 〃 | 저장소 인터페이스는 `infra` 에 | `ADR-0001` | — |
+| 〃 | `application` 은 상품을 날것의 id 조회(`findById` · `existsById` · `findAllById`)로 읽지 않는다 — 용도에 맞는 조회로 | `ADR-0013` · `I-13` | 동결 (쓰기 4곳) |
 | `TestConventionRulesTest` | `@Test` 에 `@DisplayName` | `test.md` | 동결 |
 | 〃 | 테스트에 `@Transactional` 금지 · AssertJ 사용 | 〃 | — |
 | `SourceRulesTest` | 주석 금지 · `@Setter` · `@Data` 금지 | `code.md` | 목록으로 동결 |
@@ -90,6 +91,15 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 | `WebConfig.PUBLIC_ENDPOINTS` 에 `/api/products/**` 추가 | 공개 경로 게이트 실패 |
 | 탐침 제거 후 | 통과. 동결 기록에 탐침이 들어가지 않음 |
 
+2026-10-05 (T-52 · 상품 조회 게이트):
+
+| 탐침 | 결과 |
+|---|---|
+| `trade.application` 에 `ProductRepository` 의 `findById` · `existsById` · `findAllById` 호출 셋과 `findActiveById` · `findIncludingDeleted` 호출 둘을 둔 클래스 | 게이트 실패. 보고한 위반은 **새 3건뿐** — 허용된 이름 2개와 동결된 기존 4건은 보고하지 않았다. 저장소가 탐침을 흡수하지 않았다(4줄 그대로) |
+| 탐침 제거 뒤 | 통과. 저장소에 탐침 흔적 0건 |
+| (같은 날 발견) 정합 커밋 **전** 깨끗한 `main` 에 `common` → `product` 의존 클래스 | **통과했다.** 도메인 의존 방향 게이트가 열려 있었다. 위반이 새로 만들어진 저장소 항목에 흡수됐다 |
+| (같은 탐침) 정합 커밋 **후** | `DOMAIN_DEPENDENCY_DIRECTION` 실패. 저장소가 탐침을 흡수하지 않음 |
+
 ## 사람의 자리
 
 게이트가 판정할 수 있는 것에는 사람을 넣지 않는다. 사람은 게이트가 판정할 수 없는 것만 본다.
@@ -127,7 +137,12 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
   (`RequirementCoverageTest`, `build/requirement-coverage.txt`)가 보여줄 뿐이다. 기존 기능 테스트 156개는 ID 없이 동결됐다 (T-28)
 - **`FreezingArchRule` 의 규칙 문자열을 바꾸면 옛 baseline 이 고아로 남는다.** ArchUnit 은 규칙 문자열을 키로 store 에
   기록해서, 규칙 서술 · 조건을 고치면 새 항목이 생기고 옛 항목은 `stored.rules` 에 남되 아무 `@ArchTest` 도 읽지 않는다.
-  게이트는 정상이지만 동결 목록이 죽은 부채로 부푼다. 규칙을 고쳤으면 옛 UUID 줄 · 파일을 지운다 (T-28 에서 겪음)
+  동결 목록이 죽은 부채로 부푼다. 규칙을 고쳤으면 옛 UUID 줄 · 파일을 지운다 (T-28 에서 겪음)
+- **현재 규칙 문구의 항목이 커밋된 저장소에 없으면 그 규칙은 열려 있다 — 게이트가 정상이 아니다.** 위 항목의 더 나쁜 면이다.
+  `allowStoreCreation=false` 는 저장소 파일 전체가 없을 때만 막고, **규칙별 항목은 처음 보이면 자동으로 만들어져 그 순간의
+  위반을 전부 받아들인다.** 규칙을 고친 PR 이 새 항목을 커밋하지 않으면 CI 는 항목을 만들며 통과한다.
+  2026-10-05 탐침으로 확인했다 — `main` 에서 `common` → `product` 의존을 넣어도 `architectureTest` 가 통과하고 위반이 새 항목에
+  흡수됐다. 정합 커밋(새 항목을 커밋) 뒤 같은 탐침은 실패한다. 규칙을 바꾼 뒤 저장소 변경을 커밋하지 않고 두면 생기는 일이다 (T-54)
 - **에이전트 정의는 세션을 시작할 때 읽힌다.** 리뷰어를 만들거나 고친 세션에서는 새 리뷰어를 부를 수 없다.
   그런 티켓은 새 세션에서 [5] 를 이어 한다 (`INC-06`)
 - **리뷰어의 Bash 화이트리스트는 따옴표를 모른다.** `;` · `|` · `&` 로 조각을 나눠서 `grep -E 'a|b'` 는 막힌다.
