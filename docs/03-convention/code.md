@@ -26,7 +26,7 @@
   `findActiveById` 로 상품을 얻는다 — 삭제된 상품을 제외한다. 삭제된 상품도 읽어야 하는 조회(기존 채팅방 ·
   채팅방 목록의 상품 요약 · 관심 목록)는 `findIncludingDeleted` · `findAllIncludingDeleted` 를 쓴다.
   `findById` · `existsById` · `findAllById` 는 `application` 에서 부르지 않는다 (`ArchitectureRulesTest`,
-  기존 4곳은 동결 → `T-39` · `T-42` · `T-53` 이 지운다, `ADR-0013`, `I-13`)
+  남은 2곳은 동결 → `T-42` · `T-53` 이 지운다 (`T-39` 가 2곳을 지웠다), `ADR-0013`, `I-13`)
 - 게이트는 호출을 세는 것이지 올바른 조회를 고르는 것까지는 보장하지 않는다. 쓰기 경로에서 삭제 포함 조회를 쓰면
   게이트는 초록인 채 샌다 — 연산마다 "삭제된 상품이면 거부된다" 테스트를 쓴다
 
