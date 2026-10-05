@@ -97,7 +97,7 @@ class ProductViewFlushFailureTest extends IntegrationTestSupport {
         executor.shutdown();
         productViewCountFlusher.flush();
 
-        // then — 기록한 3 + 40 건이 하나도 사라지거나 두 번 세이지 않고 반영된다
+        // then — 기록한 3 + 40 건이 하나도 사라지거나 두 번 세어지지 않고 반영된다
         assertThat(viewCountOf(productId)).as("최종 조회수 (기대 %d)", 3 + newViews).isEqualTo(3L + newViews);
     }
 
