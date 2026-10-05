@@ -36,4 +36,8 @@ public class ProductViewCounter {
     public long takePendingCount(Long productId) {
         return productViewRedisRepository.takePendingCount(productId);
     }
+
+    public void restorePendingCount(Long productId, long count) {
+        productViewRedisRepository.restorePendingCount(productId, count);
+    }
 }
