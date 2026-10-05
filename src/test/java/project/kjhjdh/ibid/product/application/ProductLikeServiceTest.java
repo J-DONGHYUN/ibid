@@ -130,7 +130,7 @@ class ProductLikeServiceTest {
         // given: 찜 최신순 = 상품10, 상품20
         given(productLikeRepository.findByUserIdOrderByIdDesc(USER_ID)).willReturn(List.of(
                 ProductLike.of(USER_ID, 10L), ProductLike.of(USER_ID, 20L)));
-        given(productRepository.findAllById(List.of(10L, 20L)))
+        given(productRepository.findAllIncludingDeleted(List.of(10L, 20L)))
                 .willReturn(List.of(product(20L, "B"), product(10L, "A")));   // 순서 뒤섞여 반환
         given(productImageService.findThumbnails(List.of(10L, 20L)))
                 .willReturn(Map.of(10L, "https://t10.jpg"));                  // 20은 썸네일 없음
@@ -152,7 +152,7 @@ class ProductLikeServiceTest {
                 ProductLike.of(USER_ID, 10L), ProductLike.of(USER_ID, 20L)));
         Product deleted = product(20L, "삭제됨");
         deleted.delete();
-        given(productRepository.findAllById(List.of(10L, 20L)))
+        given(productRepository.findAllIncludingDeleted(List.of(10L, 20L)))
                 .willReturn(List.of(product(10L, "A"), deleted));
         given(productImageService.findThumbnails(List.of(10L, 20L)))
                 .willReturn(Map.of());

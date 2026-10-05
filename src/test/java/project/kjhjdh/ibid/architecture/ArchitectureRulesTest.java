@@ -1,5 +1,9 @@
 package project.kjhjdh.ibid.architecture;
 
+import static com.tngtech.archunit.core.domain.JavaCall.Predicates.target;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.assignableTo;
+import static com.tngtech.archunit.core.domain.properties.HasName.Predicates.nameMatching;
+import static com.tngtech.archunit.core.domain.properties.HasOwner.Predicates.With.owner;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods;
@@ -12,6 +16,8 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.freeze.FreezingArchRule;
 import org.springframework.data.repository.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
+import project.kjhjdh.ibid.product.infra.ProductRepository;
 
 @AnalyzeClasses(packages = "project.kjhjdh.ibid", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureRulesTest {
@@ -81,4 +87,13 @@ class ArchitectureRulesTest {
             classes().that().areInterfaces().and().areAssignableTo(Repository.class)
                     .should().resideInAPackage("..infra..")
                     .because("저장소 인터페이스는 infra 에 두고 Spring Data 를 상속한다 (ADR-0001)");
+
+    @ArchTest
+    static final ArchRule PRODUCT_IS_READ_BY_INTENT_NOT_BY_RAW_ID = FreezingArchRule.freeze(
+            noClasses().that().resideInAPackage("..application..")
+                    .should().callMethodWhere(
+                            target(nameMatching("findById|existsById|findAllById"))
+                                    .and(target(owner(assignableTo(ProductRepository.class)))))
+                    .because("삭제된 상품에 쓰기가 새지 않도록 상품은 용도에 맞는 조회로 읽는다 — 쓰기 경로는 findActiveById, "
+                            + "삭제를 포함해 읽어야 하면 findIncludingDeleted (docs/02-design/adr/ADR-0013-deleted-product-writes.md, I-13)"));
 }

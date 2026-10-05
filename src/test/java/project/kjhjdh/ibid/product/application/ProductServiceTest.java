@@ -57,7 +57,7 @@ class ProductServiceTest {
     void generatePresignedUrls() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
         List<PresignedUploadResult> presigned = List.of(
                 new PresignedUploadResult("https://presigned1", "products/1/a.jpg", "https://image1"),
                 new PresignedUploadResult("https://presigned2", "products/1/b.png", "https://image2"));
@@ -78,7 +78,7 @@ class ProductServiceTest {
     void generatePresignedUrls_notOwner() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
         assertThatThrownBy(() -> productService.generatePresignedUrls(OTHER_USER_ID, PRODUCT_ID, List.of()))
@@ -91,7 +91,7 @@ class ProductServiceTest {
     void confirmImages() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
         productService.confirmImages(SELLER_ID, PRODUCT_ID,
@@ -107,7 +107,7 @@ class ProductServiceTest {
     void confirmImages_notIssuedUrl() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
         willThrow(new BusinessException(ErrorCode.INVALID_IMAGE_URL))
                 .given(productImageService).requireIssued(PRODUCT_ID, List.of("https://evil.example.com/a.png"));
 
@@ -124,7 +124,7 @@ class ProductServiceTest {
     void confirmImages_notOwner() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
         assertThatThrownBy(() -> productService.confirmImages(OTHER_USER_ID, PRODUCT_ID,
@@ -139,7 +139,7 @@ class ProductServiceTest {
     void update() {
         // given
         Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
         productService.update(SELLER_ID, PRODUCT_ID,
@@ -158,7 +158,7 @@ class ProductServiceTest {
     void update_notOwner() {
         // given
         Product product = Product.create(SELLER_ID, "예전 제목", "예전 설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
         assertThatThrownBy(() -> productService.update(OTHER_USER_ID, PRODUCT_ID,
@@ -174,7 +174,7 @@ class ProductServiceTest {
         // given
         Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         product.addImages(List.of("https://img1.jpg", "https://img2.png", "https://img3.gif"));
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
         productService.deleteImages(SELLER_ID, PRODUCT_ID, List.of("https://img1.jpg", "https://img2.png"));
@@ -190,7 +190,7 @@ class ProductServiceTest {
         // given
         Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         product.addImages(List.of("https://img1.jpg", "https://img2.png"));
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
         productService.delete(SELLER_ID, PRODUCT_ID);
@@ -204,12 +204,10 @@ class ProductServiceTest {
     @DisplayName("[PD-06] 이미 삭제된 상품은 다시 삭제할 수 없다")
     @Test
     void delete_alreadyDeleted() {
-        // given
-        Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
-        product.delete();
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        // given — 삭제된 상품은 쓰기 경로 전용 조회가 돌려주지 않는다
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.empty());
 
-        // when & then — findOwnedProduct 가 삭제 상품을 404 로 거른다
+        // when & then — 그래서 404 다 (삭제 제외는 저장소 테스트와 통합 테스트가 지킨다)
         assertThatThrownBy(() -> productService.delete(SELLER_ID, PRODUCT_ID))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
@@ -220,7 +218,7 @@ class ProductServiceTest {
     void delete_notOwner() {
         // given
         Product product = Product.create(SELLER_ID, "나이키", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
         assertThatThrownBy(() -> productService.delete(OTHER_USER_ID, PRODUCT_ID))
@@ -234,7 +232,7 @@ class ProductServiceTest {
     void getProduct() {
         // given
         Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
         given(productViewCounter.readTotal(product)).willReturn(164L);
 
         // when
@@ -249,7 +247,7 @@ class ProductServiceTest {
     @Test
     void getProduct_notFound() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> productService.getProduct(PRODUCT_ID, VISITOR_ID))
@@ -265,7 +263,7 @@ class ProductServiceTest {
         Product product = Product.create(SELLER_ID, "아이폰 13", "A급", 500000, ProductCondition.USED, DeviceSpecFixture.sample());
         ReflectionTestUtils.setField(product, "id", PRODUCT_ID);
         given(productImageService.findThumbnails(List.of(PRODUCT_ID))).willReturn(Map.of(PRODUCT_ID, "https://thumb"));
-        given(productRepository.findAllById(List.of(PRODUCT_ID))).willReturn(List.of(product));
+        given(productRepository.findAllIncludingDeleted(List.of(PRODUCT_ID))).willReturn(List.of(product));
 
         // when
         Map<Long, ProductSummary> result = productService.findSummaries(List.of(PRODUCT_ID));

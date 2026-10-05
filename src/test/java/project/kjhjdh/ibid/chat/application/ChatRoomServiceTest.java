@@ -183,7 +183,7 @@ class ChatRoomServiceTest {
         ChatMessage lastMessage = ChatMessage.create(ROOM_ID, BUYER_ID, "안녕하세요", "c-1");
         ReflectionTestUtils.setField(lastMessage, "id", 3L);
 
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product()));
+        given(productRepository.findIncludingDeleted(PRODUCT_ID)).willReturn(Optional.of(product()));
         given(chatRoomRepository.findByProductIdAndSellerIdAndIdLessThanOrderByIdDesc(
                 eq(PRODUCT_ID), eq(SELLER_ID), any(), any()))
                 .willReturn(new SliceImpl<>(List.of(room), PageRequest.of(0, 20), false));
@@ -207,7 +207,7 @@ class ChatRoomServiceTest {
     @Test
     void getProductRooms_notOwner() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product()));
+        given(productRepository.findIncludingDeleted(PRODUCT_ID)).willReturn(Optional.of(product()));
 
         // when & then — 구매자는 상품 소유자가 아니다
         assertThatThrownBy(() -> chatRoomService.getProductRooms(PRODUCT_ID, BUYER_ID, null))
@@ -219,7 +219,7 @@ class ChatRoomServiceTest {
     @Test
     void getProductRooms_productNotFound() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
+        given(productRepository.findIncludingDeleted(PRODUCT_ID)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> chatRoomService.getProductRooms(PRODUCT_ID, SELLER_ID, null))

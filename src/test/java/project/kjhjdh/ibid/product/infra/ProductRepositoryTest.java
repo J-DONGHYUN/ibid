@@ -120,6 +120,55 @@ class ProductRepositoryTest extends RepositoryTestSupport {
         assertThat(next.hasNext()).isFalse();
     }
 
+    @DisplayName("[PD-06] 삭제를 제외하는 조회는 살아 있는 상품을 상태와 무관하게 찾는다")
+    @Test
+    void findActiveById_findsLiveProductInAnyStatus() {
+        // given
+        Product onSale = productRepository.save(Product.create(SELLER_ID, "판매중", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        Product reserved = productRepository.save(Product.create(SELLER_ID, "예약중", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        reserved.reserve(20L);
+        Product sold = productRepository.save(Product.create(SELLER_ID, "거래완료", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        sold.complete(20L);
+        productRepository.flush();
+
+        // when & then
+        assertThat(productRepository.findActiveById(onSale.getId())).isPresent();
+        assertThat(productRepository.findActiveById(reserved.getId())).isPresent();
+        assertThat(productRepository.findActiveById(sold.getId())).isPresent();
+    }
+
+    @DisplayName("[PD-06] 삭제를 제외하는 조회는 삭제된 상품을 찾지 못한다 (거래완료 후 삭제 포함)")
+    @Test
+    void findActiveById_excludesDeleted() {
+        // given
+        Product deleted = productRepository.save(Product.create(SELLER_ID, "삭제", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        deleted.delete();
+        Product soldThenDeleted = productRepository.save(Product.create(SELLER_ID, "거래완료 후 삭제", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        soldThenDeleted.complete(20L);
+        soldThenDeleted.delete();
+        productRepository.flush();
+
+        // when & then
+        assertThat(productRepository.findActiveById(deleted.getId())).isEmpty();
+        assertThat(productRepository.findActiveById(soldThenDeleted.getId())).isEmpty();
+        assertThat(productRepository.findActiveById(999L)).isEmpty();
+    }
+
+    @DisplayName("[PD-06] 삭제 포함 조회는 삭제된 상품도 찾는다 (기존 채팅방 · 내역이 읽는다)")
+    @Test
+    void findIncludingDeleted_findsDeleted() {
+        // given
+        Product live = productRepository.save(Product.create(SELLER_ID, "살아 있음", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        Product deleted = productRepository.save(Product.create(SELLER_ID, "삭제", "상태 좋음", 10000, ProductCondition.USED, DeviceSpecFixture.sample()));
+        deleted.delete();
+        productRepository.flush();
+
+        // when & then
+        assertThat(productRepository.findIncludingDeleted(deleted.getId())).isPresent();
+        assertThat(productRepository.findAllIncludingDeleted(java.util.List.of(live.getId(), deleted.getId())))
+                .extracting(Product::getId).containsExactlyInAnyOrder(live.getId(), deleted.getId());
+    }
+
     @DisplayName("조회수를 delta만큼 증가시킨다")
     @Test
     void increaseViewCount() {

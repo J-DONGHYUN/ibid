@@ -179,7 +179,7 @@ class ChatMessageServiceTest {
         Product deleted = Product.create(SELLER_ID, "삭제됨", "설명", 1000, ProductCondition.USED, DeviceSpecFixture.sample());
         deleted.delete();
         given(chatRoomRepository.findById(ROOM_ID)).willReturn(Optional.of(room()));
-        given(productRepository.findById(99L)).willReturn(Optional.of(deleted));
+        given(productRepository.findIncludingDeleted(99L)).willReturn(Optional.of(deleted));
 
         // when & then
         assertThatThrownBy(() -> chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요")))
