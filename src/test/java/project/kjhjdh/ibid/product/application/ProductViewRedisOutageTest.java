@@ -59,7 +59,6 @@ class ProductViewRedisOutageTest extends IntegrationTestSupport {
 
     @DisplayName("[PD-09] Redis 가 응답하지 않아도 상품 상세는 응답하고 조회수만 집계되지 않는다 (QA-B.1)")
     @Test
-    @Disabled("QA-B.1 발견 — 설정에 타임아웃이 없어 무응답이면 상세가 120초 걸린다(실측 120.04초). T-45 에서 타임아웃을 설정하고 이 줄을 지운다")
     void getProduct_whileRedisIsUnresponsive() {
         // given — 조회수가 DB 에 3 으로 반영된 상품. Redis 가 멈춘다
         Long productId = saveProduct();

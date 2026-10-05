@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +20,6 @@ class RedisTimeoutConfigTest extends IntegrationTestSupport {
 
     @DisplayName("[PD-09] Redis 명령 타임아웃이 짧게 설정돼 있어 무응답이 상세 응답을 오래 붙잡지 않는다 (QA-B.1)")
     @Test
-    @Disabled("QA-B.1 발견 — Redis 명령 타임아웃이 기본 60초다(설정 없음). 무응답이면 상세 한 건이 120초 걸렸다(실측). T-45 에서 타임아웃을 설정하고 이 줄을 지운다")
     void redisCommandTimeoutIsBounded() {
         // when
         Duration commandTimeout = lettuceConnectionFactory.getClientConfiguration().getCommandTimeout();
