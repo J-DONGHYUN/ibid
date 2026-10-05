@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
@@ -29,12 +30,13 @@ import project.kjhjdh.ibid.support.StompTestClient;
 import project.kjhjdh.ibid.support.WebIntegrationTestSupport;
 import project.kjhjdh.ibid.user.domain.Role;
 
-@TestPropertySource(properties = "jwt.access.expiration=2000")
+@TestPropertySource(properties = "jwt.access.expiration=3000")
 class WebSocketTokenExpiryTest extends WebIntegrationTestSupport {
 
     private static final Long SELLER_ID = 980L;
     private static final Long BUYER_ID = 990L;
-    private static final Duration PAST_EXPIRY = Duration.ofSeconds(3);
+    private static final Duration TOKEN_LIFETIME = Duration.ofSeconds(3);
+    private static final Duration PAST_EXPIRY = Duration.ofSeconds(4);
 
     @LocalServerPort
     private int port;
@@ -57,11 +59,13 @@ class WebSocketTokenExpiryTest extends WebIntegrationTestSupport {
         // given — 수명 2초 토큰으로 연결해 한 방을 구독한다
         Long firstRoom = saveRoom();
         Long secondRoom = saveRoom();
+        Instant issuedAt = Instant.now();
         String token = tokenOf(BUYER_ID);
         try (StompTestClient buyer = StompTestClient.connect(port, token)) {
             buyer.subscribe("/topic/room." + firstRoom);
             await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
                     assertThat(presenceRegistry.isViewing(firstRoom, BUYER_ID)).as("만료 전 구독 (ERROR: %s)", buyer.errors()).isTrue());
+            assertThat(Duration.between(issuedAt, Instant.now())).as("전제: 첫 구독은 토큰 만료 전에 끝났다").isLessThan(TOKEN_LIFETIME);
 
             // when — 토큰이 만료될 때까지 기다린 뒤 다른 방을 구독한다
             Thread.sleep(PAST_EXPIRY.toMillis());
@@ -82,11 +86,13 @@ class WebSocketTokenExpiryTest extends WebIntegrationTestSupport {
     void expiredSession_stillReceivesBroadcast() throws Exception {
         // given — 수명 2초 토큰으로 연결해 구독한 구매자. 토큰이 만료될 때까지 기다린다
         Long roomId = saveRoom();
+        Instant issuedAt = Instant.now();
         String token = tokenOf(BUYER_ID);
         try (StompTestClient buyer = StompTestClient.connect(port, token)) {
             buyer.subscribe("/topic/room." + roomId);
             await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
                     assertThat(presenceRegistry.isViewing(roomId, BUYER_ID)).as("만료 전 구독 (ERROR: %s)", buyer.errors()).isTrue());
+            assertThat(Duration.between(issuedAt, Instant.now())).as("전제: 첫 구독은 토큰 만료 전에 끝났다").isLessThan(TOKEN_LIFETIME);
             Thread.sleep(PAST_EXPIRY.toMillis());
             assertThatThrownBy(() -> tokenProvider.parseAccessToken(token)).as("전제: 같은 토큰은 이제 만료돼 파싱이 실패한다").isNotNull();
 
