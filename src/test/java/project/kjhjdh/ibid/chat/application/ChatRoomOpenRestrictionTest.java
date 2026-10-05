@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +48,6 @@ class ChatRoomOpenRestrictionTest extends IntegrationTestSupport {
 
     @DisplayName("[CH-01] 삭제된 상품에는 새 채팅방을 열 수 없다 (QA-1.3)")
     @Test
-    @Disabled("QA-1.3 발견 — 삭제된 상품에 새 채팅방이 열린다. T-42 에서 404 로 막고 이 줄을 지운다")
     void open_deletedProduct() {
         // given — 판매자가 상품을 삭제한다 (채팅방은 아직 없다)
         Long productId = saveProduct();
@@ -66,7 +64,6 @@ class ChatRoomOpenRestrictionTest extends IntegrationTestSupport {
 
     @DisplayName("[CH-01] 거래완료된 상품에는 새 채팅방을 열 수 없다 (QA-1.4)")
     @Test
-    @Disabled("QA-1.4 발견 — 거래완료된 상품에 새 채팅방이 열린다. T-42 에서 막고 이 줄을 지운다")
     void open_soldProduct() {
         // given — 기존 구매자와 거래완료된 상품
         Long productId = saveProduct();
@@ -144,7 +141,6 @@ class ChatRoomOpenRestrictionTest extends IntegrationTestSupport {
 
     @DisplayName("[CH-01] 삭제 · 거래완료된 상품에 새 구매자들이 열어도 만들어지는 방이 없다 (QA-1.3 · 1.4 측정)")
     @Test
-    @Disabled("QA-1.3 · 1.4 발견 — 삭제 · 거래완료 상품에 새 구매자 3명씩 열면 방이 6개 만들어진다(실측 6/6). T-42 에서 막고 이 줄을 지운다")
     void open_blockedProducts_createNoRoom() {
         // given — 삭제된 상품 하나와 거래완료된 상품 하나. 새 구매자는 상품마다 3명이다
         Long deleted = saveProduct();

@@ -22,6 +22,7 @@ import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.product.application.ProductService;
 import project.kjhjdh.ibid.product.application.ProductSummary;
 import project.kjhjdh.ibid.product.domain.Product;
+import project.kjhjdh.ibid.product.domain.ProductStatus;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
 
 @Service
@@ -36,11 +37,17 @@ public class ChatRoomService {
     private final ProductService productService;
 
     public ChatRoom open(Long productId, Long buyerId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-
         return chatRoomRepository.findByProductIdAndBuyerId(productId, buyerId)
-                .orElseGet(() -> save(product, buyerId));
+                .orElseGet(() -> openNew(productId, buyerId));
+    }
+
+    private ChatRoom openNew(Long productId, Long buyerId) {
+        Product product = productRepository.findActiveById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        if (product.getStatus() == ProductStatus.SOLD) {
+            throw new BusinessException(ErrorCode.PRODUCT_ALREADY_SOLD);
+        }
+        return save(product, buyerId);
     }
 
     @Transactional(readOnly = true)
