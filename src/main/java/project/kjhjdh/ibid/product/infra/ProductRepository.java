@@ -1,6 +1,7 @@
 package project.kjhjdh.ibid.product.infra;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -14,6 +15,17 @@ import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductStatus;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    @Query("select p from Product p where p.id = :id and p.deletedAt is null")
+    Optional<Product> findActiveById(@Param("id") Long id);
+
+    default Optional<Product> findIncludingDeleted(Long id) {
+        return findById(id);
+    }
+
+    default List<Product> findAllIncludingDeleted(Iterable<Long> ids) {
+        return findAllById(ids);
+    }
 
     Slice<Product> findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long id, Pageable pageable);
 
