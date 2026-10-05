@@ -9,8 +9,8 @@ import static org.mockito.Mockito.times;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +41,7 @@ class WebSocketRealtimeTest extends WebIntegrationTestSupport {
 
     private static final Long SELLER_ID = 960L;
     private static final Long BUYER_ID = 970L;
+    private static final String READY_CONTENT = "준비 확인";
 
     @LocalServerPort
     private int port;
@@ -62,30 +63,27 @@ class WebSocketRealtimeTest extends WebIntegrationTestSupport {
 
     @DisplayName("[CH-03] 구독한 연결은 판매자가 보낸 메시지를 새로고침 없이 보낸 순서대로 받는다")
     @Test
-    @Disabled("QA-D.2a 발견 — 유효한 토큰으로 연결해도 SUBSCRIBE 가 거부된다. T-49 에서 고치고 이 줄을 지운다")
     void subscriberReceivesMessagesInOrder() throws Exception {
         // given
         Long roomId = saveRoom();
 
         try (StompTestClient buyer = StompTestClient.connect(port, tokenOf(BUYER_ID))) {
-            assertThat(buyer.subscribe("/topic/room." + roomId)).as("구독 수락 (ERROR: %s)", buyer.errors()).isTrue();
+            awaitSubscribed(buyer, roomId);
 
             // when — 판매자가 REST 로 연속 세 건을 보낸다
             send(roomId, "m-1", "첫 번째");
             send(roomId, "m-2", "두 번째");
             send(roomId, "m-3", "세 번째");
 
-            // then — 구매자는 새로고침 없이 세 건을 같은 순서로 받는다
+            // then — 구매자는 새로고침 없이 세 건을 같은 순서로 받는다 (준비 확인용 메시지는 걸러 본다)
             await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
-                    assertThat(buyer.received()).as("수신 수 (ERROR: %s)", buyer.errors()).hasSize(3));
-            assertThat(buyer.received()).extracting(message -> message.get("content"))
-                    .containsExactly("첫 번째", "두 번째", "세 번째");
+                    assertThat(contentsOf(buyer)).as("수신한 본 메시지 (ERROR: %s)", buyer.errors()).hasSize(3));
+            assertThat(contentsOf(buyer)).containsExactly("첫 번째", "두 번째", "세 번째");
         }
     }
 
     @DisplayName("[NT-01] 방을 보고 있는 참여자에게는 알림이 가지 않고 보고 있지 않으면 간다")
     @Test
-    @Disabled("QA-D.2a 발견 — 유효한 토큰으로 연결해도 SUBSCRIBE 가 거부된다. T-49 에서 고치고 이 줄을 지운다")
     void notificationIsSuppressedOnlyWhileViewing() throws Exception {
         // given
         Long roomId = saveRoom();
@@ -93,7 +91,7 @@ class WebSocketRealtimeTest extends WebIntegrationTestSupport {
 
         // when — 구매자가 방을 보는 동안 판매자가 보낸다
         try (StompTestClient buyer = StompTestClient.connect(port, tokenOf(BUYER_ID))) {
-            assertThat(buyer.subscribe("/topic/room." + roomId)).as("구독 수락 (ERROR: %s)", buyer.errors()).isTrue();
+            awaitSubscribed(buyer, roomId);
             send(roomId, "m-1", "보는 중에 보냄");
 
             // then — 알림이 발행되지 않는다
@@ -107,6 +105,25 @@ class WebSocketRealtimeTest extends WebIntegrationTestSupport {
 
         // then — 알림이 한 번 발행된다
         then(notificationEventPublisher).should(times(1)).publish(expected);
+    }
+
+    private void awaitSubscribed(StompTestClient buyer, Long roomId) {
+        buyer.subscribe("/topic/room." + roomId);
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+                assertThat(presenceRegistry.isViewing(roomId, BUYER_ID))
+                        .as("구독 뒤 보는 중 여부 (서버가 돌려준 ERROR: %s)", buyer.errors()).isTrue());
+        AtomicInteger sequence = new AtomicInteger();
+        await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofMillis(200)).until(() -> {
+            send(roomId, "ready-" + sequence.incrementAndGet(), READY_CONTENT);
+            return !buyer.received().isEmpty();
+        });
+    }
+
+    private List<Object> contentsOf(StompTestClient buyer) {
+        return buyer.received().stream()
+                .map(message -> message.get("content"))
+                .filter(content -> !READY_CONTENT.equals(content))
+                .toList();
     }
 
     private void send(Long roomId, String clientMessageId, String content) {

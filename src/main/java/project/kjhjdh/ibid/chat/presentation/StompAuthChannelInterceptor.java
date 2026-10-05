@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
@@ -36,8 +37,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         StompCommand command = accessor.getCommand();
 
         if (StompCommand.CONNECT.equals(command)) {
-            accessor.setUser(authenticate(accessor));
-            return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
+            return connect(message, accessor);
         }
         if (StompCommand.SUBSCRIBE.equals(command)) {
             authorizeSubscribe(accessor);
@@ -50,6 +50,17 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
             presenceRegistry.disconnect(accessor.getSessionId());
         }
 
+        return message;
+    }
+
+    private Message<?> connect(Message<?> message, StompHeaderAccessor accessor) {
+        Principal principal = authenticate(accessor);
+        StompHeaderAccessor original = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+        if (original == null || !original.isMutable()) {
+            accessor.setUser(principal);
+            return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
+        }
+        original.setUser(principal);
         return message;
     }
 
