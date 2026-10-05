@@ -4,21 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import java.time.Duration;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.messaging.converter.StringMessageConverter;
-import org.springframework.messaging.simp.stomp.StompHeaders;
-import org.springframework.messaging.simp.stomp.StompSession;
-import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
-import org.springframework.web.socket.WebSocketHttpHeaders;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import project.kjhjdh.ibid.auth.application.TokenProvider;
 import project.kjhjdh.ibid.chat.application.ChatPresenceRegistry;
@@ -28,6 +18,7 @@ import project.kjhjdh.ibid.product.DeviceSpecFixture;
 import project.kjhjdh.ibid.product.domain.Product;
 import project.kjhjdh.ibid.product.domain.ProductCondition;
 import project.kjhjdh.ibid.product.infra.ProductRepository;
+import project.kjhjdh.ibid.support.StompTestClient;
 import project.kjhjdh.ibid.support.WebIntegrationTestSupport;
 import project.kjhjdh.ibid.user.domain.Role;
 
@@ -35,6 +26,7 @@ class WebSocketSubscribeTest extends WebIntegrationTestSupport {
 
     private static final Long SELLER_ID = 930L;
     private static final Long BUYER_ID = 940L;
+    private static final Long OUTSIDER_ID = 950L;
 
     @LocalServerPort
     private int port;
@@ -53,39 +45,47 @@ class WebSocketSubscribeTest extends WebIntegrationTestSupport {
 
     @DisplayName("[CH-03] 유효한 토큰으로 연결한 참여자가 자기 채팅방을 구독하면 구독이 받아들여진다 (QA-D.2a)")
     @Test
-    @Disabled("QA-D.2a 발견 — 유효한 토큰으로 연결해도 SUBSCRIBE 가 UNAUTHORIZED 로 거부되고 연결이 끊긴다. T-49 에서 고치고 이 줄을 지운다")
     void participantCanSubscribeOwnRoom() throws Exception {
-        // given — 참여자(구매자)의 유효한 토큰으로 CONNECT 한다
+        // given
         Long roomId = saveRoom();
-        String token = tokenProvider.createTokenPair(BUYER_ID, Role.USER).accessToken();
-        CopyOnWriteArrayList<String> errors = new CopyOnWriteArrayList<>();
-        WebSocketStompClient client = new WebSocketStompClient(new StandardWebSocketClient());
-        client.setMessageConverter(new StringMessageConverter());
-        StompHeaders connectHeaders = new StompHeaders();
-        connectHeaders.add("Authorization", "Bearer " + token);
-        StompSession session = client.connectAsync("ws://localhost:" + port + "/ws",
-                new WebSocketHttpHeaders(), connectHeaders, new StompSessionHandlerAdapter() {
-                    @Override
-                    public void handleFrame(StompHeaders headers, Object payload) {
-                        errors.add(String.valueOf(headers.getFirst("message")));
-                    }
-                }).get(10, TimeUnit.SECONDS);
 
-        try {
-            // when — 같은 연결로 자기 방을 구독한다
-            session.subscribe("/topic/room." + roomId, new StompSessionHandlerAdapter() { });
+        try (StompTestClient buyer = StompTestClient.connect(port, tokenOf(BUYER_ID))) {
+            // when
+            buyer.subscribe("/topic/room." + roomId);
 
-            // then — 구독이 받아들여져 "보는 중" 이 되고 연결이 유지된다. 서버가 ERROR 를 돌려주면 안 된다
-            await().atMost(Duration.ofSeconds(10)).untilAsserted(() ->
+            // then — 서버가 구독을 받아들여 보는 중으로 등록하고, ERROR 없이 연결이 유지된다
+            await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
                     assertThat(presenceRegistry.isViewing(roomId, BUYER_ID))
-                            .as("구독 뒤 보는 중 여부 (서버가 돌려준 ERROR: %s)", errors).isTrue());
-            assertThat(session.isConnected()).isTrue();
-        } finally {
-            if (session.isConnected()) {
-                session.disconnect();
-            }
-            client.stop();
+                            .as("구독 뒤 보는 중 여부 (서버가 돌려준 ERROR: %s)", buyer.errors()).isTrue());
+            assertThat(buyer.errors()).isEmpty();
+            assertThat(buyer.isConnected()).isTrue();
         }
+    }
+
+    @DisplayName("[I-08] 참여자는 그 방을 구독할 수 있고 참여자가 아닌 사용자는 구독할 수 없다")
+    @Test
+    void outsiderCannotSubscribe() throws Exception {
+        // given
+        Long roomId = saveRoom();
+
+        try (StompTestClient buyer = StompTestClient.connect(port, tokenOf(BUYER_ID));
+             StompTestClient outsider = StompTestClient.connect(port, tokenOf(OUTSIDER_ID))) {
+            // when
+            buyer.subscribe("/topic/room." + roomId);
+            outsider.subscribe("/topic/room." + roomId);
+
+            // then — 참여자는 받아들여지고 외부인은 서버가 거부해 보는 중이 등록되지 않는다
+            await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+                    assertThat(presenceRegistry.isViewing(roomId, BUYER_ID))
+                            .as("참여자 보는 중 (ERROR: %s)", buyer.errors()).isTrue());
+            assertThat(outsider.awaitRejected(Duration.ofSeconds(5))).as("외부인 구독 거부 여부").isTrue();
+            assertThat(presenceRegistry.isViewing(roomId, OUTSIDER_ID)).isFalse();
+            assertThat(buyer.errors()).as("참여자는 거부되지 않는다").isEmpty();
+        }
+    }
+
+    private String tokenOf(Long userId) {
+        return tokenProvider.createTokenPair(userId, Role.USER).accessToken();
     }
 
     private Long saveRoom() {
