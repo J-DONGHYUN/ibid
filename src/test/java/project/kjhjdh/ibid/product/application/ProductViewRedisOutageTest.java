@@ -10,7 +10,6 @@ import java.time.Duration;
 import java.time.Instant;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -138,7 +137,6 @@ class ProductViewRedisOutageTest extends IntegrationTestSupport {
 
     @DisplayName("[PD-09] 플러시 중 DB 반영이 실패해도 꺼낸 조회수가 사라지지 않는다 (QA-B.4)")
     @Test
-    @Disabled("QA-B.4 발견 — Redis 에서 꺼낸 뒤 DB 반영이 실패하면 조회수가 사라진다(기대 3, 실제 0). T-46 에서 꺼내기와 반영의 순서를 고치고 이 줄을 지운다")
     void flush_doesNotLoseViewsWhenDatabaseFails() {
         // given — 미반영 조회수 3 건. DB 반영이 한 번 실패하는 플러셔
         Long productId = saveProduct();

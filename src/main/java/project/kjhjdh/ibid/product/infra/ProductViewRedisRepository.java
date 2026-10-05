@@ -69,6 +69,11 @@ public class ProductViewRedisRepository {
         return toCount(stringRedisTemplate.opsForValue().getAndDelete(generateCountKey(productId)));
     }
 
+    public void restorePendingCount(Long productId, long count) {
+        stringRedisTemplate.opsForValue().increment(generateCountKey(productId), count);
+        stringRedisTemplate.opsForSet().add(DIRTY_KEY, String.valueOf(productId));
+    }
+
     private long toCount(String value) {
         return value == null ? 0L : Long.parseLong(value);
     }

@@ -16,8 +16,17 @@ public class ProductViewCountFlusher {
         for (Long productId : productViewCounter.readPendingProductIds()) {
             long delta = productViewCounter.takePendingCount(productId);
             if (delta > 0) {
-                productRepository.increaseViewCount(productId, delta);
+                apply(productId, delta);
             }
+        }
+    }
+
+    private void apply(Long productId, long delta) {
+        try {
+            productRepository.increaseViewCount(productId, delta);
+        } catch (RuntimeException e) {
+            productViewCounter.restorePendingCount(productId, delta);
+            throw e;
         }
     }
 }
