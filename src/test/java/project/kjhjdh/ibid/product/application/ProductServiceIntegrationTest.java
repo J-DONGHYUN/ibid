@@ -20,6 +20,7 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
 
     private static final Long SELLER_ID = 10L;
     private static final String VISITOR_ID = "visitor-a";
+    private static final String ISSUED_BASE = "https://ibid-product-images.s3.ap-northeast-2.amazonaws.com/products/";
 
     @Autowired
     private ProductService productService;
@@ -71,15 +72,16 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
     void getProduct_returnsEveryDetailField() {
         // given
         Long productId = productService.register(SELLER_ID, registerCommand("나이키 후드"));
-        productService.confirmImages(SELLER_ID, productId,
-                List.of("https://image/a.jpg", "https://image/b.jpg"));
+        String first = issuedUrl(productId, "0b9f6c1e-2d3a-4f5b-8c7d-9e0a1b2c3d4e", "jpg");
+        String second = issuedUrl(productId, "1c0a7d2f-3e4b-4a6c-9d8e-0f1b2c3d4e5f", "jpg");
+        productService.confirmImages(SELLER_ID, productId, List.of(first, second));
 
         // when
         ProductDetailResult result = productService.getProduct(productId, VISITOR_ID);
 
         // then
         assertThat(result.viewCount()).isEqualTo(1L);
-        assertThat(result.imageUrls()).containsExactly("https://image/a.jpg", "https://image/b.jpg");
+        assertThat(result.imageUrls()).containsExactly(first, second);
         assertThat(result.deviceSpec().modelName()).isEqualTo("iPhone 13");
         assertThat(result.productCondition()).isEqualTo(ProductCondition.LIKE_NEW);
         assertThat(result.status()).isEqualTo(ProductStatus.ON_SALE);
@@ -108,5 +110,9 @@ class ProductServiceIntegrationTest extends IntegrationTestSupport {
     private ProductRegisterCommand registerCommand(String title) {
         return new ProductRegisterCommand(title, "상태 좋음", 89000, ProductCondition.LIKE_NEW,
                 new DeviceSpecCommand(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체, 충전기", null));
+    }
+
+    private String issuedUrl(Long productId, String uuid, String extension) {
+        return ISSUED_BASE + productId + "/" + uuid + "." + extension;
     }
 }

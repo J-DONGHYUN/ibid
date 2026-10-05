@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 
 import java.util.List;
@@ -98,6 +99,24 @@ class ProductServiceTest {
 
         // then
         assertThat(product.imageUrls()).containsExactly("https://image1.jpg", "https://image2.png");
+        then(productImageService).should().requireIssued(PRODUCT_ID, List.of("https://image1.jpg", "https://image2.png"));
+    }
+
+    @DisplayName("[PD-02] 이 상품으로 발급하지 않은 주소면 이미지를 저장하지 않는다")
+    @Test
+    void confirmImages_notIssuedUrl() {
+        // given
+        Product product = Product.create(SELLER_ID, "나이키 후드", "상태 좋음", 89000, ProductCondition.USED, DeviceSpecFixture.sample());
+        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        willThrow(new BusinessException(ErrorCode.INVALID_IMAGE_URL))
+                .given(productImageService).requireIssued(PRODUCT_ID, List.of("https://evil.example.com/a.png"));
+
+        // when & then
+        assertThatThrownBy(() -> productService.confirmImages(SELLER_ID, PRODUCT_ID,
+                List.of("https://evil.example.com/a.png")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_IMAGE_URL.getMessage());
+        assertThat(product.imageUrls()).isEmpty();
     }
 
     @DisplayName("본인 상품이 아니면 이미지 URL을 저장할 수 없다")
@@ -162,7 +181,7 @@ class ProductServiceTest {
 
         // then
         assertThat(product.imageUrls()).containsExactly("https://img3.gif");
-        then(productImageService).should().deleteFiles(List.of("https://img1.jpg", "https://img2.png"));
+        then(productImageService).should().deleteFiles(PRODUCT_ID, List.of("https://img1.jpg", "https://img2.png"));
     }
 
     @DisplayName("[PD-06] 본인 상품을 삭제하면 소프트 삭제되고 행·이미지는 남는다")
@@ -179,7 +198,7 @@ class ProductServiceTest {
         // then — 소프트 삭제: deletedAt 만 찍히고 행·S3 는 그대로
         assertThat(product.isDeleted()).isTrue();
         then(productRepository).should(never()).delete(any(Product.class));
-        then(productImageService).should(never()).deleteFiles(any());
+        then(productImageService).should(never()).deleteFiles(any(), any());
     }
 
     @DisplayName("[PD-06] 이미 삭제된 상품은 다시 삭제할 수 없다")
