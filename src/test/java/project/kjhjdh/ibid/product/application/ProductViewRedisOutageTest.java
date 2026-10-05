@@ -19,7 +19,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.GenericContainer;
 
 import project.kjhjdh.ibid.product.DeviceSpecFixture;
@@ -29,7 +28,6 @@ import project.kjhjdh.ibid.product.infra.ProductRepository;
 import project.kjhjdh.ibid.support.IntegrationTestSupport;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@TestPropertySource(properties = "spring.data.redis.timeout=500ms")
 class ProductViewRedisOutageTest extends IntegrationTestSupport {
 
     private static final Long SELLER_ID = 10L;
@@ -75,7 +73,7 @@ class ProductViewRedisOutageTest extends IntegrationTestSupport {
         // then — 상세는 정상 응답하고 조회수는 DB 값이다. 집계는 비어 있다
         assertThat(detail.productId()).isEqualTo(productId);
         assertThat(detail.viewCount()).isEqualTo(3L);
-        assertThat(elapsed).as("Redis 무응답 중 상세 응답 시간 (타임아웃 500ms 설정)").isLessThan(Duration.ofSeconds(5));
+        assertThat(elapsed).as("Redis 무응답 중 상세 응답 시간 (설정된 타임아웃 기준)").isLessThan(Duration.ofSeconds(5));
     }
 
     @DisplayName("[PD-09] 플러시 경로는 Redis 장애를 삼키지 않고 그대로 던진다 (QA-B.2 — 현재 동작)")
