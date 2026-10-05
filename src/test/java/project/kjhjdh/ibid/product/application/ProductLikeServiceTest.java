@@ -13,6 +13,7 @@ import static org.mockito.Mockito.never;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ class ProductLikeServiceTest {
     @Test
     void like() {
         // given
-        given(productRepository.existsById(PRODUCT_ID)).willReturn(true);
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product(PRODUCT_ID, "상품")));
         given(productLikeRepository.existsByUserIdAndProductId(USER_ID, PRODUCT_ID)).willReturn(false);
 
         // when
@@ -71,7 +72,7 @@ class ProductLikeServiceTest {
     @Test
     void like_alreadyLiked() {
         // given
-        given(productRepository.existsById(PRODUCT_ID)).willReturn(true);
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product(PRODUCT_ID, "상품")));
         given(productLikeRepository.existsByUserIdAndProductId(USER_ID, PRODUCT_ID)).willReturn(true);
 
         // when
@@ -81,11 +82,11 @@ class ProductLikeServiceTest {
         then(productLikeRepository).should(never()).save(any());
     }
 
-    @DisplayName("존재하지 않는 상품을 찜하면 실패한다")
+    @DisplayName("[PD-07] 존재하지 않거나 삭제된 상품을 찜하면 실패한다 — 삭제된 상품은 쓰기 경로 전용 조회가 돌려주지 않는다")
     @Test
     void like_productNotFound() {
         // given
-        given(productRepository.existsById(PRODUCT_ID)).willReturn(false);
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> productLikeService.like(USER_ID, PRODUCT_ID))

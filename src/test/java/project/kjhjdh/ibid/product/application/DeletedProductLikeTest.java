@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +33,6 @@ class DeletedProductLikeTest extends IntegrationTestSupport {
 
     @DisplayName("[PD-07] 삭제된 상품은 찜할 수 없다 (QA-1.5)")
     @Test
-    @Disabled("QA-1.5 발견 — 삭제된 상품도 찜이 된다. T-53 에서 404 로 막고 이 줄을 지운다")
     void like_deletedProduct() {
         // given — 판매자가 삭제한 상품
         Long productId = saveProduct();
@@ -49,7 +47,6 @@ class DeletedProductLikeTest extends IntegrationTestSupport {
 
     @DisplayName("[PD-07] 삭제된 상품에 여러 사용자가 찜해도 저장되는 찜이 없다 (QA-1.5 측정)")
     @Test
-    @Disabled("QA-1.5 발견 — 삭제된 상품에 3명이 찜하면 읽히지 않는 찜 행이 3개 쌓인다(실측 3). T-53 에서 막고 이 줄을 지운다")
     void like_deletedProduct_storesNoLikeRow() {
         // given — 삭제된 상품과 서로 다른 사용자 3명
         Long productId = saveProduct();

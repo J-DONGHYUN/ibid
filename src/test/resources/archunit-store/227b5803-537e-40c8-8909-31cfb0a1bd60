@@ -1,1 +1,0 @@
-Method <project.kjhjdh.ibid.product.application.ProductLikeService.like(java.lang.Long, java.lang.Long)> calls method <project.kjhjdh.ibid.product.infra.ProductRepository.existsById(java.lang.Object)> in (ProductLikeService.java:29)
