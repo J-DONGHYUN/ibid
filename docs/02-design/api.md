@@ -44,35 +44,35 @@
 
 ## 엔드포인트
 
-요구사항 ID 와 연결한다. `상태` 는 `requirements.md` 와 같다.
+요구사항 ID 와 연결한다. **구현 상태는 이 표에 두지 않는다 — `requirements.md` 의 `상태` 열이 정본이다.** 같은 값을 두 곳에 두면 갈라진다(T-38).
 
-| 요구사항 | 메서드 · 경로 | 등급 | 상태 |
-|---|---|---|---|
-| `AU-01` | `POST /api/auth/signup` | 공개 | 구현됨 |
-| `AU-02` | `POST /api/auth/login` | 공개 | 구현됨 |
-| `AU-03` | `POST /api/auth/refresh` | 쿠키 | 구현됨 |
-| `AU-04` | `POST /api/auth/logout` | 쿠키 | 구현됨 |
-| `PD-01` | `POST /api/products` | 로그인 | 변경 |
-| `PD-02` | `POST /api/products/{id}/images/presign` · `/confirm` · `DELETE /images` | 본인 | 구현됨 |
-| `PD-03` | `GET /api/products` | 공개 | 변경 |
-| `PD-04` | `GET /api/products/{id}` | 공개 | 변경 |
-| `PD-05` | `PATCH /api/products/{id}` | 본인 | 변경 |
-| `PD-06` | `DELETE /api/products/{id}` | 본인 | 변경 |
-| `PD-07` | `GET` · `POST` · `DELETE /api/products/{id}/like` | 로그인 | 구현됨 |
-| `PD-08` | `GET /api/products/me/likes` | 로그인 | 구현됨 |
-| `CH-01` | `POST /api/products/{id}/chat-rooms` | 로그인 | 신규 |
-| `CH-02` | 실시간 채널 또는 `POST /api/chat-rooms/{id}/messages` | 본인 | 신규 — `ADR-0007` |
-| `CH-03` | 실시간 채널 | 본인 | 신규 — `ADR-0007` |
-| `CH-04` | `GET /api/chat-rooms/{id}/messages` | 본인 | 신규 |
-| `CH-05` | `GET /api/chat-rooms` | 로그인 | 신규 |
-| `CH-06` | `POST /api/chat-rooms/{id}/read` | 본인 | 신규 |
-| `CH-07` | `GET /api/products/{id}/chat-rooms` | 본인 | 신규 |
-| `TR-01` | `POST /api/products/{id}/reservation` | 본인 | 신규 |
-| `TR-02` | `DELETE /api/products/{id}/reservation` | 본인 | 신규 |
-| `TR-03` | `POST /api/products/{id}/completion` | 본인 | 신규 |
-| `TR-04` | `GET /api/products/me/sales` | 로그인 | 신규 |
-| `TR-05` | `GET /api/products/me/purchases` | 로그인 | 신규 |
-| `NT-03` | `GET /api/notifications` · `POST /api/notifications/{id}/read` | 로그인 | 신규 |
+| 요구사항 | 메서드 · 경로 | 등급 |
+|---|---|---|
+| `AU-01` | `POST /api/auth/signup` | 공개 |
+| `AU-02` | `POST /api/auth/login` | 공개 |
+| `AU-03` | `POST /api/auth/refresh` | 쿠키 |
+| `AU-04` | `POST /api/auth/logout` | 쿠키 |
+| `PD-01` | `POST /api/products` | 로그인 |
+| `PD-02` | `POST /api/products/{id}/images/presign` · `/confirm` · `DELETE /images` | 본인 |
+| `PD-03` | `GET /api/products` | 공개 |
+| `PD-04` | `GET /api/products/{id}` | 공개 |
+| `PD-05` | `PATCH /api/products/{id}` | 본인 |
+| `PD-06` | `DELETE /api/products/{id}` | 본인 |
+| `PD-07` | `GET` · `POST` · `DELETE /api/products/{id}/like` | 로그인 |
+| `PD-08` | `GET /api/products/me/likes` | 로그인 |
+| `CH-01` | `POST /api/products/{id}/chat-rooms` | 로그인 |
+| `CH-02` | `POST /api/chat-rooms/{id}/messages` | 본인 |
+| `CH-03` | `/ws` 로 연결한 뒤 `/topic/room.{id}` 구독 (`ADR-0007`) | 본인 |
+| `CH-04` | `GET /api/chat-rooms/{id}/messages` | 본인 |
+| `CH-05` | `GET /api/chat-rooms` | 로그인 |
+| `CH-06` | `POST /api/chat-rooms/{id}/read` | 본인 |
+| `CH-07` | `GET /api/products/{id}/chat-rooms` | 본인 |
+| `TR-01` | `POST /api/products/{id}/reservation` | 본인 |
+| `TR-02` | `DELETE /api/products/{id}/reservation` | 본인 |
+| `TR-03` | `POST /api/products/{id}/completion` | 본인 |
+| `TR-04` | `GET /api/products/me/sales` | 로그인 |
+| `TR-05` | `GET /api/products/me/purchases` | 로그인 |
+| `NT-03` | `GET /api/notifications` · `POST /api/notifications/{id}/read` | 로그인 |
 
 **사라진 엔드포인트** — `PATCH /api/products/{id}/on-sale` 은 지웠다 (등록 즉시 판매중, `T-05` · `PD-01`).
 `/api/orders/**` · `/api/payments/**` · `/api/inspections/**` 도 지웠다 (`T-04` · `NG-01` · `NG-02` · `NG-04`)
