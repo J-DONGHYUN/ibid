@@ -65,7 +65,7 @@ public class ChatMessageService {
         if (!room.isParticipant(command.senderId())) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
-        boolean productDeleted = productRepository.findById(room.getProductId())
+        boolean productDeleted = productRepository.findIncludingDeleted(room.getProductId())
                 .map(Product::isDeleted)
                 .orElse(false);
         if (productDeleted) {

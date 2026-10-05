@@ -80,6 +80,30 @@ class ProductDeletionIntegrationTest extends IntegrationTestSupport {
                 .hasMessage(ErrorCode.PRODUCT_DELETED.getMessage());
     }
 
+    @DisplayName("[PD-06] 삭제된 상품의 수정 · 이미지 변경 · 재삭제는 404 다 (쓰기 경로 전용 조회, 동작 불변)")
+    @Test
+    void softDelete_writesAreNotFound() {
+        // given
+        Long productId = productService.register(SELLER_ID, registerCommand());
+        productService.delete(SELLER_ID, productId);
+        ProductUpdateCommand update = new ProductUpdateCommand("수정", "설명", 1000, ProductCondition.USED,
+                new DeviceSpecCommand(DeviceCategory.SMARTPHONE, "iPhone 13", 90, "본체", null));
+
+        // when & then
+        assertNotFound(() -> productService.update(SELLER_ID, productId, update));
+        assertNotFound(() -> productService.delete(SELLER_ID, productId));
+        assertNotFound(() -> productService.confirmImages(SELLER_ID, productId, java.util.List.of("https://x/a.png")));
+        assertNotFound(() -> productService.deleteImages(SELLER_ID, productId, java.util.List.of("https://x/a.png")));
+        assertNotFound(() -> productService.generatePresignedUrls(SELLER_ID, productId,
+                java.util.List.of(new ImagePresignCommand("front.png", "image/png"))));
+    }
+
+    private void assertNotFound(org.assertj.core.api.ThrowableAssert.ThrowingCallable call) {
+        assertThatThrownBy(call)
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+    }
+
     private java.util.List<Long> ids(ProductListResult result) {
         return result.slice().getContent().stream().map(Product::getId).toList();
     }

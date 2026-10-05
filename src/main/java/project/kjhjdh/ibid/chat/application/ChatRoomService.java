@@ -76,7 +76,7 @@ public class ChatRoomService {
 
     @Transactional(readOnly = true)
     public Slice<ProductChatRoomResult> getProductRooms(Long productId, Long sellerId, Long cursor) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findIncludingDeleted(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         if (!product.isOwnedBy(sellerId)) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);

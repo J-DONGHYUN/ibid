@@ -58,7 +58,7 @@ public class ProductLikeService {
         if (productIds.isEmpty()) {
             return List.of();
         }
-        Map<Long, Product> productsById = productRepository.findAllById(productIds).stream()
+        Map<Long, Product> productsById = productRepository.findAllIncludingDeleted(productIds).stream()
                 .collect(Collectors.toMap(Product::getId, product -> product));
         Map<Long, String> thumbnails = productImageService.findThumbnails(productIds);
         return productIds.stream()

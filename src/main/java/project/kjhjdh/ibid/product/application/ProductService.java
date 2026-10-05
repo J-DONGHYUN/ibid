@@ -94,7 +94,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Map<Long, ProductSummary> findSummaries(List<Long> productIds) {
         Map<Long, String> thumbnails = productImageService.findThumbnails(productIds);
-        return productRepository.findAllById(productIds).stream()
+        return productRepository.findAllIncludingDeleted(productIds).stream()
                 .collect(Collectors.toMap(
                         Product::getId,
                         product -> new ProductSummary(
@@ -103,16 +103,14 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public ProductDetailResult getProduct(Long productId, String visitorId) {
-        Product product = productRepository.findById(productId)
-                .filter(p -> !p.isDeleted())
+        Product product = productRepository.findActiveById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         productViewCounter.record(productId, visitorId);
         return ProductDetailResult.from(product, productViewCounter.readTotal(product));
     }
 
     private Product findOwnedProduct(Long sellerId, Long productId) {
-        Product product = productRepository.findById(productId)
-                .filter(p -> !p.isDeleted())
+        Product product = productRepository.findActiveById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         if (!product.isOwnedBy(sellerId)) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
