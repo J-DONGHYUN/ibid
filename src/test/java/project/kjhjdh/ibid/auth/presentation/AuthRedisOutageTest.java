@@ -3,6 +3,7 @@ package project.kjhjdh.ibid.auth.presentation;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -68,19 +69,21 @@ class AuthRedisOutageTest extends AuthRedisFaultSupport {
         assertThat(result.clearsRefreshCookie()).as("무응답 중 로그아웃이 refresh 쿠키를 지우는가 — %s", result.summary()).isFalse();
     }
 
-    @DisplayName("[AU-02] Redis 가 되살아나면 로그인 · 재발급 · 로그아웃이 정상으로 돌아온다 (T-50 복구 대조)")
+    @DisplayName("[AU-02] Redis 가 되살아나면 새로 로그인한 계정의 로그인 · 재발급(AU-03) · 로그아웃(AU-04) 이 모두 200 이다 (T-50 복구 대조)")
     @Test
     void auth_recoversAfterRedisResumes() {
-        Account account = signupAndLogin();
         pause();
-        login(account.email());
         resume();
 
+        Account account = signupAndLogin();
         Measured login = login(account.email());
-        Measured refresh = refresh(account.refreshCookie());
+        Account relogged = signupAndLogin();
+        Measured refresh = refresh(relogged.refreshCookie());
+        Measured logout = logout(relogged.refreshCookie());
 
-        assertThat(login.status()).as("복구 뒤 로그인 %s", login.summary()).isEqualTo(200);
-        assertThat(refresh.status()).as("복구 뒤 재발급 %s", refresh.summary()).isIn(200, 401);
+        assertThat(List.of(login.status(), refresh.status(), logout.status()))
+                .as("복구 뒤 상태 코드 — login: %s | refresh: %s | logout: %s", login.summary(), refresh.summary(), logout.summary())
+                .containsOnly(200);
     }
 
     private void pause() {
