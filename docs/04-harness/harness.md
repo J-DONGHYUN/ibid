@@ -52,7 +52,7 @@ ibid 의 하네스가 **무엇으로 이루어져 있고, 왜 그렇게 만들�
 | 〃 | `domain` 은 스프링 · 바깥 계층에 의존하지 않는다 | `architecture.md` 「계층」 | — |
 | 〃 | `@Transactional` 은 `application` 에만 | 〃 | 메서드 규칙만 동결 |
 | 〃 | 저장소 인터페이스는 `infra` 에 | `ADR-0001` | — |
-| 〃 | `application` 은 상품을 날것의 id 조회(`findById` · `existsById` · `findAllById`)로 읽지 않는다 — 용도에 맞는 조회로 | `ADR-0013` · `I-13` | 동결 (남은 쓰기는 저장소가 정본 — 처음 4곳에서 `T-39` · `T-42` 가 줄였다) |
+| 〃 | `application` 은 상품을 날것의 id 조회(`findById` · `existsById` · `findAllById`)로 읽지 않는다 — 용도에 맞는 조회로 | `ADR-0013` · `I-13` | 동결 없음 — 처음 동결한 4곳을 `T-39` · `T-42` · `T-53` 이 모두 지웠다. 규칙은 살아 있다 |
 | `TestConventionRulesTest` | `@Test` 에 `@DisplayName` | `test.md` | 동결 |
 | 〃 | 테스트에 `@Transactional` 금지 · AssertJ 사용 | 〃 | — |
 | `SourceRulesTest` | 주석 금지 · `@Setter` · `@Data` 금지 | `code.md` | 목록으로 동결 |
@@ -99,6 +99,7 @@ wc -l src/test/resources/archunit-store/*-*    # 규칙별 남은 위반 수
 | 탐침 제거 뒤 | 통과. 저장소에 탐침 흔적 0건 |
 | (같은 날 발견) 정합 커밋 **전** 깨끗한 `main` 에 `common` → `product` 의존 클래스 | **통과했다.** 도메인 의존 방향 게이트가 열려 있었다. 위반이 새로 만들어진 저장소 항목에 흡수됐다 |
 | (같은 탐침) 정합 커밋 **후** | `DOMAIN_DEPENDENCY_DIRECTION` 실패. 저장소가 탐침을 흡수하지 않음 |
+| (T-53) 동결 기준선이 **0**(저장소 항목 0바이트)인 상태에서 `product.application` 에 날것의 `findById` 한 건 | **실패.** 보고한 위반은 새 1건. 제거 뒤 통과, 저장소는 0바이트 그대로이고 탐침 흔적 0건. **기준선이 비어도 규칙은 살아 있다** |
 
 ## 사람의 자리
 

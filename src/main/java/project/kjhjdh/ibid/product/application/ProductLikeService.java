@@ -26,9 +26,8 @@ public class ProductLikeService {
 
     @Transactional
     public void like(Long userId, Long productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
-        }
+        productRepository.findActiveById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         if (productLikeRepository.existsByUserIdAndProductId(userId, productId)) {
             return;
         }
