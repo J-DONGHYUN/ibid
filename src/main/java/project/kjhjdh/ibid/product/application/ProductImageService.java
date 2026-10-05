@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import project.kjhjdh.ibid.common.exception.BusinessException;
+import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.common.image.infra.S3ImageUploader;
 import project.kjhjdh.ibid.product.domain.ProductImage;
@@ -23,7 +25,7 @@ public class ProductImageService {
     private final S3ImageUploader s3ImageUploader;
 
     public List<PresignedUploadResult> presign(Long productId, List<ImagePresignCommand> commands) {
-        String directory = DIRECTORY_PREFIX + productId;
+        String directory = directoryOf(productId);
         return commands.stream()
                 .map(command -> s3ImageUploader.generatePresignedUrl(directory, command.filename()))
                 .toList();
@@ -38,7 +40,21 @@ public class ProductImageService {
                 .collect(Collectors.toMap(image -> image.getProduct().getId(), ProductImage::getUrl, (first, second) -> first));
     }
 
-    public void deleteFiles(List<String> urls) {
-        urls.forEach(s3ImageUploader::delete);
+    public void requireIssued(Long productId, List<String> urls) {
+        String directory = directoryOf(productId);
+        if (!urls.stream().allMatch(url -> s3ImageUploader.isIssuedUrl(directory, url))) {
+            throw new BusinessException(ErrorCode.INVALID_IMAGE_URL);
+        }
+    }
+
+    public void deleteFiles(Long productId, List<String> urls) {
+        String directory = directoryOf(productId);
+        urls.stream()
+                .filter(url -> s3ImageUploader.isIssuedUrl(directory, url))
+                .forEach(s3ImageUploader::delete);
+    }
+
+    private String directoryOf(Long productId) {
+        return DIRECTORY_PREFIX + productId;
     }
 }

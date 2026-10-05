@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -27,6 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import io.awspring.cloud.s3.S3Template;
 import project.kjhjdh.ibid.common.exception.BusinessException;
+import project.kjhjdh.ibid.common.exception.ErrorCode;
 import project.kjhjdh.ibid.common.image.infra.PresignedUploadResult;
 import project.kjhjdh.ibid.product.DeviceSpecFixture;
 import project.kjhjdh.ibid.product.domain.Product;
@@ -101,7 +101,6 @@ class ProductImageConfirmTest extends IntegrationTestSupport {
     @DisplayName("[PD-02] 이 상품으로 발급하지 않은 주소는 확정할 수 없고 저장되지 않는다 (QA-D.1b)")
     @ParameterizedTest(name = "{0}")
     @MethodSource("notIssuedUrls")
-    @Disabled("QA-D.1b 발견 — 이 상품으로 발급하지 않은 주소 8종 중 6종이 저장된다(확장자 검사만 있다). T-47 에서 주소를 검증하고 이 줄을 지운다")
     void notIssuedUrlIsRejected(String variant, String template) {
         // given
         Long productId = saveProduct();
@@ -112,12 +111,12 @@ class ProductImageConfirmTest extends IntegrationTestSupport {
 
         // then — 거부되고 아무것도 저장되지 않는다
         assertThat(imageUrlsOf(productId)).as("저장된 주소 (%s)", variant).isEmpty();
-        assertThat(thrown).isInstanceOf(BusinessException.class);
+        assertThat(thrown).isInstanceOf(BusinessException.class)
+                .hasMessage(ErrorCode.INVALID_IMAGE_URL.getMessage());
     }
 
     @DisplayName("[PD-02] 이미 저장돼 있던 다른 상품 경로 주소를 지워도 그 S3 객체 삭제는 호출되지 않는다 (QA-D.1c)")
     @Test
-    @Disabled("QA-D.1c 발견 — 다른 상품 경로 주소를 지우면 그 S3 객체 삭제가 호출된다. T-47 에서 삭제 전 검사를 걸고 이 줄을 지운다")
     void deleteImages_doesNotDeleteAnotherProductsObject() {
         // given — 검증이 없던 시절에 내 상품에 붙어 버린 남의 상품 경로 주소 (옛 데이터)
         Long mine = saveProduct();

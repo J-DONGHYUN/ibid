@@ -37,6 +37,7 @@ public class ProductService {
     @Transactional
     public void confirmImages(Long sellerId, Long productId, List<String> imageUrls) {
         Product product = findOwnedProduct(sellerId, productId);
+        productImageService.requireIssued(productId, imageUrls);
         product.addImages(imageUrls);
     }
 
@@ -54,7 +55,7 @@ public class ProductService {
     public void deleteImages(Long sellerId, Long productId, List<String> imageUrls) {
         Product product = findOwnedProduct(sellerId, productId);
         List<String> removed = product.removeImages(imageUrls);
-        productImageService.deleteFiles(removed);
+        productImageService.deleteFiles(productId, removed);
     }
 
     @Transactional

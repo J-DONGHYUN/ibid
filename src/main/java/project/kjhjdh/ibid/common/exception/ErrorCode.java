@@ -62,6 +62,7 @@ public enum ErrorCode {
     FILE_EMPTY(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),
     FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일 크기는 10MB 이하여야 합니다."),
     FILE_INVALID_EXTENSION(HttpStatus.BAD_REQUEST, "jpg, jpeg, png, gif 형식만 업로드 가능합니다."),
+    INVALID_IMAGE_URL(HttpStatus.BAD_REQUEST, "이 상품으로 발급한 이미지 주소가 아닙니다."),
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
 
     ;
