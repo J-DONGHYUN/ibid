@@ -40,7 +40,7 @@ class NotificationPoisonMessageTest extends IntegrationTestSupport {
 
     @DisplayName("[I-11] 처리 중 예외가 나는 알림은 무한 재배달되지 않는다 (QA-A.1)")
     @Test
-    @Disabled("QA-A.1 발견 — 소비 예외가 무한 재배달된다(3초에 11705회). DLQ · 재시도 상한을 도입하는 티켓에서 지운다")
+    @Disabled("QA-A.1 발견 — 소비 예외가 무한 재배달된다(3초에 11705회). T-44 에서 DLQ · 재시도 상한을 도입하고 이 줄을 지운다")
     void poisonMessageIsNotRedeliveredForever() throws InterruptedException {
         // given — 이 수신자의 알림은 저장 중 항상 예외가 난다 (DB 장애 · 배포 어긋남으로 인한 값 등)
         willThrow(new IllegalStateException("poison")).given(notificationService)

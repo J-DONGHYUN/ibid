@@ -66,7 +66,7 @@ class ProductImageConfirmTest extends IntegrationTestSupport {
 
     @DisplayName("[PD-02] 이 상품으로 발급하지 않은 이미지 주소는 확정할 수 없다 (QA-D.1b)")
     @Test
-    @Disabled("QA-D.1b 발견 — confirmImages 가 클라이언트가 보낸 주소를 검증 없이 저장한다. 주소 검증 티켓에서 지운다")
+    @Disabled("QA-D.1b 발견 — confirmImages 가 클라이언트가 보낸 주소를 검증 없이 저장한다. T-47 에서 주소를 검증하고 이 줄을 지운다")
     void confirm_rejectsUrlNotIssuedForThisProduct() {
         // given
         Long productId = saveProduct();
@@ -80,7 +80,7 @@ class ProductImageConfirmTest extends IntegrationTestSupport {
 
     @DisplayName("[PD-02] 내 상품에서 이미지를 지워도 남의 상품 S3 객체는 지워지지 않는다 (QA-D.1c)")
     @Test
-    @Disabled("QA-D.1c 발견 — 남의 상품 이미지 주소를 확정한 뒤 지우면 그 S3 객체가 삭제된다. 주소 검증 티켓에서 지운다")
+    @Disabled("QA-D.1c 발견 — 남의 상품 이미지 주소를 확정한 뒤 지우면 그 S3 객체가 삭제된다. T-47 에서 주소를 검증하고 이 줄을 지운다")
     void deleteImages_doesNotDeleteAnotherProductsObject() {
         // given — 내 상품에 남의 상품 경로의 주소를 확정해 둔다 (현재는 검증 없이 저장된다)
         Long mine = saveProduct();
