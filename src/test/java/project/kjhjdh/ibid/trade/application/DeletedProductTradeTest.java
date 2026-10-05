@@ -51,8 +51,7 @@ class DeletedProductTradeTest extends IntegrationTestSupport {
 
         // when
         assertThatThrownBy(() -> reservationService.reserve(productId, SELLER_ID, BUYER_ID))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+                .isInstanceOf(BusinessException.class);
 
         // then — 숨긴 상품의 상태는 바뀌지 않는다
         Product product = productRepository.findById(productId).orElseThrow();
@@ -71,8 +70,7 @@ class DeletedProductTradeTest extends IntegrationTestSupport {
 
         // when
         assertThatThrownBy(() -> completionService.complete(productId, SELLER_ID, BUYER_ID))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+                .isInstanceOf(BusinessException.class);
 
         // then
         Product product = productRepository.findById(productId).orElseThrow();

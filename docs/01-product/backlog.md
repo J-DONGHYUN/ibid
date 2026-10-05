@@ -488,7 +488,7 @@
 - **완료 조건**
   - 삭제된 상품에는 새 채팅방을 열 수 없다 · 거래완료된 상품에도 열 수 없다
   - **거래완료 전에 열린 방은 거래완료 뒤에도 같은 방으로 돌아온다** — 새 방만 막고 인수 조율 대화는 끊지 않는다
-  - `ChatRoomOpenRestrictionTest` 의 `@Disabled` 두 줄을 지우고 통과시킨다 (`open_existingRoomAfterSold` 는 계속 통과해야 한다)
+  - `ChatRoomOpenRestrictionTest` 의 `@Disabled` 두 줄을 지우고 통과시킨다 (`open_existingRoomAfterSold` 는 계속 통과해야 한다). 재현 테스트는 `BusinessException` 까지만 단언한다 — **어떤 `ErrorCode` 로 막을지는 이 티켓이 정하고 단언을 조인다**
   - `requirements.md` 의 `CH-01` 상태를 갱신한다
 - **선행**: T-13 · T-22 (삭제와 거래완료가 있어야 성립 — 둘 다 ✅)
 - **참고**
@@ -522,7 +522,7 @@
 - **완료 조건**
   - 삭제된 상품은 예약(`TR-01`)·거래완료(`TR-03`)할 수 없다 (404 또는 적절한 거부)
   - 서비스/통합 테스트로 검증
-  - `DeletedProductTradeTest` 의 `@Disabled` 두 줄을 지우고 통과시킨다
+  - `DeletedProductTradeTest` 의 `@Disabled` 두 줄을 지우고 통과시킨다. 재현 테스트는 `BusinessException` 까지만 단언한다 — **어떤 `ErrorCode` 로 막을지는 이 티켓이 정하고 단언을 조인다**
 - **선행**: T-13 (소프트 삭제가 있어야 성립)
 - **참고**
   - `trade` 의 상품 조회에 `deletedAt` 확인을 더한다. `Product` 에 "거래 가능" 판정을 둘지, 서비스에서 `isDeleted()` 로 거를지는 구현에서 정한다

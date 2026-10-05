@@ -51,8 +51,7 @@ class ChatRoomOpenRestrictionTest extends IntegrationTestSupport {
 
         // when
         assertThatThrownBy(() -> chatRoomService.open(productId, BUYER_ID))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage(ErrorCode.PRODUCT_NOT_FOUND.getMessage());
+                .isInstanceOf(BusinessException.class);
 
         // then — 방이 생기지 않는다
         assertThat(chatRoomRepository.findByProductIdAndBuyerId(productId, BUYER_ID)).isEmpty();
@@ -69,8 +68,7 @@ class ChatRoomOpenRestrictionTest extends IntegrationTestSupport {
 
         // when — 거래와 무관한 다른 구매자가 채팅방을 연다
         assertThatThrownBy(() -> chatRoomService.open(productId, OTHER_BUYER_ID))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage(ErrorCode.PRODUCT_ALREADY_SOLD.getMessage());
+                .isInstanceOf(BusinessException.class);
 
         // then
         assertThat(chatRoomRepository.findByProductIdAndBuyerId(productId, OTHER_BUYER_ID)).isEmpty();
