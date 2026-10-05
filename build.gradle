@@ -63,3 +63,35 @@ tasks.register('architectureTest', Test) {
         includeTestsMatching 'project.kjhjdh.ibid.architecture.*'
     }
 }
+
+def frozenStoreDir = layout.projectDirectory.dir('src/test/resources/archunit-store').asFile
+
+def readFrozenStore = {
+    Map<String, Set<String>> snapshot = [:]
+    if (frozenStoreDir.exists()) {
+        frozenStoreDir.eachFile { f ->
+            if (f.isFile()) {
+                snapshot[f.name] = f.readLines('UTF-8').findAll { !it.startsWith('#') }.toSet()
+            }
+        }
+    }
+    snapshot
+}
+
+tasks.withType(Test).configureEach {
+    def before = [:]
+    doFirst {
+        before.putAll(readFrozenStore())
+    }
+    doLast {
+        def after = readFrozenStore()
+        def created = after.keySet() - before.keySet()
+        def grown = after.findAll { name, lines -> before.containsKey(name) && !before[name].containsAll(lines) }.keySet()
+        if (created || grown) {
+            throw new GradleException(
+                    "ArchUnit 이 동결 저장소(src/test/resources/archunit-store/)에 새 항목을 기록했다 — 새 파일 ${created}, 늘어난 파일 ${grown}.\n" +
+                    "저장소에 없는 규칙은 처음 보이는 순간 현재 위반을 전부 받아들여 통과한다. 사람이 항목을 확인하고 커밋해야 게이트가 닫힌다.\n" +
+                    "위반을 고치는 게 먼저다. 의도한 새 동결이면 git diff 로 기록된 위반 수를 확인해 커밋한 뒤 다시 돌린다 (ADR-0010, harness.md 「알려진 구멍」)")
+        }
+    }
+}
