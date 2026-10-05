@@ -23,7 +23,7 @@ public class CompletionService {
 
     @Transactional
     public void complete(Long productId, Long sellerId, Long buyerId) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findActiveById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         if (!product.isOwnedBy(sellerId)) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);

@@ -52,7 +52,7 @@ class CompletionServiceTest {
     void complete() {
         // given
         Product product = onSaleProduct();
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
         given(chatRoomService.isChatPartner(PRODUCT_ID, BUYER_ID)).willReturn(true);
 
         // when
@@ -69,7 +69,7 @@ class CompletionServiceTest {
     @Test
     void complete_notOwner() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(onSaleProduct()));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(onSaleProduct()));
 
         // when & then
         assertThatThrownBy(() -> completionService.complete(PRODUCT_ID, OTHER_USER_ID, BUYER_ID))
@@ -81,7 +81,7 @@ class CompletionServiceTest {
     @Test
     void complete_notChatPartner() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(onSaleProduct()));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(onSaleProduct()));
         given(chatRoomService.isChatPartner(PRODUCT_ID, BUYER_ID)).willReturn(false);
 
         // when & then
@@ -94,7 +94,7 @@ class CompletionServiceTest {
     @Test
     void complete_productNotFound() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> completionService.complete(PRODUCT_ID, SELLER_ID, BUYER_ID))

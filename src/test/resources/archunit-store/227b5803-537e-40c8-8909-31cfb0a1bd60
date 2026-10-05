@@ -1,4 +1,2 @@
 Method <project.kjhjdh.ibid.chat.application.ChatRoomService.open(java.lang.Long, java.lang.Long)> calls method <project.kjhjdh.ibid.product.infra.ProductRepository.findById(java.lang.Object)> in (ChatRoomService.java:39)
 Method <project.kjhjdh.ibid.product.application.ProductLikeService.like(java.lang.Long, java.lang.Long)> calls method <project.kjhjdh.ibid.product.infra.ProductRepository.existsById(java.lang.Object)> in (ProductLikeService.java:29)
-Method <project.kjhjdh.ibid.trade.application.CompletionService.complete(java.lang.Long, java.lang.Long, java.lang.Long)> calls method <project.kjhjdh.ibid.product.infra.ProductRepository.findById(java.lang.Object)> in (CompletionService.java:26)
-Method <project.kjhjdh.ibid.trade.application.ReservationService.findOwnedProduct(java.lang.Long, java.lang.Long)> calls method <project.kjhjdh.ibid.product.infra.ProductRepository.findById(java.lang.Object)> in (ReservationService.java:46)

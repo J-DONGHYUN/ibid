@@ -52,7 +52,7 @@ class ReservationServiceTest {
     void reserve() {
         // given
         Product product = onSaleProduct();
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
         given(chatRoomService.isChatPartner(PRODUCT_ID, BUYER_ID)).willReturn(true);
 
         // when
@@ -71,7 +71,7 @@ class ReservationServiceTest {
         // given
         Product product = onSaleProduct();
         product.reserve(BUYER_ID);
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
         reservationService.cancelReservation(PRODUCT_ID, SELLER_ID);
@@ -85,7 +85,7 @@ class ReservationServiceTest {
     @Test
     void reserve_notOwner() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(onSaleProduct()));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(onSaleProduct()));
 
         // when & then
         assertThatThrownBy(() -> reservationService.reserve(PRODUCT_ID, OTHER_USER_ID, BUYER_ID))
@@ -97,7 +97,7 @@ class ReservationServiceTest {
     @Test
     void reserve_notChatPartner() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(onSaleProduct()));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(onSaleProduct()));
         given(chatRoomService.isChatPartner(PRODUCT_ID, BUYER_ID)).willReturn(false);
 
         // when & then
@@ -110,7 +110,7 @@ class ReservationServiceTest {
     @Test
     void reserve_productNotFound() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> reservationService.reserve(PRODUCT_ID, SELLER_ID, BUYER_ID))
@@ -124,7 +124,7 @@ class ReservationServiceTest {
         // given
         Product product = onSaleProduct();
         product.reserve(BUYER_ID);
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when
         reservationService.cancelReservation(PRODUCT_ID, SELLER_ID);
@@ -140,7 +140,7 @@ class ReservationServiceTest {
         // given
         Product product = onSaleProduct();
         product.reserve(BUYER_ID);
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.of(product));
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.of(product));
 
         // when & then
         assertThatThrownBy(() -> reservationService.cancelReservation(PRODUCT_ID, OTHER_USER_ID))
@@ -152,7 +152,7 @@ class ReservationServiceTest {
     @Test
     void cancelReservation_productNotFound() {
         // given
-        given(productRepository.findById(PRODUCT_ID)).willReturn(Optional.empty());
+        given(productRepository.findActiveById(PRODUCT_ID)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> reservationService.cancelReservation(PRODUCT_ID, SELLER_ID))

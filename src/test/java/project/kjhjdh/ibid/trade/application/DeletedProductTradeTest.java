@@ -3,7 +3,6 @@ package project.kjhjdh.ibid.trade.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +42,6 @@ class DeletedProductTradeTest extends IntegrationTestSupport {
 
     @DisplayName("[TR-01] 삭제된 상품은 예약할 수 없고 상태는 바뀌지 않는다 (QA-1.1)")
     @Test
-    @Disabled("QA-1.1 발견 — 삭제 상품이 예약된다. T-39 에서 막고 이 줄을 지운다")
     void reserve_deletedProduct() {
         // given — 채팅 상대가 있는 상품을 판매자가 삭제한다
         Long productId = saveProduct();
@@ -63,7 +61,6 @@ class DeletedProductTradeTest extends IntegrationTestSupport {
 
     @DisplayName("[TR-02] 삭제된 상품의 예약은 해제할 수 없고 상태는 바뀌지 않는다 (QA-1.1)")
     @Test
-    @Disabled("QA-1.1 발견 — 삭제 상품의 예약이 해제된다. T-39 에서 막고 이 줄을 지운다")
     void cancelReservation_deletedProduct() {
         // given — 예약중인 상품을 판매자가 삭제한다
         Long productId = saveProduct();
@@ -84,7 +81,6 @@ class DeletedProductTradeTest extends IntegrationTestSupport {
 
     @DisplayName("[TR-03] 삭제된 상품은 거래완료할 수 없고 상태는 바뀌지 않는다 (QA-1.2)")
     @Test
-    @Disabled("QA-1.2 발견 — 삭제 상품이 거래완료된다. T-39 에서 막고 이 줄을 지운다")
     void complete_deletedProduct() {
         // given
         Long productId = saveProduct();
@@ -104,7 +100,6 @@ class DeletedProductTradeTest extends IntegrationTestSupport {
 
     @DisplayName("[I-13] 삭제된 상품은 판매자가 아닌 사람에게도 404 다 (삭제된 상품의 존재를 새 쓰기가 알려 주지 않는다)")
     @Test
-    @Disabled("QA-1.1 발견 — 삭제 상품이 판매자가 아닌 사람에게 403 으로 존재를 알린다. T-39 에서 404 로 막고 이 줄을 지운다")
     void trade_deletedProduct_notOwner() {
         // given
         Long productId = saveProduct();
@@ -122,7 +117,6 @@ class DeletedProductTradeTest extends IntegrationTestSupport {
 
     @DisplayName("[I-13] 삭제된 상품에 예약 · 해제 · 거래완료를 차례로 시도하면 성공하는 연산이 없고 상태가 그대로다 (QA-1.1 · 1.2 연쇄)")
     @Test
-    @Disabled("QA-1.1 · 1.2 발견 — 삭제 상품에 3개 연산이 모두 성공해 SOLD 가 된다(실측 3/3). T-39 에서 막고 이 줄을 지운다")
     void trade_deletedProduct_noOperationSucceeds() {
         // given — 채팅 상대가 있는 상품을 판매자가 삭제한다
         Long productId = saveProduct();

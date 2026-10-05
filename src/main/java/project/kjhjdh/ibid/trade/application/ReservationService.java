@@ -43,7 +43,7 @@ public class ReservationService {
     }
 
     private Product findOwnedProduct(Long productId, Long sellerId) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findActiveById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         if (!product.isOwnedBy(sellerId)) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
