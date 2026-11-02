@@ -2,6 +2,7 @@ package project.kjhjdh.ibid.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ class ChatNotificationFlowTest extends IntegrationTestSupport {
 
     private static final Long SELLER_ID = 10L;
     private static final Long BUYER_ID = 20L;
+    private static final String VIEWING_SESSION = "session-1";
 
     @Autowired
     private ChatMessageService chatMessageService;
@@ -42,6 +44,14 @@ class ChatNotificationFlowTest extends IntegrationTestSupport {
 
     @Autowired
     private ChatPresenceRegistry presenceRegistry;
+
+    // ChatPresenceRegistry 는 싱글턴이라 DbCleaner 가 치우지 못한다.
+    // TRUNCATE 로 AUTO_INCREMENT 가 리셋돼 다음 테스트가 같은 방 id 를 받으므로,
+    // 치우지 않으면 메서드 실행 순서에 따라 결과가 뒤집힌다.
+    @AfterEach
+    void clearPresence() {
+        presenceRegistry.disconnect(VIEWING_SESSION);
+    }
 
     @DisplayName("[NT-01] 메시지를 보내면 그 방을 안 보는 상대에게 알림 행이 생긴다 (트랜잭션 없는 경로)")
     @Test
@@ -65,7 +75,7 @@ class ChatNotificationFlowTest extends IntegrationTestSupport {
     void sendSkipsNotificationWhenRecipientViewing() {
         // given — seller 가 그 방을 보는 중
         Long roomId = openRoom();
-        presenceRegistry.subscribe("session-1", "sub-0", SELLER_ID, roomId);
+        presenceRegistry.subscribe(VIEWING_SESSION, "sub-0", SELLER_ID, roomId);
 
         // when
         chatMessageService.send(new SendMessageCommand(roomId, BUYER_ID, "c-1", "7시에 봬요"));

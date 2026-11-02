@@ -11,7 +11,11 @@
 - 비즈니스 규칙 위반은 `throw new BusinessException(ErrorCode.X)` 로 던진다.
   인증 · 토큰 계열(인터셉터 · 토큰 파싱)은 `GlobalException` 을 쓴다
 - **서비스에서 예외를 잡아 다른 응답으로 바꾸지 않는다.** 응답 변환은 `GlobalExceptionHandler` 한 곳이 한다.
-  예외는 `ADR-0005` 의 멱등 요청 하나다
+  예외는 둘뿐이고 둘 다 근거 ADR 이 있다 —
+  멱등 요청(`ADR-0005`)과 **알림 흡수**(`I-11` · `ADR-0014`, `NotificationEventListener`).
+  「서비스에서 catch 해도 된다」 로 일반화하지 않는다
+  - 알림 흡수는 **`try-catch` 가 트랜잭션 경계 밖**에 있어야 한다. 경계 안에서 잡으면 참여 트랜잭션이
+    rollback-only 로 표시돼, 예외를 삼켜도 커밋 때 `UnexpectedRollbackException` 이 난다 (`ADR-0014`)
 - 새 `ErrorCode` 를 만들기 전에 같은 의미가 있는지 본다
 
 ## DTO · 커맨드
