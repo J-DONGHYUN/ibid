@@ -10,7 +10,9 @@ paths:
 - 트랜잭션 경계는 여기 public 메서드에 둔다. 조회 전용은 `@Transactional(readOnly = true)`
 - **`presentation` 을 import 하지 않는다.** 요청 DTO 대신 커맨드(`~Command` record)를 받는다.
   기존 서비스 중 요청 DTO 를 받는 곳이 있다 — 고칠 때 커맨드로 바꾸고, 새 코드에서 따라 하지 않는다
-- 예외를 잡아 다른 응답으로 바꾸지 않는다. `throw` 만 한다. 유일한 예외는 멱등 요청(`ADR-0005`)
+- 예외를 잡아 다른 응답으로 바꾸지 않는다. `throw` 만 한다. 예외는 둘뿐이다 —
+  멱등 요청(`ADR-0005`)과 **알림 흡수**(`I-11` · `ADR-0014`, `NotificationEventListener`).
+  둘 다 근거 ADR 이 있다. 「application 에서 catch 해도 된다」 로 일반화하지 않는다
 - 다른 도메인의 서비스를 부르기 전에 `docs/03-convention/architecture.md` 「도메인과 의존 방향」 을 본다.
   **`product` 가 `chat` 을 부르면 순환이다** — 둘을 모두 봐야 하면 `trade` 에 둔다 (`ADR-0006`)
 - 삭제 예정 도메인(`order` · `payment` · `inspection`)을 부르지 않는다

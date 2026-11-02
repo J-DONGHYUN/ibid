@@ -172,6 +172,8 @@
 
 ### QA-2.5 알림 발행 실패가 원 작업을 막지 않는다 (I-11)
 - 행위: `NotificationEventPublisher` 가 던지도록(브로커 장애 가정) 두고 `send` / `complete` 실행
+  - **(2026-11-02, `ADR-0014` · `T-57`)** 브로커를 걷어내 이 경로는 사라졌다. 같은 `I-11` 을 이제
+    알림 **저장** 실패로 찌른다 (`TradeNotificationResilienceTest`). 아래는 당시 기록이다
 - 기대: 메시지 저장 · 거래완료는 성공. 알림만 유실
 - 가설: **통과** (`TradeNotificationResilienceTest`·발행기 삼킴 재확인)
 - **실행 결과: 통과.** `TradeNotificationResilienceTest` (0.09s). `AmqpException` 을 던지게 해도
