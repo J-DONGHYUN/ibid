@@ -26,8 +26,8 @@ import project.kjhjdh.ibid.auth.application.TokenProvider;
 import project.kjhjdh.ibid.chat.application.ChatPresenceRegistry;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
-import project.kjhjdh.ibid.common.event.NotificationEventPublisher;
 import project.kjhjdh.ibid.common.event.NotificationMessage;
+import project.kjhjdh.ibid.notification.application.NotificationEventListener;
 import project.kjhjdh.ibid.common.event.NotificationMessage.NotificationType;
 import project.kjhjdh.ibid.product.DeviceSpecFixture;
 import project.kjhjdh.ibid.product.domain.Product;
@@ -60,7 +60,7 @@ class WebSocketRealtimeTest extends WebIntegrationTestSupport {
     private ChatRoomRepository chatRoomRepository;
 
     @MockitoBean
-    private NotificationEventPublisher notificationEventPublisher;
+    private NotificationEventListener notificationEventListener;
 
     @DisplayName("[CH-03] 구독한 연결은 판매자가 보낸 메시지를 새로고침 없이 보낸 순서대로 받는다")
     @Test
@@ -96,7 +96,7 @@ class WebSocketRealtimeTest extends WebIntegrationTestSupport {
             send(roomId, "m-1", "보는 중에 보냄");
 
             // then — 알림이 발행되지 않는다
-            then(notificationEventPublisher).should(after(NOTIFICATION_WAIT_MILLIS).never()).publish(expected);
+            then(notificationEventListener).should(after(NOTIFICATION_WAIT_MILLIS).never()).onNotification(expected);
         }
 
         // when — 구매자가 연결을 닫아 방을 떠난 뒤 판매자가 다시 보낸다
@@ -105,7 +105,7 @@ class WebSocketRealtimeTest extends WebIntegrationTestSupport {
         send(roomId, "m-2", "떠난 뒤에 보냄");
 
         // then — 알림이 한 번 발행된다
-        then(notificationEventPublisher).should(times(1)).publish(expected);
+        then(notificationEventListener).should(times(1)).onNotification(expected);
     }
 
     private void awaitSubscribed(StompTestClient buyer, Long roomId) {

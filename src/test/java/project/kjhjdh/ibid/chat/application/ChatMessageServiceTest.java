@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,7 +27,6 @@ import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
 import project.kjhjdh.ibid.chat.infra.ChatMessageRepository;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
-import project.kjhjdh.ibid.common.event.NotificationEventPublisher;
 import project.kjhjdh.ibid.common.event.NotificationMessage;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
@@ -57,7 +57,7 @@ class ChatMessageServiceTest {
     private ChatPresenceRegistry presenceRegistry;
 
     @Mock
-    private NotificationEventPublisher notificationEventPublisher;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ChatMessageService chatMessageService;
@@ -94,7 +94,7 @@ class ChatMessageServiceTest {
 
         // then — 상대(seller)에게 NEW_MESSAGE 알림
         ArgumentCaptor<NotificationMessage> captor = ArgumentCaptor.forClass(NotificationMessage.class);
-        then(notificationEventPublisher).should().publish(captor.capture());
+        then(eventPublisher).should().publishEvent(captor.capture());
         assertThat(captor.getValue().recipientId()).isEqualTo(SELLER_ID);
         assertThat(captor.getValue().type()).isEqualTo(NotificationMessage.NotificationType.NEW_MESSAGE);
     }
@@ -112,7 +112,7 @@ class ChatMessageServiceTest {
         chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요"));
 
         // then
-        then(notificationEventPublisher).shouldHaveNoInteractions();
+        then(eventPublisher).shouldHaveNoInteractions();
     }
 
     @DisplayName("[NT-01] 재전송(멱등)은 알림을 다시 발행하지 않는다")
@@ -127,7 +127,7 @@ class ChatMessageServiceTest {
         chatMessageService.send(new SendMessageCommand(ROOM_ID, BUYER_ID, CLIENT_MSG_ID, "안녕하세요"));
 
         // then
-        then(notificationEventPublisher).shouldHaveNoInteractions();
+        then(eventPublisher).shouldHaveNoInteractions();
     }
 
     @DisplayName("[CH-02] 같은 클라이언트 메시지 식별자로 재전송하면 기존 메시지를 돌려준다")
