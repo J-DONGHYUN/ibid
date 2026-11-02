@@ -307,7 +307,7 @@ CI(`ci.yml`)가 PR 에서 전체 빌드를 최종적으로 돌린다. 실수로 
 **T-25 (#138, 2026-10-02) — `notification` 도메인 생성 시 "아무도 안 본다" 게이트 생존 확인**
 
 `notification` 을 처음 만들며 탐침했다. 이 도메인은 방향 규칙이 다르다 — **아무 도메인도 notification 을
-import 하면 안 된다**(이벤트로만 받는다, `architecture.md` · `ADR-0009`). 그런데 기존 게이트엔
+import 하면 안 된다**(이벤트로만 받는다, `architecture.md` · `ADR-0009` → `ADR-0014`). 그런데 기존 게이트엔
 `notification` 의 "무엇을 보나"(`mayOnlyAccessLayers`)만 있고 "아무도 못 본다"가 **없어** 문서-게이트가
 어긋나 있었다. `legacy` 처럼 `.whereLayer("notification").mayNotBeAccessedByAnyLayer()` 를 더해 맞췄다.
 
@@ -316,8 +316,11 @@ import 하면 안 된다**(이벤트로만 받는다, `architecture.md` · `ADR-
 | `product` 가 `notification.domain.Notification` 을 **실제 참조**(`product → notification`, 금지) | 실패 (`DOMAIN_DEPENDENCY_DIRECTION`) |
 | 탐침 제거 | 통과 |
 
-chat·trade 는 notification 을 import 하지 않고 `common.event.NotificationMessage` 를 RabbitMQ 로 흘린다.
+chat·trade 는 notification 을 import 하지 않고 `common.event.NotificationMessage` 를 흘린다.
 탐침은 확인 후 되돌렸다(커밋하지 않음).
+
+> 전달 수단은 그 뒤 RabbitMQ 에서 **스프링 애플리케이션 이벤트**로 바뀌었다(`ADR-0014` · `T-57`).
+> 게이트가 지키는 것은 수단이 아니라 **방향**이라 규칙은 그대로다.
 
 ## 다음
 

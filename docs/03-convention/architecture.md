@@ -31,7 +31,7 @@
 | `notification` | 알림 저장 · 조회 | `auth` · `common` |
 
 - [G] 표에 없는 방향의 import 를 하지 않는다. 특히 **`product` → `chat` · `trade`, `chat` → `trade` 금지** (`ADR-0006`)
-- [G] 어떤 도메인도 `notification` 을 import 하지 않는다. 알림은 이벤트로만 받는다 (`ADR-0009`)
+- [G] 어떤 도메인도 `notification` 을 import 하지 않는다. 알림은 이벤트로만 받는다 (`ADR-0014`)
 - [G] `common.image` 는 어떤 도메인도 import 하지 않는다. 이미지를 소유하는 쪽은 도메인이다
   (`product.ProductImage` 가 `common.image` 의 업로더를 쓴다)
 - [G] **삭제 예정 도메인**(`order` · `payment` · `inspection`)을 새 코드가 import 하지 않는다.
@@ -60,4 +60,4 @@
 | 두 애그리게이트를 봐야 하는 판정 ("예약 상대는 채팅 상대다") | 둘을 모두 볼 수 있는 도메인의 `application` (`trade`) |
 | 요청 형식 검사 (빈 값 · 길이) | `presentation` DTO 의 Bean Validation. **최종 방어는 도메인이 한다** |
 | 복잡한 조회 쿼리 | `infra` 저장소 메서드 |
-| 외부 호출(S3 · RabbitMQ) | `infra`. `application` 은 그 결과만 받는다 |
+| 외부 호출(S3 등) | `infra`. `application` 은 그 결과만 받는다 |
