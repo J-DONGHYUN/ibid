@@ -1,5 +1,6 @@
 package project.kjhjdh.ibid.chat.application;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -11,7 +12,6 @@ import project.kjhjdh.ibid.chat.domain.ChatMessage;
 import project.kjhjdh.ibid.chat.domain.ChatRoom;
 import project.kjhjdh.ibid.chat.infra.ChatMessageRepository;
 import project.kjhjdh.ibid.chat.infra.ChatRoomRepository;
-import project.kjhjdh.ibid.common.event.NotificationEventPublisher;
 import project.kjhjdh.ibid.common.event.NotificationMessage;
 import project.kjhjdh.ibid.common.exception.BusinessException;
 import project.kjhjdh.ibid.common.exception.ErrorCode;
@@ -28,7 +28,7 @@ public class ChatMessageService {
     private final ChatRoomRepository chatRoomRepository;
     private final ProductRepository productRepository;
     private final ChatPresenceRegistry presenceRegistry;
-    private final NotificationEventPublisher notificationEventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public MessageListResult getMessages(Long chatRoomId, Long userId, Long cursor) {
@@ -86,7 +86,7 @@ public class ChatMessageService {
         if (presenceRegistry.isViewing(room.getId(), recipientId)) {
             return;
         }
-        notificationEventPublisher.publish(new NotificationMessage(
+        eventPublisher.publishEvent(new NotificationMessage(
                 recipientId, NotificationMessage.NotificationType.NEW_MESSAGE, room.getId()));
     }
 
