@@ -10,7 +10,11 @@
       "Edit(.github/workflows/**)",
       "Edit(.claude/settings.json)",
       "Edit(.claude/hooks/**)",
-      "Edit(.claude/agents/**)"
+      "Edit(.claude/agents/**)",
+      "Bash(gh issue edit *)",
+      "Bash(gh issue create *)",
+      "Bash(gh pr create *)",
+      "Bash(git push *)"
     ],
     "deny": [
       "Bash(git push --force *)",
