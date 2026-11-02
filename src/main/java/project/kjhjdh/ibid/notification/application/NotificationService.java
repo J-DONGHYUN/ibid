@@ -3,6 +3,7 @@ package project.kjhjdh.ibid.notification.application;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Notification save(Long recipientId, NotificationType type, Long referenceId) {
         return notificationRepository.save(Notification.create(recipientId, type, referenceId));
     }

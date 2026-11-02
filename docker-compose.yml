@@ -16,14 +16,5 @@ services:
     ports:
       - "6379:6379"
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"    # AMQP
-      - "15672:15672"  # 관리 UI (guest/guest)
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-
 volumes:
   mysql-data:
-  rabbitmq-data:

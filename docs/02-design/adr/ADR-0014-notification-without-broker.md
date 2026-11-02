@@ -56,9 +56,28 @@ import 하지 않는다 (`architecture.md` `[G]`). 지금까지 RabbitMQ 가 하
 INSERT 가 커밋될 곳이 없다. RabbitMQ 를 쓸 때는 소비자가 다른 스레드에서 새 트랜잭션으로
 저장해 이 문제가 없었다.
 
-그래서 리스너에 `@Transactional(propagation = REQUIRES_NEW)` 를 건다.
-트랜잭션이 없는 채팅 경로에서는 그냥 새 트랜잭션이 하나 열릴 뿐이라 같은 코드로 동작한다.
-`NotificationFlowIntegrationTest` 의 「트랜잭션이 있는 경로」 단언이 이 자리를 지킨다.
+그래서 새 트랜잭션을 연다. **다만 그 경계는 리스너가 아니라 `NotificationService.save` 에 둔다.**
+
+리스너에 `@Transactional(REQUIRES_NEW)` 를 걸면 `try-catch` 가 **트랜잭션 경계 안**에 갇힌다.
+저장이 던지면 참여 트랜잭션이 바깥을 rollback-only 로 표시하고, 리스너가 예외를 삼켜도
+프록시가 커밋하는 순간 `UnexpectedRollbackException` 이 난다 — 메서드 본문 밖이라 `catch` 가 못 잡는다.
+그 예외는 `AFTER_COMMIT` 콜백에서 호출자에게 전파돼 **트랜잭션이 없는 채팅 전송이 500 으로 끝난다.**
+`ADR-0005` 가 `ChatMessageService.send` 에 `@Transactional` 을 두지 않은 것과 같은 함정이다.
+
+```
+  ✗ 리스너에 트랜잭션          ⭕ save 에 트랜잭션
+  try {  ┌─ 경계 ─┐           ┌─ try ─────────────┐
+         │ save ✗ │ rollback  │  save ┌ 경계 ✗ ┐  │ 예외가 경계를 넘어
+  } catch└────────┘ -only     │       └────────┘  │ catch 로 온다
+         커밋 때 터진다         └───────────────────┘
+```
+
+트랜잭션이 없는 채팅 경로에서는 `REQUIRES_NEW` 가 그냥 새 트랜잭션을 하나 열 뿐이라 같은 코드로 동작한다.
+
+`NotificationFlowIntegrationTest` 의 「트랜잭션이 있는 경로」 와
+`TradeNotificationResilienceTest` 의 두 단언(거래 · 채팅)이 이 자리를 지킨다.
+**저장 실패는 서비스가 아니라 저장소에서 던지게 해야 한다** — 서비스를 mock 하면 트랜잭션 프록시가
+없어 참여 실패가 재현되지 않고 초록불이 거짓 안심을 준다.
 
 ### 4. 저장은 동기 · 실패는 리스너가 흡수
 
